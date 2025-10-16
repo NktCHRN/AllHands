@@ -13,7 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AllHands"
+  title: "AllHands",
+  description: "Empowering every hand in your company."
 };
 
 export default function RootLayout({
