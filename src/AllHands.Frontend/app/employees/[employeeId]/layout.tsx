@@ -13,14 +13,19 @@ export async function generateMetadata(
   const { employeeId: employeeId } = await params
  
   return {
-    title: `AllHands - Employee ${employeeId} assets`,
+    title: `AllHands - Employee ${employeeId}`,
   }
 }
 
-export default function EmployeeAssets() {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <div>
-      <h1>Employee assets Page</h1>
+      <h1>Employee by Id Page</h1>
+        {children}
     </div>
   );
 }
