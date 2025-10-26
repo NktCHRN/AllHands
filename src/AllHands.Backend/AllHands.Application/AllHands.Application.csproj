@@ -10,4 +10,8 @@
       <ProjectReference Include="..\AllHands.Domain\AllHands.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Marten" Version="8.13.2" />
+    </ItemGroup>
+
 </Project>
