@@ -8,12 +8,10 @@
 
     <ItemGroup>
       <PackageReference Include="Ardalis.Specification" Version="9.3.1" />
+      <PackageReference Include="DeterministicGuids" Version="1.0.5" />
       <PackageReference Include="MediatR.Contracts" Version="2.0.1" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Events\TimeOff\" />
+      <PackageReference Include="Marten" Version="8.13.2" />
     </ItemGroup>
 
 </Project>

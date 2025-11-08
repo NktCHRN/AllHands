@@ -2,5 +2,5 @@
 
 public interface ICompanyResource
 {
-    Guid CompanyId { get; set; }
+    Guid CompanyId { get; }
 }

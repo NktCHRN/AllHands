@@ -1,3 +1,9 @@
-﻿namespace AllHands.Domain.Events.Employee;
+﻿using AllHands.Domain.Abstractions;
 
-public record EmployeeFiredEvent(Guid EmployeeId, Guid PerformedByIdentityId, Guid PerformedByEmployeeId): BaseEmployeeEvent(EmployeeId, PerformedByIdentityId, PerformedByEmployeeId);
+namespace AllHands.Domain.Events.Employee;
+
+public sealed record EmployeeFiredEvent(
+    Guid EntityId, 
+    Guid PerformedByUserId,
+    string Reason): AuditableEvent(EntityId, PerformedByUserId);
+    

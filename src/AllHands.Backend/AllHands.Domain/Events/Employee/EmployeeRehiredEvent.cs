@@ -1,3 +1,5 @@
-﻿namespace AllHands.Domain.Events.Employee;
+﻿using AllHands.Domain.Abstractions;
 
-public record EmployeeRehiredEvent(Guid EmployeeId, Guid PerformedByIdentityId, Guid PerformedByEmployeeId): BaseEmployeeEvent(EmployeeId, PerformedByIdentityId, PerformedByEmployeeId);  // Fired employee could be rehired.
+namespace AllHands.Domain.Events.Employee;
+
+public sealed record EmployeeRehiredEvent(Guid EntityId, Guid PerformedByUserId): AuditableEvent(EntityId, PerformedByUserId);  // Fired employee could be rehired.

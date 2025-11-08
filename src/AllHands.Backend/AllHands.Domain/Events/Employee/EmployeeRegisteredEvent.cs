@@ -1,3 +1,12 @@
-﻿namespace AllHands.Domain.Events.Employee;
+﻿using AllHands.Domain.Abstractions;
 
-public sealed record EmployeeRegisteredEvent(Guid EmployeeId, Guid PerformedByIdentityId, Guid PerformedByEmployeeId): BaseEmployeeEvent(EmployeeId, PerformedByIdentityId, PerformedByEmployeeId);
+namespace AllHands.Domain.Events.Employee;
+
+public sealed record EmployeeRegisteredEvent(
+    Guid EntityId, 
+    Guid PerformedByUserId,
+    string FirstName,
+    string? MiddleName,
+    string LastName,
+    string? PhoneNumber,
+    string? AvatarFileName): AuditableEvent(EntityId, PerformedByUserId);

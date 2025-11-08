@@ -1,3 +1,5 @@
-﻿namespace AllHands.Domain.Events.Employee;
+﻿using AllHands.Domain.Abstractions;
 
-public record EmployeeDeletedEvent(Guid EmployeeId, Guid PerformedByIdentityId, Guid PerformedByEmployeeId): BaseEmployeeEvent(EmployeeId, PerformedByIdentityId, PerformedByEmployeeId);
+namespace AllHands.Domain.Events.Employee;
+
+public sealed record EmployeeDeletedEvent(Guid EntityId, Guid PerformedByUserId): AuditableEvent(EntityId, PerformedByUserId);

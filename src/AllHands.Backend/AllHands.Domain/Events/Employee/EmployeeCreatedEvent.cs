@@ -1,3 +1,17 @@
-﻿namespace AllHands.Domain.Events.Employee;
+﻿using AllHands.Domain.Abstractions;
 
-public record EmployeeCreatedEvent(Guid EmployeeId, Guid PerformedByIdentityId, Guid PerformedByEmployeeId): BaseEmployeeEvent(EmployeeId, PerformedByIdentityId, PerformedByEmployeeId);
+namespace AllHands.Domain.Events.Employee;
+
+public sealed record EmployeeCreatedEvent(
+    Guid EntityId, 
+    Guid PerformedByUserId, 
+    Guid UserId,
+    Guid CompanyId,
+    Guid PositionId,
+    Guid ManagerId,
+    string Email, 
+    string FirstName,
+    string? MiddleName,
+    string LastName,
+    string? PhoneNumber,
+    DateTimeOffset WorkStartDate): AuditableEvent(EntityId, PerformedByUserId);
