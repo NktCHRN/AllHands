@@ -14,6 +14,9 @@ public sealed class TimeOffBalance
     public Guid TypeId { get; internal set; }
     public TimeOffType? Type { get; internal set; }
     public decimal Days { get; internal set; }
+
+    public static Guid GetId(Guid employeeId, Guid typeId) =>
+        DeterministicGuid.Create(employeeId, typeId.ToString());
 }
 
 public class EmployeeTimeOffBalanceItemProjection : MultiStreamProjection<TimeOffBalance, Guid>
@@ -31,7 +34,7 @@ public class EmployeeTimeOffBalanceItemProjection : MultiStreamProjection<TimeOf
     {
         return new TimeOffBalance()
         {
-            Id = DeterministicGuid.Create(@event.EmployeeId, @event.TypeId.ToString()),
+            Id = TimeOffBalance.GetId(@event.EmployeeId, @event.TypeId),
             EmployeeId = @event.EmployeeId,
             TypeId = @event.TypeId,
             Days = -@event.WorkingDaysCount
