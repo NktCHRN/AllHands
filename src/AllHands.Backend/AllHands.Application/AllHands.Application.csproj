@@ -10,4 +10,8 @@
       <ProjectReference Include="..\AllHands.Domain\AllHands.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Abstractions\" />
+    </ItemGroup>
+
 </Project>
