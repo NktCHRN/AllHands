@@ -31,7 +31,7 @@ public static class DependencyInjection
         services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = redisConnectionString;
-            options.InstanceName = "AllHands";
+            options.InstanceName = "AllHands:";
         });
         return services;
     }

@@ -19,6 +19,6 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
         modelBuilder.Entity<AllHandsSession>()
             .HasKey(x => x.Key);
         modelBuilder.Entity<AllHandsSession>()
-            .HasIndex(x => x.CreatedAt);
+            .HasIndex(x => x.IssuesAt);
     }
 }
