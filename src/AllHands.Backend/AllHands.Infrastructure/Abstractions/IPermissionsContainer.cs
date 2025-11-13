@@ -1,4 +1,4 @@
-﻿namespace AllHands.Application.Abstractions;
+﻿namespace AllHands.Infrastructure.Abstractions;
 
 public interface IPermissionsContainer
 {

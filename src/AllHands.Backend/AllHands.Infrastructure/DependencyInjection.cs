@@ -1,4 +1,4 @@
-﻿using AllHands.Application.Abstractions;
+﻿using AllHands.Infrastructure.Abstractions;
 using AllHands.Domain.Projections;
 using AllHands.Infrastructure.Auth;
 using JasperFx.Events.Projections;

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Frozen;
-using AllHands.Application.Abstractions;
+using AllHands.Infrastructure.Abstractions;
 
 namespace AllHands.Infrastructure.Auth;
 
