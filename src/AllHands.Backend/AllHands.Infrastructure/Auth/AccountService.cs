@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace AllHands.Infrastructure.Auth;
 
-public sealed class AccountService(UserManager<AllHandsIdentityUser> userManager, RoleManager<IdentityRole<Guid>> roleManager) : IAccountService
+public sealed class AccountService(UserManager<AllHandsIdentityUser> userManager, AuthDbContext dbContext) : IAccountService
 {
     public async Task<LoginResult> LoginAsync(string login, string password, CancellationToken cancellationToken = default)
     {
@@ -22,7 +22,15 @@ public sealed class AccountService(UserManager<AllHandsIdentityUser> userManager
 
     private async Task<ClaimsPrincipal> CreateClaimsPrincipalAsync(AllHandsIdentityUser user)
     {
-        var roles = await userManager.GetRolesAsync(user);
+        // TODO: Implement navigation. User => UserRole => Role => RoleClaim => Claim.
         throw new NotImplementedException();
+        // var roleNames = await userManager.GetRolesAsync(user);
+        // var permissions = new List<Claim>();
+        // foreach (var roleName in roleNames)
+        // {
+        //     var role = await roleManager.FindByNameAsync(roleName)
+        //         ;
+        //     permissions.AddRange(await roleManager.GetClaimsAsync(role));
+        // }
     }
 }
