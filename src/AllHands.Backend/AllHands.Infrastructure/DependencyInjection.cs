@@ -1,4 +1,5 @@
-﻿using AllHands.Domain.Projections;
+﻿using AllHands.Application.Abstractions;
+using AllHands.Domain.Projections;
 using AllHands.Infrastructure.Auth;
 using JasperFx.Events.Projections;
 using Marten;
@@ -18,7 +19,8 @@ public static class DependencyInjection
             .AddRedis(configuration)
             .AddDatabase(configuration)
             .AddMartenDb(configuration)
-            .AddIdentityServices(configuration);
+            .AddIdentityServices(configuration)
+            .AddSingleton<IPermissionsContainer, PermissionsContainer>();
     }
 
     private static IServiceCollection AddRedis(this IServiceCollection services, IConfiguration configuration)

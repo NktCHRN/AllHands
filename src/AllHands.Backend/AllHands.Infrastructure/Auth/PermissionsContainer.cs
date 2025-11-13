@@ -1,10 +1,11 @@
 ﻿using System.Collections.Frozen;
+using AllHands.Application.Abstractions;
 
 namespace AllHands.Infrastructure.Auth;
 
-public sealed class PermissionsContainer
+public sealed class PermissionsContainer : IPermissionsContainer
 {
-    public readonly FrozenDictionary<string, int> Dictionary = new Dictionary<string, int>()
+    public IReadOnlyDictionary<string, int> Permissions { get; } = new Dictionary<string, int>()
         {
             {"roles.create", 1},
             {"roles.edit", 2},
