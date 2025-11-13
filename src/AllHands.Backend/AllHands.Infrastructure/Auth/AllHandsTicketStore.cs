@@ -14,7 +14,7 @@ public sealed class AllHandsTicketStore(AuthDbContext dbContext, IDistributedCac
         var serializedTicket = ticketSerializer.Serialize(ticket);
         var session = new AllHandsSession()
         {
-            Key = Guid.CreateVersion7(),
+            Key = Guid.NewGuid(),
             TicketValue = serializedTicket,
             UserId = userId,
             IssuedAt = ticket.Properties.IssuedUtc,
