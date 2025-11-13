@@ -8,6 +8,7 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
     : IdentityDbContext<AllHandsIdentityUser, IdentityRole<Guid>, Guid>(options)
 {
     public DbSet<AllHandsSession> Sessions { get; set; }
+    public DbSet<Invitation> Invitations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
