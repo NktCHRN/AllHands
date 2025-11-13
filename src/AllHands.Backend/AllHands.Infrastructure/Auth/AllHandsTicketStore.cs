@@ -6,10 +6,12 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace AllHands.Infrastructure.Auth;
 
-public sealed class AllHandsTicketStore(AuthDbContext dbContext, IDistributedCache cache, TicketSerializer ticketSerializer, TimeProvider timeProvider) : ITicketStore
+public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbContextFactory, IDistributedCache cache, TicketSerializer ticketSerializer, TimeProvider timeProvider) : ITicketStore
 {
     public async Task<string> StoreAsync(AuthenticationTicket ticket)
     {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        
         var userId = Guid.Parse(ticket.Principal.Identity!.Name!);
         var serializedTicket = ticketSerializer.Serialize(ticket);
         var session = new AllHandsSession()
@@ -33,6 +35,8 @@ public sealed class AllHandsTicketStore(AuthDbContext dbContext, IDistributedCac
 
     public async Task RenewAsync(string key, AuthenticationTicket ticket)
     {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        
         var sessionId = Guid.Parse(key);
         var session = await dbContext.Sessions.FirstOrDefaultAsync(s => s.Key == sessionId);
         if (session == null)
@@ -53,6 +57,8 @@ public sealed class AllHandsTicketStore(AuthDbContext dbContext, IDistributedCac
 
     public async Task<AuthenticationTicket?> RetrieveAsync(string key)
     {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        
         var cachedTicket = await cache.GetStringAsync($"sessions:{key}");
         AllHandsSession? session;
         if (cachedTicket != null)
@@ -80,6 +86,8 @@ public sealed class AllHandsTicketStore(AuthDbContext dbContext, IDistributedCac
 
     public async Task RemoveAsync(string key)
     {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        
         var sessionId = Guid.Parse(key);
         var session = await dbContext.Sessions.FirstOrDefaultAsync(s => s.Key == sessionId);
         if (session == null)

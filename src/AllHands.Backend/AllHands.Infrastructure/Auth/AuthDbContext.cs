@@ -1,12 +1,11 @@
 ﻿using AllHands.Infrastructure.Auth.Entities;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace AllHands.Infrastructure.Auth;
 
 public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
-    : IdentityDbContext<AllHandsIdentityUser, IdentityRole<Guid>, Guid>(options)
+    : IdentityDbContext<AllHandsIdentityUser, AllHandsRole, Guid>(options)
 {
     public DbSet<AllHandsSession> Sessions { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
@@ -36,5 +35,16 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
             .HasOne(x => x.User)
             .WithMany(x => x.Invitations)
             .HasForeignKey(x => x.UserId);
+        
+        modelBuilder.Entity<AllHandsRole>()
+            .Property(x => x.CompanyId)
+            .IsRequired();
+        var index = modelBuilder.Entity<AllHandsRole>()
+            .HasIndex(u => new { u.NormalizedName }).Metadata;
+        _ = modelBuilder.Entity<AllHandsRole>().Metadata.RemoveIndex(index.Properties);
+        modelBuilder.Entity<AllHandsRole>()
+            .HasIndex(e => new {e.CompanyId, e.NormalizedName})
+            .HasDatabaseName("RoleNameIndex")
+            .IsUnique();
     }
 }

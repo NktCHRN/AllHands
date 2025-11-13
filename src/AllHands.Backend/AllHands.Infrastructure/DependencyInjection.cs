@@ -53,8 +53,9 @@ public static class DependencyInjection
         })
             .AddEntityFrameworkStores<AuthDbContext>()
             .AddDefaultTokenProviders();
-        
-        services.AddScoped<ITicketStore, AllHandsTicketStore>();
+
+        services.AddSingleton(Microsoft.AspNetCore.Authentication.TicketSerializer.Default);
+        services.AddSingleton<ITicketStore, AllHandsTicketStore>();
         services.AddScoped<IAccountService, AccountService>();
         
         return services;
@@ -62,10 +63,14 @@ public static class DependencyInjection
 
     private static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
     {
-        return services
-            .AddDbContext<AuthDbContext>((sp, options)
+        services
+            .AddPooledDbContextFactory<AuthDbContext>(options
                 => options
                     .UseNpgsql(configuration.GetConnectionString("postgres")));
+        
+        services.AddScoped(sp => sp.GetRequiredService<IDbContextFactory<AuthDbContext>>().CreateDbContext());
+        
+        return services;
     }
     
     private static IServiceCollection AddMartenDb(this IServiceCollection services, IConfiguration configuration)
