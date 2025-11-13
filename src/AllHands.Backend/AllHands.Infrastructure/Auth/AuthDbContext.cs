@@ -19,6 +19,20 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
         modelBuilder.Entity<AllHandsSession>()
             .HasKey(x => x.Key);
         modelBuilder.Entity<AllHandsSession>()
-            .HasIndex(x => x.IssuesAt);
+            .HasIndex(x => x.IssuedAt);
+        
+        modelBuilder.Entity<Invitation>()
+            .Property(x => x.TokenHash)
+            .HasMaxLength(64);
+        modelBuilder.Entity<Invitation>()
+            .HasIndex(x => new { x.ExpiresAt, x.TokenHash });
+        modelBuilder.Entity<Invitation>()
+            .HasOne(x => x.Issuer)
+            .WithMany(x => x.IssuedInvitations)
+            .HasForeignKey(x => x.IssuerId);
+        modelBuilder.Entity<Invitation>()
+            .HasOne(x => x.User)
+            .WithMany(x => x.Invitations)
+            .HasForeignKey(x => x.UserId);
     }
 }

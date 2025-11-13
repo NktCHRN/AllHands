@@ -17,7 +17,7 @@ public sealed class AllHandsTicketStore(AuthDbContext dbContext, IDistributedCac
             Key = Guid.CreateVersion7(),
             TicketValue = serializedTicket,
             UserId = userId,
-            IssuesAt = ticket.Properties.IssuedUtc,
+            IssuedAt = ticket.Properties.IssuedUtc,
             ExpiresAt = ticket.Properties.ExpiresUtc
         };
         await dbContext.AddAsync(session);
