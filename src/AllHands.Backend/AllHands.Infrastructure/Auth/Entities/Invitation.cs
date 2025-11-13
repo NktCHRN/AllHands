@@ -1,4 +1,4 @@
-﻿namespace AllHands.Infrastructure.Auth;
+﻿namespace AllHands.Infrastructure.Auth.Entities;
 
 public sealed class Invitation
 {

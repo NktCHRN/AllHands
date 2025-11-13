@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace AllHands.Infrastructure.Auth;
+namespace AllHands.Infrastructure.Auth.Entities;
 
 public sealed class AllHandsIdentityUser : IdentityUser<Guid>
 {

@@ -1,4 +1,6 @@
-﻿namespace AllHands.Infrastructure.Auth;
+﻿using AllHands.Infrastructure.Auth.Entities;
+
+namespace AllHands.Infrastructure.Auth;
 
 public sealed class AllHandsSession
 {

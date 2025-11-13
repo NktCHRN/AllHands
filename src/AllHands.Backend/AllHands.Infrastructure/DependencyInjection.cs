@@ -1,8 +1,11 @@
-﻿using AllHands.Infrastructure.Abstractions;
+﻿using AllHands.Application.Abstractions;
+using AllHands.Infrastructure.Abstractions;
 using AllHands.Domain.Projections;
 using AllHands.Infrastructure.Auth;
+using AllHands.Infrastructure.Auth.Entities;
 using JasperFx.Events.Projections;
 using Marten;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -50,7 +53,10 @@ public static class DependencyInjection
         })
             .AddEntityFrameworkStores<AuthDbContext>()
             .AddDefaultTokenProviders();
-
+        
+        services.AddScoped<ITicketStore, AllHandsTicketStore>();
+        services.AddScoped<IAccountService, AccountService>();
+        
         return services;
     }
 
