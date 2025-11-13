@@ -1,6 +1,5 @@
 ﻿using AllHands.Domain.Projections;
 using AllHands.Infrastructure.Auth;
-using JasperFx;
 using JasperFx.Events.Projections;
 using Marten;
 using Microsoft.AspNetCore.Identity;
@@ -18,6 +17,7 @@ public static class DependencyInjection
         return services
             .AddRedis(configuration)
             .AddDatabase(configuration)
+            .AddMartenDb(configuration)
             .AddIdentityServices(configuration);
     }
 
@@ -72,8 +72,6 @@ public static class DependencyInjection
                 options.Projections.Add<EmployeeProjection>(ProjectionLifecycle.Inline);
                 options.Projections.Add<EmployeeTimeOffBalanceItemProjection>(ProjectionLifecycle.Inline);
                 options.Projections.Add<TimeOffRequestProjection>(ProjectionLifecycle.Inline);
-
-                options.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
             })
             .UseLightweightSessions();
         
