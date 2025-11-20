@@ -8,6 +8,7 @@ public sealed class AllHandsIdentityUser : IdentityUser<Guid>
     public string? MiddleName { get; internal set; }
     public string LastName { get; internal set; } = string.Empty;
     public required Guid CompanyId { get; set; }
+    public DateTimeOffset? DeletedAt { get; internal set; }
     
     public IList<Invitation> IssuedInvitations { get; set; } = [];
     public IList<Invitation> Invitations { get; set; } = [];

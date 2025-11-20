@@ -1,6 +1,10 @@
 ﻿using System.Collections;
+using System.Data;
 using System.Security.Claims;
 using AllHands.Application.Abstractions;
+using AllHands.Application.Features.User.RegisterFromInvitation;
+using AllHands.Domain.Exceptions;
+using AllHands.Infrastructure.Abstractions;
 using AllHands.Infrastructure.Auth.Entities;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -8,7 +12,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AllHands.Infrastructure.Auth;
 
-public sealed class AccountService(UserManager<AllHandsIdentityUser> userManager, AuthDbContext dbContext, IPermissionsContainer permissionsContainer) : IAccountService
+public sealed class AccountService(
+    UserManager<AllHandsIdentityUser> userManager, 
+    AuthDbContext dbContext, 
+    IPermissionsContainer permissionsContainer, 
+    IInvitationService invitationService) : IAccountService
 {
     public async Task<LoginResult> LoginAsync(string login, string password, CancellationToken cancellationToken = default)
     {
@@ -92,5 +100,23 @@ public sealed class AccountService(UserManager<AllHandsIdentityUser> userManager
             }
         }
         return bytes;
+    }
+    
+    public async Task RegisterFromInvitationAsync(RegisterFromInvitationCommand command, CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
+
+        var useInvitationResult = await invitationService.UseAsync(command.InvitationId, command.InvitationToken, cancellationToken);
+        
+        var user = await userManager.FindByIdAsync(useInvitationResult.UserId.ToString())
+            ?? throw new InvalidOperationException("User was not found.");
+        if (user.DeletedAt.HasValue)
+        {
+            throw new UserUnauthorizedException("Invalid invitation token.");
+        }
+        
+        await userManager.AddPasswordAsync(user, command.Password);
+        
+        await transaction.CommitAsync(cancellationToken);
     }
 }

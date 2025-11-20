@@ -1,5 +1,6 @@
 ﻿using AllHands.Application.Abstractions;
 using AllHands.Domain.Projections;
+using AllHands.Infrastructure.Abstractions;
 using AllHands.Infrastructure.Auth;
 using AllHands.Infrastructure.Auth.Entities;
 using JasperFx.Events.Projections;
@@ -42,6 +43,8 @@ public static class DependencyInjection
     
     private static IServiceCollection AddIdentityServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddSingleton<IPasswordHasher<AllHandsIdentityUser>, BCryptUserPasswordHasher>();
+        
         services.AddIdentity<AllHandsIdentityUser, IdentityRole<Guid>>(options =>
         {
             options.Password.RequiredLength = 8;
@@ -55,6 +58,13 @@ public static class DependencyInjection
 
         services.AddSingleton(Microsoft.AspNetCore.Authentication.TicketSerializer.Default);
         services.AddSingleton<ITicketStore, AllHandsTicketStore>();
+        
+        services.AddOptions<InvitationTokenProviderOptions>()
+            .BindConfiguration(nameof(InvitationTokenProviderOptions))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        
+        services.AddScoped<IInvitationService, InvitationService>();
         services.AddScoped<IAccountService, AccountService>();
         
         return services;

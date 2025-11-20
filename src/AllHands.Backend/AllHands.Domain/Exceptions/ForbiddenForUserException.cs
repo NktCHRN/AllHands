@@ -1,4 +1,4 @@
-﻿namespace DomainAbstractions.Exceptions;
+﻿namespace AllHands.Domain.Exceptions;
 [Serializable]
 public sealed class ForbiddenForUserException : Exception
 {

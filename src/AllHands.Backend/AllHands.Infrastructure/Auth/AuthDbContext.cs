@@ -27,8 +27,6 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
             .Property(x => x.TokenHash)
             .HasMaxLength(64);
         modelBuilder.Entity<Invitation>()
-            .HasIndex(x => new { x.ExpiresAt, x.TokenHash });
-        modelBuilder.Entity<Invitation>()
             .HasOne(x => x.Issuer)
             .WithMany(x => x.IssuedInvitations)
             .HasForeignKey(x => x.IssuerId);
