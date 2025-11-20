@@ -1,11 +1,11 @@
 ﻿using System.Collections;
 using System.Security.Claims;
 using AllHands.Application.Abstractions;
-using AllHands.Infrastructure.Abstractions;
+using AllHands.Infrastructure.Auth;
 
 namespace AllHands.WebApi;
 
-public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor, IPermissionsContainer permissionsContainer) : ICurrentUserService
+public sealed class CurrentHttpUserService(IHttpContextAccessor httpContextAccessor, IPermissionsContainer permissionsContainer) : ICurrentUserService
 {
     private HttpContext HttpContext 
         => httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not accessible.");
@@ -37,13 +37,13 @@ public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor,
             GetEmail(), 
             GetPhoneNumber(),
             User.FindFirst(ClaimTypes.GivenName)?.Value ?? throw new InvalidOperationException("Invalid user first name."),
-            User.FindFirst("middle_name")?.Value ?? throw new InvalidOperationException("Invalid user middle name."),
+            User.FindFirst("middlename")?.Value ?? throw new InvalidOperationException("Invalid user middle name."),
             User.FindFirst(ClaimTypes.Surname)?.Value ?? throw new InvalidOperationException("Invalid user last name."));
     }
 
     public bool IsAllowed(string permission)
     {
-        var claim = User.FindFirst("permissions")?.Value ??
+        var claim = User.FindFirst(AuthConstants.PermissionClaimName)?.Value ??
                     throw new InvalidOperationException("Invalid user permissions.");
         var permissions = new BitArray(Convert.FromBase64String(claim));
 

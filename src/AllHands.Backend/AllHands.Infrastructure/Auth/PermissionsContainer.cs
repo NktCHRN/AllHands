@@ -1,5 +1,5 @@
 ﻿using System.Collections.Frozen;
-using AllHands.Infrastructure.Abstractions;
+using AllHands.Application.Abstractions;
 
 namespace AllHands.Infrastructure.Auth;
 
@@ -33,4 +33,6 @@ public sealed class PermissionsContainer : IPermissionsContainer
             {"position.delete", 24},
         }
         .ToFrozenDictionary();
+
+    public int PermissionsLength => 128;
 }

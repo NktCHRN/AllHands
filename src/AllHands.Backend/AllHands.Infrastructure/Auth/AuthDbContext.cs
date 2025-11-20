@@ -1,11 +1,12 @@
 ﻿using AllHands.Infrastructure.Auth.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace AllHands.Infrastructure.Auth;
 
 public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
-    : IdentityDbContext<AllHandsIdentityUser, AllHandsRole, Guid>(options)
+    : IdentityDbContext<AllHandsIdentityUser, AllHandsRole, Guid, IdentityUserClaim<Guid>, AllHandsUserRole, IdentityUserLogin<Guid>, IdentityRoleClaim<Guid>, IdentityUserToken<Guid>>(options)
 {
     public DbSet<AllHandsSession> Sessions { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
@@ -46,5 +47,34 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
             .HasIndex(e => new {e.CompanyId, e.NormalizedName})
             .HasDatabaseName("RoleNameIndex")
             .IsUnique();
+        
+        modelBuilder.Entity<AllHandsRole>()
+            .HasKey(x => x.Id);
+        modelBuilder.Entity<AllHandsRole>()
+            .HasMany(x => x.Claims)
+            .WithOne()
+            .HasForeignKey(x => x.RoleId)
+            .HasPrincipalKey(x => x.Id);
+        
+        modelBuilder.Entity<AllHandsUserRole>()
+            .HasOne(x => x.Role)
+            .WithMany()
+            .HasForeignKey(x => x.RoleId)
+            .HasPrincipalKey(x => x.Id);
+        
+        modelBuilder.Entity<AllHandsIdentityUser>()
+            .Property(x => x.FirstName)
+            .HasMaxLength(255);
+        modelBuilder.Entity<AllHandsIdentityUser>()
+            .Property(x => x.MiddleName)
+            .HasMaxLength(255);
+        modelBuilder.Entity<AllHandsIdentityUser>()
+            .Property(x => x.LastName)
+            .HasMaxLength(255);
+        modelBuilder.Entity<AllHandsIdentityUser>()
+            .HasMany(x => x.Roles)
+            .WithOne()
+            .HasForeignKey(x => x.UserId)
+            .HasPrincipalKey(x => x.Id);
     }
 }
