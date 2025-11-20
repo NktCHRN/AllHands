@@ -8,6 +8,7 @@
 
     <ItemGroup>
       <PackageReference Include="DeterministicGuids" Version="1.0.5" />
+      <PackageReference Include="Humanizer.Core" Version="3.0.0-rc.30" />
       <PackageReference Include="MediatR.Contracts" Version="2.0.1" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
       <PackageReference Include="Marten" Version="8.13.2" />

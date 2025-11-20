@@ -2,6 +2,7 @@
 using AllHands.Domain.Exceptions;
 using AllHands.Infrastructure.Abstractions;
 using AllHands.Infrastructure.Auth.Entities;
+using Humanizer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -18,6 +19,17 @@ public sealed class InvitationService(AuthDbContext dbContext, TimeProvider time
     public async Task CreateAsync(Guid userId, Guid issuerId, CancellationToken cancellationToken)
     {
         var currentUtcTime = timeProvider.GetUtcNow();
+        
+        var latestValidCreationDateTime = currentUtcTime.AddSeconds(-_options.TokenRecreationTimeoutInSeconds);
+        var invitationInTimeoutRange = await dbContext.Invitations.FirstOrDefaultAsync(
+            i => i.UserId == userId && i.IssuedAt > latestValidCreationDateTime,
+            cancellationToken);
+        if (invitationInTimeoutRange is not null)
+        {
+            throw new EntityAlreadyExistsException($"This user was already invited. " +
+                                                   $"Please wait {(invitationInTimeoutRange.IssuedAt - latestValidCreationDateTime).Humanize(2)} to create a new invitation.");
+        }
+        
         var token = RandomNumberGenerator.GetString(Alphanumeric, TokenLength);     
         // TODO: Send email with token here.
         

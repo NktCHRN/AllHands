@@ -34,6 +34,9 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
             .HasOne(x => x.User)
             .WithMany(x => x.Invitations)
             .HasForeignKey(x => x.UserId);
+        modelBuilder.Entity<Invitation>()
+            .HasIndex(x => x.IssuedAt)
+            .IsDescending(true);
         
         modelBuilder.Entity<AllHandsRole>()
             .Property(x => x.CompanyId)
