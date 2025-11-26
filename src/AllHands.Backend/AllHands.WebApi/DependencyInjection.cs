@@ -19,10 +19,12 @@ public static class DependencyInjection
             });
         services.AddAuthentication(opt =>
             {
+                opt.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                 opt.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                 opt.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                 opt.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                 opt.DefaultSignOutScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                opt.DefaultForbidScheme = CookieAuthenticationDefaults.AuthenticationScheme;
             })
             .AddCookie(opt =>
             {
