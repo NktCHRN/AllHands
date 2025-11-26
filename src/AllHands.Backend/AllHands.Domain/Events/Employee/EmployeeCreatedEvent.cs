@@ -14,4 +14,4 @@ public sealed record EmployeeCreatedEvent(
     string? MiddleName,
     string LastName,
     string? PhoneNumber,
-    DateTimeOffset WorkStartDate): AuditableEvent(EntityId, PerformedByUserId);
+    DateOnly WorkStartDate): AuditableEvent(EntityId, PerformedByUserId);

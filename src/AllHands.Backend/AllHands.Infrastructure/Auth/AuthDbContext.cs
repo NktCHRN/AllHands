@@ -10,6 +10,7 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
 {
     public DbSet<AllHandsSession> Sessions { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
+    public DbSet<AllHandsRoleClaim> AllHandsRoleClaims { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -56,6 +57,10 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
             .WithOne()
             .HasForeignKey(x => x.RoleId)
             .HasPrincipalKey(x => x.Id);
+        modelBuilder.Entity<AllHandsRole>()
+            .HasIndex(x => new {x.CompanyId, x.NormalizedName})
+            .IsUnique()
+            .HasFilter($"\"{nameof(AllHandsRole.DeletedAt)}\" IS NULL");
         
         modelBuilder.Entity<AllHandsUserRole>()
             .HasOne(x => x.Role)
@@ -77,5 +82,16 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
             .WithOne()
             .HasForeignKey(x => x.UserId)
             .HasPrincipalKey(x => x.Id);
+        modelBuilder.Entity<AllHandsIdentityUser>()
+            .HasIndex(x => x.NormalizedUserName)
+            .IsUnique()
+            .HasFilter($"\"{nameof(AllHandsRole.DeletedAt)}\" IS NULL");
+        
+        modelBuilder.Entity<AllHandsRoleClaim>()
+            .Property(x => x.ClaimType)
+            .HasMaxLength(255);
+        modelBuilder.Entity<AllHandsRoleClaim>()
+            .Property(x => x.ClaimValue)
+            .HasMaxLength(255);
     }
 }

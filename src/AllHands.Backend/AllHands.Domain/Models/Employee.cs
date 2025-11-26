@@ -1,5 +1,4 @@
 ﻿using AllHands.Domain.Abstractions;
-using AllHands.Domain.Events.Employee;
 
 namespace AllHands.Domain.Models;
 
@@ -15,7 +14,7 @@ public sealed class Employee : ISoftDeletable, ICompanyResource
     public string? AvatarFileName { get; internal set; }
     public DateTimeOffset CreatedAt { get; internal set; }
     public DateTimeOffset? UpdatedAt { get; internal set; }
-    public DateTimeOffset WorkStartDate { get; internal set; }
+    public DateOnly WorkStartDate { get; internal set; }
     public DateTimeOffset? DeletedAt { get; internal set; }
     public Guid ManagerId { get; internal set; }
     public Employee? Manager { get; internal set; }

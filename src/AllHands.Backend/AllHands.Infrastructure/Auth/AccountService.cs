@@ -2,6 +2,7 @@
 using System.Data;
 using System.Security.Claims;
 using AllHands.Application.Abstractions;
+using AllHands.Application.Features.User.Login;
 using AllHands.Application.Features.User.RegisterFromInvitation;
 using AllHands.Domain.Exceptions;
 using AllHands.Infrastructure.Abstractions;
@@ -24,12 +25,12 @@ public sealed class AccountService(
         var checkPasswordResult = user is not null && await userManager.CheckPasswordAsync(user, password);
         if (!checkPasswordResult)
         {
-            return new LoginResult(false, null);
+            throw new UserUnauthorizedException("Invalid login or password.");
         }
         
         var claimsPrincipal = await CreateClaimsPrincipalAsync(user!);
         
-        return new LoginResult(true, claimsPrincipal);
+        return new LoginResult(claimsPrincipal);
     }
 
     private async Task<ClaimsPrincipal> CreateClaimsPrincipalAsync(AllHandsIdentityUser user)
@@ -102,7 +103,7 @@ public sealed class AccountService(
         return bytes;
     }
     
-    public async Task RegisterFromInvitationAsync(RegisterFromInvitationCommand command, CancellationToken cancellationToken = default)
+    public async Task<Guid> RegisterFromInvitationAsync(RegisterFromInvitationCommand command, CancellationToken cancellationToken = default)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
@@ -118,5 +119,7 @@ public sealed class AccountService(
         await userManager.AddPasswordAsync(user, command.Password);
         
         await transaction.CommitAsync(cancellationToken);
+
+        return user.Id;
     }
 }

@@ -12,6 +12,6 @@ public sealed record EmployeeInfoUpdatedEvent(
     string? MiddleName,
     string LastName,
     string? PhoneNumber,
-    DateTimeOffset WorkStartDate,
+    DateOnly WorkStartDate,
     string? AvatarFileName): AuditableEvent(EntityId, PerformedByUserId);
     

@@ -11,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Features\User\Login\" />
+      <PackageReference Include="MediatR" Version="14.0.0-beta-1" />
     </ItemGroup>
 
 </Project>

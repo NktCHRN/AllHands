@@ -16,21 +16,44 @@ public class TimeOffBalanceTimeOffRequestedEventGrouper : IAggregateGrouper<Guid
         var timeOffRequestedEvents = eventsList
             .OfType<IEvent<TimeOffRequestedEvent>>()
             .ToList();
-
+        
+        // (EmployeeId, TypeId) combinations from events
         var identifiers = timeOffRequestedEvents
             .Select(r => (r.Data.EmployeeId, r.Data.TypeId))
             .Distinct()
-            .ToList();
-        var employeeBalanceItems = await session.Query<TimeOffBalance>()
-            .Where(x => identifiers.Contains(new(x.EmployeeId, x.TypeId)))
-            .ToListAsync<TimeOffBalance>();
+            .ToArray();
         
-        var streamIds = new Dictionary<(Guid, Guid), Guid>();
+        var employeeIds = identifiers
+            .Select(i => i.EmployeeId)
+            .Distinct()
+            .ToArray();
+
+        var typeIds = identifiers
+            .Select(i => i.TypeId)
+            .Distinct()
+            .ToArray();
+        
+        var employeeBalanceItems = await session.Query<TimeOffBalance>()
+            .Where(x => employeeIds.Contains(x.EmployeeId) &&
+                        typeIds.Contains(x.TypeId))
+            .ToListAsync();
+        
+        var balancesByKey = employeeBalanceItems
+            .GroupBy(b => (b.EmployeeId, b.TypeId))
+            .ToDictionary(g => g.Key, g => g.First().Id);
+        
+        var streamIds = new Dictionary<(Guid EmployeeId, Guid TypeId), Guid>();
+
         foreach (var id in identifiers)
         {
-            streamIds[id] =
-                employeeBalanceItems.FirstOrDefault(e => e.EmployeeId == id.EmployeeId && e.TypeId == id.TypeId)?.Id
-                ?? DeterministicGuid.Create(id.EmployeeId, id.TypeId.ToString());
+            if (balancesByKey.TryGetValue(id, out var existingId))
+            {
+                streamIds[id] = existingId;
+            }
+            else
+            {
+                streamIds[id] = DeterministicGuid.Create(id.EmployeeId, id.TypeId.ToString());
+            }
         }
         
         grouping.AddEvents<TimeOffRequestedEvent>(e => streamIds[(e.EmployeeId, e.TypeId)], timeOffRequestedEvents);

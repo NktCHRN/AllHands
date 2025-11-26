@@ -35,9 +35,17 @@ public class TimeOffBalanceTimeOffRequestCancelledRejectedEventGrouper : IAggreg
             .Select(r => (r.EmployeeId, r.TypeId))
             .Distinct()
             .ToList();
+        var employeeIds = identifiers
+            .Select(i => i.EmployeeId)
+            .Distinct()
+            .ToArray();
+        var typeIds = identifiers
+            .Select(i => i.TypeId)
+            .Distinct()
+            .ToArray();
         var employeeBalanceItems = await session.Query<TimeOffBalance>()
-            .Where(x => identifiers.Contains(new(x.EmployeeId, x.TypeId)))
-            .ToListAsync<TimeOffBalance>();
+            .Where(x => employeeIds.Contains(x.EmployeeId) && typeIds.Contains(x.TypeId))
+            .ToListAsync();
         
         var streamIds = new Dictionary<Guid, Guid>();
         foreach (var @event in timeOffCancelledEvents)

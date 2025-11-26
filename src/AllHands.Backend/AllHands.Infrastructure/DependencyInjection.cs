@@ -45,7 +45,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<IPasswordHasher<AllHandsIdentityUser>, BCryptUserPasswordHasher>();
         
-        services.AddIdentity<AllHandsIdentityUser, IdentityRole<Guid>>(options =>
+        services.AddIdentity<AllHandsIdentityUser, AllHandsRole>(options =>
         {
             options.Password.RequiredLength = 8;
             options.Password.RequireNonAlphanumeric = false;

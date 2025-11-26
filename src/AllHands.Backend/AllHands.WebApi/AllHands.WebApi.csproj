@@ -8,12 +8,16 @@
 
     <ItemGroup>
         <PackageReference Include="Amazon.Extensions.Configuration.SystemsManager" Version="7.0.1" />
+        <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
+        <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
         <PackageReference Include="Marten.CommandLine" Version="7.40.5" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+        <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="9.0.1" />
     </ItemGroup>
 
     <ItemGroup>
