@@ -7,11 +7,15 @@ public sealed class PermissionRequirementHandler(IPermissionsContainer permissio
 {
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
     {
-        var result = context.User.IsAllowed(permissionsContainer, requirement.Permission);
+        var permissions = requirement.Permission.Replace(" ", string.Empty).Split(',');
 
-        if (result)
+        foreach (var permission in permissions)
         {
-            context.Succeed(requirement);
+            if (context.User.IsAllowed(permissionsContainer, permission))       // "OR" - user has at least one of permissions. For "AND" use multiple attributes.
+            {
+                context.Succeed(requirement);
+                return Task.CompletedTask;
+            }
         }
         
         return Task.CompletedTask;

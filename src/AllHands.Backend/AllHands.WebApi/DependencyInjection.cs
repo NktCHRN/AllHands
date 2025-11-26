@@ -42,16 +42,8 @@ public static class DependencyInjection
             });
 
         services.AddAuthorization();
-        services.AddOptions<AuthorizationOptions>()
-            .Configure<IServiceProvider>((options, sp) =>
-            {
-                var permissions = sp.GetRequiredService<IPermissionsContainer>().Permissions;
-                foreach (var (permission, _) in permissions)
-                {
-                    options.AddPolicy($"HasPermission_{permission}", policy => policy.Requirements.Add(new PermissionRequirement(permission)));
-                }
-            });
 
+        services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
         services.AddSingleton<IAuthorizationHandler, PermissionRequirementHandler>();
         
         services.AddHttpContextAccessor();
