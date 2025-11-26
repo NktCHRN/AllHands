@@ -1,7 +1,7 @@
 ﻿using AllHands.Application.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 
-namespace AllHands.WebApi;
+namespace AllHands.WebApi.Auth;
 
 public sealed class PermissionRequirementHandler(IPermissionsContainer permissionsContainer) : AuthorizationHandler<PermissionRequirement>
 {

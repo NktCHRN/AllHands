@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using AllHands.Application.Abstractions;
+using AllHands.WebApi.Auth;
 using AllHands.WebApi.Contracts;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.Cookies;
