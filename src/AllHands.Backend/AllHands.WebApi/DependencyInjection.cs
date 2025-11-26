@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using AllHands.Application.Abstractions;
+using AllHands.WebApi.Contracts;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
@@ -23,7 +24,19 @@ public static class DependencyInjection
                 opt.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                 opt.DefaultSignOutScheme = CookieAuthenticationDefaults.AuthenticationScheme;
             })
-            .AddCookie();
+            .AddCookie(opt =>
+            {
+                opt.Events.OnRedirectToLogin = async context =>
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsJsonAsync(ApiResponse.FromError(new ErrorResponse("You are not authenticated.")));
+                };
+                opt.Events.OnRedirectToAccessDenied = async context =>
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    await context.Response.WriteAsJsonAsync(ApiResponse.FromError(new ErrorResponse("Access denied.")));
+                };
+            });
         
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentHttpUserService>();
