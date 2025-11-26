@@ -3,6 +3,7 @@ using AllHands.Application.Abstractions;
 using AllHands.WebApi.Contracts;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
 namespace AllHands.WebApi;
@@ -39,6 +40,19 @@ public static class DependencyInjection
                     await context.Response.WriteAsJsonAsync(ApiResponse.FromError(new ErrorResponse("Access denied.")));
                 };
             });
+
+        services.AddAuthorization();
+        services.AddOptions<AuthorizationOptions>()
+            .Configure<IServiceProvider>((options, sp) =>
+            {
+                var permissions = sp.GetRequiredService<IPermissionsContainer>().Permissions;
+                foreach (var (permission, _) in permissions)
+                {
+                    options.AddPolicy($"HasPermission_{permission}", policy => policy.Requirements.Add(new PermissionRequirement(permission)));
+                }
+            });
+
+        services.AddSingleton<IAuthorizationHandler, PermissionRequirementHandler>();
         
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentHttpUserService>();

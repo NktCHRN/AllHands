@@ -43,10 +43,6 @@ public sealed class CurrentHttpUserService(IHttpContextAccessor httpContextAcces
 
     public bool IsAllowed(string permission)
     {
-        var claim = User.FindFirst(AuthConstants.PermissionClaimName)?.Value ??
-                    throw new InvalidOperationException("Invalid user permissions.");
-        var permissions = new BitArray(Convert.FromBase64String(claim));
-
-        return permissions[permissionsContainer.Permissions[permission]];
+        return User.IsAllowed(permissionsContainer, permission);
     }
 }
