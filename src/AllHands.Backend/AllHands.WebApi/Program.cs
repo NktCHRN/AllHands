@@ -1,8 +1,20 @@
 using AllHands.Application;
 using AllHands.Infrastructure;
 using AllHands.WebApi;
+using Amazon;
+using Amazon.Extensions.NETCore.Setup;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.AddSystemsManager(opt =>
+{
+    opt.Path = $"/AllHands/{builder.Environment.EnvironmentName}";
+    
+    opt.AwsOptions = new AWSOptions
+    {
+        Region = RegionEndpoint.EUCentral1
+    };
+});
 
 builder.Services
     .AddApplication(builder.Configuration)
