@@ -29,7 +29,7 @@ public static class DependencyInjection
                 opt.Events.OnRedirectToLogin = async context =>
                 {
                     context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    await context.Response.WriteAsJsonAsync(ApiResponse.FromError(new ErrorResponse("You are not authenticated.")));
+                    await context.Response.WriteAsJsonAsync(ApiResponse.FromError(new ErrorResponse("You are not authorized.")));
                 };
                 opt.Events.OnRedirectToAccessDenied = async context =>
                 {
