@@ -10,16 +10,20 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddWebApi(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
     {
-        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(options =>
+        services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
+            .BindConfiguration("CookieAuthenticationOptions")
+            .Configure<ITicketStore>((options, ticketStore) =>
             {
-                options.Cookie.Name = "AllHands.Cookie";
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
-                options.SlidingExpiration = true;
-                options.Cookie.HttpOnly = true;
-                options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.SessionStore = ticketStore;
             });
+        services.AddAuthentication(opt =>
+            {
+                opt.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                opt.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                opt.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                opt.DefaultSignOutScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            })
+            .AddCookie();
         
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentHttpUserService>();

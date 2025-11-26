@@ -18,7 +18,7 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
         
         modelBuilder.Entity<AllHandsSession>()
             .Property(s => s.TicketValue)
-            .HasColumnType("jsonb");
+            .HasColumnType("bytea");
         modelBuilder.Entity<AllHandsSession>()
             .HasKey(x => x.Key);
         modelBuilder.Entity<AllHandsSession>()

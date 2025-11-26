@@ -36,7 +36,7 @@ namespace AllHands.Infrastructure.Migrations
 
                     b.Property<byte[]>("TicketValue")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("bytea");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");

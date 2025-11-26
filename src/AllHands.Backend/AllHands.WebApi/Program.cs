@@ -41,7 +41,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
@@ -58,7 +57,7 @@ var seeder = new DevelopmentSeeder(
     scope.ServiceProvider.GetRequiredService<UserManager<AllHandsIdentityUser>>(),
     scope.ServiceProvider.GetRequiredService<RoleManager<AllHandsRole>>(),
     scope.ServiceProvider.GetRequiredService<IPermissionsContainer>());
-await seeder.SeedAsync(CancellationToken.None);
+//await seeder.SeedAsync(CancellationToken.None);
 
 //
 

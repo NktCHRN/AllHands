@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Security.Claims;
+using System.Text.Json;
+using AllHands.Domain.Exceptions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +14,7 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         
-        var userId = Guid.Parse(ticket.Principal.Identity!.Name!);
+        var userId = Guid.Parse(ticket.Principal.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new InvalidOperationException("Unexpected NameIdentifier."));
         var serializedTicket = ticketSerializer.Serialize(ticket);
         var session = new AllHandsSession()
         {
@@ -41,7 +43,7 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
         var session = await dbContext.Sessions.FirstOrDefaultAsync(s => s.Key == sessionId);
         if (session == null)
         {
-            throw new InvalidOperationException("Session was not found");
+            throw new UserUnauthorizedException("Session was not found");
         }
         
         session.TicketValue = ticketSerializer.Serialize(ticket);
