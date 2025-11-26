@@ -7,30 +7,40 @@ public sealed class PermissionsContainer : IPermissionsContainer
 {
     public IReadOnlyDictionary<string, int> Permissions { get; } = new Dictionary<string, int>()
         {
-            {"roles.create", 1 },
-            {"roles.edit", 2 },
-            {"roles.delete", 3 },
-            {"company.edit", 4 },
-            {"employee.create", 5 },
-            {"employee.edit", 6 },
-            {"employee.delete", 7},
-            {"timeoffrequest.adminapprove", 8 },
-            {"company.statistics.view", 9},
-            {"roles.view", 10 },
-            {"news.create", 11 },
-            {"news.edit", 12 },
-            {"news.delete", 13 },
-            {"employee.rehire", 14 },
-            {"timeofftype.create", 15 },
-            {"timeofftype.edit", 16 },
-            {"timeofftype.delete", 17},
-            {"timeoffbalance.edit", 18 },
-            {"holiday.create", 19 },
-            {"holiday.edit", 20 },
-            {"holiday.delete", 21},
-            {"position.create", 22 },
-            {"position.edit", 23 },
-            {"position.delete", 24},
+            { Application.Permissions.RolesCreate, 1 },
+            { Application.Permissions.RolesEdit, 2 },
+            { Application.Permissions.RolesDelete, 3 },
+
+            { Application.Permissions.CompanyEdit, 4 },
+
+            { Application.Permissions.EmployeeCreate, 5 },
+            { Application.Permissions.EmployeeEdit, 6 },
+            { Application.Permissions.EmployeeDelete, 7 },
+
+            { Application.Permissions.TimeOffRequestAdminApprove, 8 },
+
+            { Application.Permissions.CompanyStatisticsView, 9 },
+            { Application.Permissions.RolesView, 10 },
+
+            { Application.Permissions.NewsCreate, 11 },
+            { Application.Permissions.NewsEdit, 12 },
+            { Application.Permissions.NewsDelete, 13 },
+
+            { Application.Permissions.EmployeeRehire, 14 },
+
+            { Application.Permissions.TimeOffTypeCreate, 15 },
+            { Application.Permissions.TimeOffTypeEdit, 16 },
+            { Application.Permissions.TimeOffTypeDelete, 17 },
+
+            { Application.Permissions.TimeOffBalanceEdit, 18 },
+
+            { Application.Permissions.HolidayCreate, 19 },
+            { Application.Permissions.HolidayEdit, 20 },
+            { Application.Permissions.HolidayDelete, 21 },
+
+            { Application.Permissions.PositionCreate, 22 },
+            { Application.Permissions.PositionEdit, 23 },
+            { Application.Permissions.PositionDelete, 24 },
         }
         .ToFrozenDictionary();
 
