@@ -152,6 +152,7 @@ public sealed class AccountService(
             await userManager.AddPasswordAsync(user, command.Password);
         }
         
+        user.IsInvitationAccepted = true;
         await invitationService.UseAsync(command.InvitationId, invitationToken: command.InvitationToken, cancellationToken);
         
         await transaction.CommitAsync(cancellationToken);
