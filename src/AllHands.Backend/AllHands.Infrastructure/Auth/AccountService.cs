@@ -17,7 +17,8 @@ public sealed class AccountService(
     UserManager<AllHandsIdentityUser> userManager, 
     AuthDbContext dbContext, 
     IPermissionsContainer permissionsContainer, 
-    IInvitationService invitationService) : IAccountService
+    IInvitationService invitationService,
+    ICurrentUserService currentUserService) : IAccountService
 {
     public async Task<LoginResult> LoginAsync(string email, string password, CancellationToken cancellationToken = default)
     {
@@ -43,6 +44,28 @@ public sealed class AccountService(
         var claimsPrincipal = await CreateClaimsPrincipalAsync(user!);
         
         return new LoginResult(claimsPrincipal);
+    }
+    
+    public async Task ReloginAsync(Guid companyId, CancellationToken cancellationToken = default)
+    {
+        var currentUserId = currentUserService.GetId();
+        
+        var currentUser = await dbContext.Users
+            .Include(u => u.GlobalUser)
+                .ThenInclude(g => g.Users)
+            .FirstOrDefaultAsync(u => u.Id == currentUserId, cancellationToken);
+        if (currentUser is null)
+        {
+            throw new InvalidOperationException("User was not found.");
+        }
+
+        if (currentUser.GlobalUser!.Users.All(u => u.CompanyId != companyId))
+        {
+            throw new UserUnauthorizedException("Company was not found.");
+        }
+        
+        currentUser.GlobalUser.DefaultCompanyId = companyId;
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<ClaimsPrincipal> CreateClaimsPrincipalAsync(AllHandsIdentityUser user)
@@ -151,6 +174,7 @@ public sealed class AccountService(
         }
         
         user.IsInvitationAccepted = true;
+        user.GlobalUser.DefaultCompanyId = user.CompanyId;
         await invitationService.UseAsync(command.InvitationId, invitationToken: command.InvitationToken, cancellationToken);
         
         await transaction.CommitAsync(cancellationToken);

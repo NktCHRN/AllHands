@@ -44,6 +44,16 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
             Name = "AllHands test company"
         });
         await documentSession.SaveChangesAsync(cancellationToken);
+        
+        documentSession.Insert(new Company()
+        {
+            Id = Guid.Parse("9a8953a9-dbd2-4f6a-9151-1367c777b68c"),
+            CreatedAt = DateTime.UtcNow,
+            EmailDomain = "@test.com",
+            IanaTimeZone = "Europe/Kyiv",
+            Name = "AllHands test company 2"
+        });
+        await documentSession.SaveChangesAsync(cancellationToken);
     }
 
     private async Task SeedPositions(CancellationToken cancellationToken)
@@ -102,6 +112,8 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
             new EmployeeRegisteredEvent(employeeId, employeeId));
         await documentSession.SaveChangesAsync(cancellationToken);
 
+        var globalUserId = Guid.Parse("037c90c3-1404-42b8-8121-faa3d86080be");
+
         var identityUser = new AllHandsIdentityUser()
         {
             Id = userId,
@@ -118,11 +130,51 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
             }],
             GlobalUser = new AllHandsGlobalUser()
             {
-                Id = Guid.NewGuid(),
+                Id = globalUserId,
                 DefaultCompanyId =  _companyId,
                 Email = "user@example.com",
                 NormalizedEmail = "user@example.com".ToUpperInvariant()
             },
+            IsInvitationAccepted = true
+        };
+        _ = await userManager.CreateAsync(identityUser, "P@ssw0rd");
+
+        await CreateActiveUser2(globalUserId, cancellationToken);
+    }
+
+    private async Task CreateActiveUser2(Guid globalUserId, CancellationToken cancellationToken)
+    {
+        var userId = Guid.Parse("d2c6dfca-0f64-4590-9faf-1b2c5f349236");
+        var employeeId = Guid.Parse("686cc75f-35fc-4477-aaa6-e1694cacb327");
+        var companyId = Guid.Parse("9a8953a9-dbd2-4f6a-9151-1367c777b68c");
+
+        var stream = documentSession.Events.StartStream<Employee>(new EmployeeCreatedEvent(
+                employeeId,
+                _adminUserId,
+                userId,
+                companyId,
+                _positions[0].Id,
+                _managerId,
+                "user@example.com",
+                "Anastasiia",
+                "Vadymivna",
+                "Linchuk",
+                "+380681112233",
+                new DateOnly(2025, 11, 26)),
+            new EmployeeRegisteredEvent(employeeId, employeeId));
+        await documentSession.SaveChangesAsync(cancellationToken);
+
+        var identityUser = new AllHandsIdentityUser()
+        {
+            Id = userId,
+            Email = "user@example.com",
+            UserName = $"user@example.com_{companyId}",
+            FirstName = "Anastasiia",
+            MiddleName = "Vadymivna",
+            LastName = "Linchuk",
+            PhoneNumber = "+380681112233",
+            CompanyId = companyId,
+            GlobalUserId = globalUserId,
             IsInvitationAccepted = true
         };
         _ = await userManager.CreateAsync(identityUser, "P@ssw0rd");
