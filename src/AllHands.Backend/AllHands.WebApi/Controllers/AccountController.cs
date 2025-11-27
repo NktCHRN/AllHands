@@ -3,6 +3,7 @@ using AllHands.Application.Features.User.RegisterFromInvitation;
 using AllHands.WebApi.Contracts;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AllHands.WebApi.Controllers;
@@ -30,6 +31,15 @@ public sealed class AccountController(IMediator mediator) : ControllerBase
         var command = new RegisterFromInvitationCommand(invitationId, invitationToken, request.Password);
         
         await  mediator.Send(command);
+        return NoContent();
+    }
+    
+    [Authorize]
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync();
+        
         return NoContent();
     }
 }
