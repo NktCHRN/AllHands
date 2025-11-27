@@ -246,7 +246,7 @@ public sealed class AccountService(
         var normalizedEmail = StringUtilities.GetNormalizedEmail(command.Email);
         var globalUser = await dbContext.GlobalUsers
             .Include(g => g.Users.Where(u => u.IsInvitationAccepted))
-            .Include(x => x.PasswordResetTokens.Where(t => t.ExpiresAt >= currentDateTime))
+            .Include(x => x.PasswordResetTokens.Where(t => t.ExpiresAt >= currentDateTime && !t.IsUsed))
             .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail, cancellationToken);
         if (globalUser is null || globalUser.Users.Count == 0)
         {
@@ -258,6 +258,8 @@ public sealed class AccountService(
         {
             throw new UserUnauthorizedException("Invalid token.");
         }
+
+        token.IsUsed = true;
 
         foreach (var user in globalUser.Users)
         {
