@@ -3,6 +3,8 @@ using AllHands.Domain.Projections;
 using AllHands.Infrastructure.Abstractions;
 using AllHands.Infrastructure.Auth;
 using AllHands.Infrastructure.Auth.Entities;
+using AllHands.Infrastructure.Email;
+using Amazon.SimpleEmailV2;
 using JasperFx.Events.Projections;
 using Marten;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -23,7 +25,8 @@ public static class DependencyInjection
             .AddDatabase(configuration)
             .AddMartenDb(configuration)
             .AddIdentityServices(configuration)
-            .AddSingleton<IPermissionsContainer, PermissionsContainer>();
+            .AddSingleton<IPermissionsContainer, PermissionsContainer>()
+            .AddAwsServices(configuration);
     }
 
     private static IServiceCollection AddRedis(this IServiceCollection services, IConfiguration configuration)
@@ -49,9 +52,6 @@ public static class DependencyInjection
         {
             options.Password.RequiredLength = 8;
             options.Password.RequireNonAlphanumeric = false;
-
-            //options.Tokens.EmailConfirmationTokenProvider = "CustomEmailConfirmation";
-            //options.Tokens.PasswordResetTokenProvider = "CustomPasswordReset";
         })
             .AddEntityFrameworkStores<AuthDbContext>()
             .AddDefaultTokenProviders();
@@ -96,6 +96,20 @@ public static class DependencyInjection
                 options.Projections.Add<TimeOffRequestProjection>(ProjectionLifecycle.Inline);
             })
             .UseLightweightSessions();
+        
+        return services;
+    }
+
+    private static IServiceCollection AddAwsServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddDefaultAWSOptions(configuration.GetAWSOptions());
+        
+        services.AddOptions<EmailSenderOptions>()
+            .BindConfiguration("EmailSenderOptions")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services.AddAWSService<IAmazonSimpleEmailServiceV2>();
+        services.AddSingleton<IEmailSender, EmailSender>();
         
         return services;
     }

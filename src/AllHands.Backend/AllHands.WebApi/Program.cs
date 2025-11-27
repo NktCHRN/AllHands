@@ -5,8 +5,6 @@ using AllHands.Infrastructure.Auth;
 using AllHands.Infrastructure.Auth.Entities;
 using AllHands.Infrastructure.Data;
 using AllHands.WebApi;
-using Amazon;
-using Amazon.Extensions.NETCore.Setup;
 using Marten;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,11 +14,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddSystemsManager(opt =>
 {
     opt.Path = $"/AllHands/{builder.Environment.EnvironmentName}";
-    
-    opt.AwsOptions = new AWSOptions
-    {
-        Region = RegionEndpoint.EUCentral1
-    };
 });
 
 builder.Services

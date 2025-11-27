@@ -14,7 +14,7 @@ public sealed class RegisterFromInvitationHandler(IDocumentSession documentSessi
     {
         var userId = await accountService.RegisterFromInvitationAsync(request, cancellationToken);
 
-        var employee = await documentSession.Query<Employee>()
+        var employee = await documentSession.Query<Domain.Models.Employee>()
             .Where(x => x.UserId == userId)
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new EntityNotFoundException("Employee was not found");

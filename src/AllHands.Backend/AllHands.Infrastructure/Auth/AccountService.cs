@@ -119,7 +119,7 @@ public sealed class AccountService(
         await userManager.AddPasswordAsync(user, command.Password);
         
         await transaction.CommitAsync(cancellationToken);
-
+        
         return user.Id;
     }
 }
