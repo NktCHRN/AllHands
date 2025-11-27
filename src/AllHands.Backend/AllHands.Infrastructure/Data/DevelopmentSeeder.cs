@@ -106,7 +106,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
         {
             Id = userId,
             Email = "user@example.com",
-            UserName = "user@example.com",
+            UserName = $"user@example.com_{_companyId}",
             FirstName = "Anastasiia",
             MiddleName = "Vadymivna",
             LastName = "Linchuk",
@@ -115,7 +115,14 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
             Roles = [new AllHandsUserRole()
             {
                 RoleId = _adminRoleId,
-            }]
+            }],
+            GlobalUser = new AllHandsGlobalUser()
+            {
+                Id = Guid.NewGuid(),
+                DefaultCompanyId =  _companyId,
+                Email = "user@example.com",
+                NormalizedEmail = "user@example.com".ToUpperInvariant()
+            }
         };
         _ = await userManager.CreateAsync(identityUser, "P@ssw0rd");
     }
@@ -144,12 +151,19 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
         {
             Id = userId,
             Email = "14nik20@gmail.com",
-            UserName = "14nik20@gmail.com",
+            UserName = $"14nik20@gmail.com_{_companyId}",
             FirstName = "Nikita",
             MiddleName = "Mykolaiovych",
             LastName = "Chernikov",
             PhoneNumber = "+380682223344",
-            CompanyId = _companyId
+            CompanyId = _companyId,
+            GlobalUser = new AllHandsGlobalUser()
+            {
+                Id = Guid.NewGuid(),
+                DefaultCompanyId =  _companyId,
+                Email = "14nik20@gmail.com",
+                NormalizedEmail = "14nik20@gmail.com".ToUpperInvariant()
+            }
         };
         _ = await userManager.CreateAsync(identityUser);
 

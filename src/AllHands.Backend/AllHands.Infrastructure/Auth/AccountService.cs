@@ -19,9 +19,18 @@ public sealed class AccountService(
     IPermissionsContainer permissionsContainer, 
     IInvitationService invitationService) : IAccountService
 {
-    public async Task<LoginResult> LoginAsync(string login, string password, CancellationToken cancellationToken = default)
+    public async Task<LoginResult> LoginAsync(string email, string password, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByEmailAsync(login);
+        var normalizedEmail = GetNormalizedEmail(email);
+        var globalUser = await dbContext.GlobalUsers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail, cancellationToken);
+        if (globalUser is null)
+        {
+            throw new UserUnauthorizedException("Invalid login or password.");
+        }
+        
+        var user = await userManager.FindByNameAsync(GetUserName(globalUser.Email, globalUser.DefaultCompanyId));
         var checkPasswordResult = user is not null && await userManager.CheckPasswordAsync(user, password);
         if (!checkPasswordResult)
         {
@@ -106,20 +115,45 @@ public sealed class AccountService(
     public async Task<Guid> RegisterFromInvitationAsync(RegisterFromInvitationCommand command, CancellationToken cancellationToken = default)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
-
-        var useInvitationResult = await invitationService.UseAsync(command.InvitationId, command.InvitationToken, cancellationToken);
         
-        var user = await userManager.FindByIdAsync(useInvitationResult.UserId.ToString())
-            ?? throw new InvalidOperationException("User was not found.");
+        var user = await dbContext.Users
+            .Include(u => u.GlobalUser)
+                .ThenInclude(g => g.Users.Where(u => !u.DeletedAt.HasValue))
+            .Where(u => u.Invitations.Any(i => i.Id == command.InvitationId))
+            .FirstOrDefaultAsync(cancellationToken)
+                   ?? throw new InvalidOperationException("User was not found.");
+        
         if (user.DeletedAt.HasValue)
         {
             throw new UserUnauthorizedException("Invalid invitation token.");
         }
+
+        if (user.GlobalUser!.Users.Count > 1)
+        {
+            var existingUser = user.GlobalUser.Users.First(u => u.Id != user.Id);
+            var isValidPasswordAsync = await userManager.CheckPasswordAsync(existingUser, command.Password);
+            if (!isValidPasswordAsync)
+            {
+                throw new UserUnauthorizedException("Incorrect password.");
+            }
+        }
+        else
+        {
+            await userManager.AddPasswordAsync(user, command.Password);
+        }
         
-        await userManager.AddPasswordAsync(user, command.Password);
+        await invitationService.UseAsync(command.InvitationId, invitationToken: command.InvitationToken, cancellationToken);
         
         await transaction.CommitAsync(cancellationToken);
         
         return user.Id;
     }
+
+    private static string GetUserName(string email, Guid companyId)
+    {
+        return $"{email}_{companyId}";
+    }
+
+    private static string GetNormalizedEmail(string email)
+        => email.Trim().ToUpperInvariant();
 }

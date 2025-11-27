@@ -5,6 +5,6 @@ namespace AllHands.Application.Abstractions;
 
 public interface IAccountService
 {
-    Task<LoginResult> LoginAsync(string login, string password, CancellationToken cancellationToken = default);
+    Task<LoginResult> LoginAsync(string email, string password, CancellationToken cancellationToken = default);
     Task<Guid> RegisterFromInvitationAsync(RegisterFromInvitationCommand command, CancellationToken cancellationToken = default);
 }

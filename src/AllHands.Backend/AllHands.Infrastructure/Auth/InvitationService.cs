@@ -52,7 +52,7 @@ public sealed class InvitationService(AuthDbContext dbContext, TimeProvider time
         return BCrypt.Net.BCrypt.HashPassword(invitationToken, WorkFactor, true);
     }
     
-    public async Task<UseInvitationResult> UseAsync(Guid id, string invitationToken, CancellationToken cancellationToken)
+    public async Task UseAsync(Guid id, string invitationToken, CancellationToken cancellationToken)
     {
         var invitation = await dbContext.Invitations.FirstOrDefaultAsync(i => i.Id == id, cancellationToken: cancellationToken);
         var isTokenCorrect = invitation is not null && Verify(invitationToken, invitation.TokenHash);
@@ -73,8 +73,6 @@ public sealed class InvitationService(AuthDbContext dbContext, TimeProvider time
                 
         invitation.IsUsed = true;
         await dbContext.SaveChangesAsync(cancellationToken);
-        
-        return new UseInvitationResult(invitation.UserId);
     }
 
     private static bool Verify(string invitationToken, string hash)

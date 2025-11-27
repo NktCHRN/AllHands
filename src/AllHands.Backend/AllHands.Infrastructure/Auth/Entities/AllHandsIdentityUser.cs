@@ -11,6 +11,9 @@ public sealed class AllHandsIdentityUser : IdentityUser<Guid>
     public DateTimeOffset? DeletedAt { get; internal set; }
     public DateTimeOffset? LastPasswordResetRequestedAt { get; set; }
     
+    public Guid GlobalUserId { get; set; }
+    public AllHandsGlobalUser? GlobalUser { get; set; }
+    
     public IList<Invitation> IssuedInvitations { get; set; } = [];
     public IList<Invitation> Invitations { get; set; } = [];
     public IList<AllHandsUserRole> Roles { get; set; } = [];
