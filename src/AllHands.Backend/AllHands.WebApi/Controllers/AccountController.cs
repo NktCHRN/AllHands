@@ -1,7 +1,8 @@
-﻿using AllHands.Application.Features.User.Login;
+﻿using AllHands.Application.Features.User.ChangePassword;
+using AllHands.Application.Features.User.Login;
 using AllHands.Application.Features.User.RegisterFromInvitation;
 using AllHands.Application.Features.User.Relogin;
-using AllHands.WebApi.Contracts;
+using AllHands.Application.Features.User.ResetPassword;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -39,13 +40,26 @@ public sealed class AccountController(IMediator mediator, IOptionsSnapshot<Cooki
 
     [HttpPost("register/invitation")]
     public async Task<IActionResult> RegisterFromInvitation(
-        [FromQuery] Guid invitationId,
-        [FromQuery] string invitationToken,
-        [FromBody] RegisterFromInvitationRequest request)
+        [FromBody] RegisterFromInvitationCommand command)
     {
-        var command = new RegisterFromInvitationCommand(invitationId, invitationToken, request.Password);
-        
         await  mediator.Send(command);
+        return NoContent();
+    }
+
+    [HttpPost("reset-password")]
+    [EnableRateLimiting("ResetPasswordLimiter")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command)
+    {
+        await mediator.Send(command);
+        
+        return NoContent();
+    }
+    
+    [HttpPut("password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command)
+    {
+        await mediator.Send(command);
+        
         return NoContent();
     }
     
@@ -57,7 +71,4 @@ public sealed class AccountController(IMediator mediator, IOptionsSnapshot<Cooki
         
         return NoContent();
     }
-    
-    //[EnableRateLimiting("ForgotPasswordLimiter")]
-    //public async Task<IActionResult> ForgotPassword(...) { ... }
 }

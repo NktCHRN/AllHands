@@ -10,6 +10,7 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
 {
     public DbSet<AllHandsSession> Sessions { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
+    public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
     public DbSet<AllHandsRoleClaim> AllHandsRoleClaims { get; set; }
     public DbSet<AllHandsGlobalUser> GlobalUsers { get; set; }
 
@@ -39,6 +40,17 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
             .WithMany(x => x.Invitations)
             .HasForeignKey(x => x.UserId);
         modelBuilder.Entity<Invitation>()
+            .HasIndex(x => x.IssuedAt)
+            .IsDescending(true);
+        
+        modelBuilder.Entity<PasswordResetToken>()
+            .Property(x => x.TokenHash)
+            .HasMaxLength(64);
+        modelBuilder.Entity<PasswordResetToken>()
+            .HasOne(x => x.GlobalUser)
+            .WithMany(x => x.PasswordResetTokens)
+            .HasForeignKey(x => x.GlobalUserId);
+        modelBuilder.Entity<PasswordResetToken>()
             .HasIndex(x => x.IssuedAt)
             .IsDescending(true);
         
@@ -95,6 +107,9 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
             .HasOne(x => x.GlobalUser)
             .WithMany(x => x.Users)
             .HasForeignKey(x => x.GlobalUserId);
+        modelBuilder.Entity<AllHandsIdentityUser>()
+            .Navigation(u => u.GlobalUser)
+            .AutoInclude();
         modelBuilder.Entity<AllHandsIdentityUser>()
             .HasQueryFilter(x => !x.DeletedAt.HasValue);
         

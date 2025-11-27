@@ -2,12 +2,15 @@
 using System.Data;
 using System.Security.Claims;
 using AllHands.Application.Abstractions;
+using AllHands.Application.Features.User.ChangePassword;
 using AllHands.Application.Features.User.Login;
 using AllHands.Application.Features.User.RegisterFromInvitation;
+using AllHands.Application.Features.User.ResetPassword;
 using AllHands.Domain.Exceptions;
 using AllHands.Domain.Utilities;
 using AllHands.Infrastructure.Abstractions;
 using AllHands.Infrastructure.Auth.Entities;
+using Humanizer;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -19,13 +22,14 @@ public sealed class AccountService(
     AuthDbContext dbContext, 
     IPermissionsContainer permissionsContainer, 
     IInvitationService invitationService,
-    ICurrentUserService currentUserService) : IAccountService
+    ICurrentUserService currentUserService,
+    IPasswordResetTokenProvider passwordResetTokenProvider,
+    TimeProvider timeProvider) : IAccountService
 {
     public async Task<LoginResult> LoginAsync(string email, string password, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = StringUtilities.GetNormalizedEmail(email);
         var globalUser = await dbContext.GlobalUsers
-            .AsNoTracking()
             .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail, cancellationToken);
         if (globalUser is null)
         {
@@ -33,6 +37,15 @@ public sealed class AccountService(
         }
         
         var user = await userManager.FindByNameAsync(GetUserName(globalUser.Email, globalUser.DefaultCompanyId));
+        if (user is null)
+        {
+            user = await userManager.FindByEmailAsync(globalUser.Email);
+            if (user is not null)
+            {
+                globalUser.DefaultCompanyId = user.CompanyId;
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+        }
         var checkPasswordResult = user is not null 
                                   && !user.DeletedAt.HasValue 
                                   && user.IsInvitationAccepted
@@ -53,7 +66,7 @@ public sealed class AccountService(
         
         var currentUser = await dbContext.Users
             .Include(u => u.GlobalUser)
-                .ThenInclude(g => g.Users)
+                .ThenInclude(g => g!.Users)
             .FirstOrDefaultAsync(u => u.Id == currentUserId, cancellationToken);
         if (currentUser is null)
         {
@@ -146,7 +159,7 @@ public sealed class AccountService(
         
         var user = await dbContext.Users
             .Include(u => u.GlobalUser)
-                .ThenInclude(g => g.Users.Where(u => !u.DeletedAt.HasValue))
+                .ThenInclude(g => g!.Users.Where(u => !u.DeletedAt.HasValue))
             .Where(u => u.Invitations.Any(i => i.Id == command.InvitationId))
             .FirstOrDefaultAsync(cancellationToken)
                    ?? throw new EntityNotFoundException("User was not found.");
@@ -172,7 +185,11 @@ public sealed class AccountService(
         }
         else
         {
-            await userManager.AddPasswordAsync(user, command.Password);
+            var identityResult = await userManager.AddPasswordAsync(user, command.Password);
+            if (!identityResult.Succeeded)
+            {
+                throw new EntityValidationFailedException(IdentityUtilities.IdentityErrorsToString(identityResult.Errors));
+            }
         }
         
         user.IsInvitationAccepted = true;
@@ -187,5 +204,71 @@ public sealed class AccountService(
     private static string GetUserName(string email, Guid companyId)
     {
         return $"{email}_{companyId}";
+    }
+
+    public async Task<GenerateResetPasswordTokenResult> GenerateResetPasswordToken(string email, CancellationToken cancellationToken)
+    {
+        var currentDateTime = timeProvider.GetUtcNow();
+        var normalizedEmail = StringUtilities.GetNormalizedEmail(email);
+        var globalUser = await dbContext.GlobalUsers
+            .Include(g => g.Users)
+            .Include(x => x.PasswordResetTokens.Where(t => t.ExpiresAt >= currentDateTime))
+            .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail, cancellationToken);
+        if (globalUser is null)
+        {
+            return new GenerateResetPasswordTokenResult(false);
+        }
+
+        var maxLastGenerationTime = currentDateTime.Add(-passwordResetTokenProvider.Options.TokenRecreationTimeout);
+        var alreadyExistingToken = globalUser.PasswordResetTokens.FirstOrDefault(t => t.IssuedAt > maxLastGenerationTime);
+        if (alreadyExistingToken is not null)
+        {
+            throw new EntityAlreadyExistsException($"Please, wait {(alreadyExistingToken.IssuedAt - maxLastGenerationTime).Humanize()} to generate new password reset token.");
+        }
+        
+        var (token, entity) = passwordResetTokenProvider.Generate(globalUser.Id);
+        
+        await dbContext.PasswordResetTokens.AddAsync(entity, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        
+        return new GenerateResetPasswordTokenResult(
+            true, 
+            token, 
+            globalUser.Users.FirstOrDefault(u => u.CompanyId == globalUser.DefaultCompanyId)?.FirstName
+            ?? globalUser.Users.First().FirstName);
+    }
+
+    public async Task ChangePassword(ChangePasswordCommand command, CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
+        
+        var currentDateTime = timeProvider.GetUtcNow();
+        var normalizedEmail = StringUtilities.GetNormalizedEmail(command.Email);
+        var globalUser = await dbContext.GlobalUsers
+            .Include(g => g.Users.Where(u => u.IsInvitationAccepted))
+            .Include(x => x.PasswordResetTokens.Where(t => t.ExpiresAt >= currentDateTime))
+            .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail, cancellationToken);
+        if (globalUser is null || globalUser.Users.Count == 0)
+        {
+            throw new EntityNotFoundException("User was not found");
+        }
+        
+        var token = globalUser.PasswordResetTokens.FirstOrDefault(t => passwordResetTokenProvider.Verify(command.Token, t.TokenHash));
+        if (token is null)
+        {
+            throw new UserUnauthorizedException("Invalid token.");
+        }
+
+        foreach (var user in globalUser.Users)
+        {
+            await userManager.RemovePasswordAsync(user);
+            var identityResult = await userManager.AddPasswordAsync(user, command.NewPassword);
+            if (!identityResult.Succeeded)
+            {
+                throw new EntityValidationFailedException(IdentityUtilities.IdentityErrorsToString(identityResult.Errors));
+            }
+        }
+        
+        await transaction.CommitAsync(cancellationToken);
     }
 }

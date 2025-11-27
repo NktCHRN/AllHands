@@ -103,7 +103,7 @@ public static class DependencyInjection
         
         services.AddRateLimiter(options =>
         {
-            options.AddFixedWindowLimiter("ForgotPasswordLimiter", o =>
+            options.AddFixedWindowLimiter("ResetPasswordLimiter", o =>
             {
                 o.Window = TimeSpan.FromSeconds(10);
                 o.PermitLimit = 5;

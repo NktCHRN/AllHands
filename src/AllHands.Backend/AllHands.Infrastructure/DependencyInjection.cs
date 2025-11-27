@@ -65,6 +65,13 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
         
+        services.AddOptions<PasswordResetTokenProviderOptions>()
+            .BindConfiguration(nameof(PasswordResetTokenProviderOptions))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        
+        services.AddSingleton<IPasswordResetTokenProvider, PasswordResetTokenProvider>();
+        
         services.AddScoped<IInvitationService, InvitationService>();
         services.AddScoped<IAccountService, AccountService>();
         

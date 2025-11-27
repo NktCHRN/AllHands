@@ -8,4 +8,5 @@ public sealed class AllHandsGlobalUser
     public Guid DefaultCompanyId {get; set;}
 
     public IList<AllHandsIdentityUser> Users { get; set; } = [];
+    public IList<PasswordResetToken> PasswordResetTokens { get; set; } = [];
 }

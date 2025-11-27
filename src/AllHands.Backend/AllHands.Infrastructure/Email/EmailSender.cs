@@ -2,7 +2,7 @@
 using System.Text.Json;
 using AllHands.Application.Abstractions;
 using AllHands.Application.Features.Employee.Create;
-using AllHands.Application.Features.User.ForgotPassword;
+using AllHands.Application.Features.User.ResetPassword;
 using Amazon.SimpleEmailV2;
 using Amazon.SimpleEmailV2.Model;
 using Microsoft.AspNetCore.WebUtilities;
