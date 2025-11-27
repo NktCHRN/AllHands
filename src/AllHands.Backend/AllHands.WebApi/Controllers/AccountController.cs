@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AllHands.WebApi.Controllers;
 
@@ -42,4 +43,7 @@ public sealed class AccountController(IMediator mediator) : ControllerBase
         
         return NoContent();
     }
+    
+    //[EnableRateLimiting("ForgotPasswordLimiter")]
+    //public async Task<IActionResult> ForgotPassword(...) { ... }
 }

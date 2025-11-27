@@ -6,6 +6,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AllHands.WebApi;
 
@@ -99,6 +100,16 @@ public static class DependencyInjection
         
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
+        
+        services.AddRateLimiter(options =>
+        {
+            options.AddFixedWindowLimiter("ForgotPasswordLimiter", o =>
+            {
+                o.Window = TimeSpan.FromSeconds(10);
+                o.PermitLimit = 5;
+                o.QueueLimit = 0;
+            });
+        });
         
         return services;
     }
