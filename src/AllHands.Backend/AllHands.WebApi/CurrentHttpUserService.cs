@@ -30,6 +30,11 @@ public sealed class CurrentHttpUserService(IHttpContextAccessor httpContextAcces
         return User.FindFirst(ClaimTypes.MobilePhone)?.Value;
     }
 
+    public string GetCompanyId()
+    {
+        return User.FindFirst("companyid")?.Value ?? throw new InvalidOperationException("Invalid company id.");
+    }
+
     public CurrentUserDto GetCurrentUser()
     {
         return new CurrentUserDto(

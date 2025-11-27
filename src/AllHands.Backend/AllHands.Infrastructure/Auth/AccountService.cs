@@ -86,7 +86,8 @@ public sealed class AccountService(
             new Claim(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty),
             new Claim(ClaimTypes.GivenName, user.FirstName),
             new Claim(ClaimTypes.Surname, user.LastName),
-            new Claim(AuthConstants.PermissionClaimName, permissionsString)
+            new Claim(AuthConstants.PermissionClaimName, permissionsString),
+            new Claim("companyid", user.CompanyId.ToString()),
         };
 
         if (!string.IsNullOrEmpty(user.MiddleName))
