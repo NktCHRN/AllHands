@@ -1,8 +1,11 @@
 ﻿using AllHands.Application.Features.User.ChangePassword;
+using AllHands.Application.Features.User.Get;
+using AllHands.Application.Features.User.GetDetails;
 using AllHands.Application.Features.User.Login;
 using AllHands.Application.Features.User.RegisterFromInvitation;
 using AllHands.Application.Features.User.Relogin;
 using AllHands.Application.Features.User.ResetPassword;
+using AllHands.WebApi.Contracts;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -18,9 +21,10 @@ namespace AllHands.WebApi.Controllers;
 public sealed class AccountController(IMediator mediator, IOptionsSnapshot<CookieAuthenticationOptions> cookieOptions) : ControllerBase
 {
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginCommand command)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Login([FromBody] LoginCommand command, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(command);
+        var result = await mediator.Send(command, cancellationToken);
 
         await HttpContext.SignInAsync(result.ClaimsPrincipal);
         
@@ -29,9 +33,10 @@ public sealed class AccountController(IMediator mediator, IOptionsSnapshot<Cooki
     
     [Authorize]
     [HttpPost("relogin")]
-    public async Task<IActionResult> Relogin([FromBody] ReloginCommand command)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Relogin([FromBody] ReloginCommand command, CancellationToken cancellationToken)
     {
-        await mediator.Send(command);
+        await mediator.Send(command, cancellationToken);
 
         await HttpContext.SignOutAsync();
         
@@ -39,36 +44,58 @@ public sealed class AccountController(IMediator mediator, IOptionsSnapshot<Cooki
     }
 
     [HttpPost("register/invitation")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RegisterFromInvitation(
-        [FromBody] RegisterFromInvitationCommand command)
+        [FromBody] RegisterFromInvitationCommand command, CancellationToken cancellationToken)
     {
-        await  mediator.Send(command);
+        await  mediator.Send(command, cancellationToken);
         return NoContent();
     }
 
     [HttpPost("reset-password")]
     [EnableRateLimiting("ResetPasswordLimiter")]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command, CancellationToken cancellationToken)
     {
-        await mediator.Send(command);
+        await mediator.Send(command, cancellationToken);
         
         return NoContent();
     }
     
     [HttpPut("password")]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command, CancellationToken cancellationToken)
     {
-        await mediator.Send(command);
+        await mediator.Send(command, cancellationToken);
         
         return NoContent();
     }
     
     [Authorize]
     [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync();
         
         return NoContent();
+    }
+    
+    [Authorize]
+    [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<GetUserResult>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Get(CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetUserQuery());
+        return Ok(ApiResponse.FromResult(result));
+    }
+    
+    [Authorize]
+    [HttpGet("details")]
+    [ProducesResponseType(typeof(ApiResponse<GetUserResult>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDetails(CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetUserDetailsQuery(), cancellationToken);
+        return Ok(ApiResponse.FromResult(result));
     }
 }

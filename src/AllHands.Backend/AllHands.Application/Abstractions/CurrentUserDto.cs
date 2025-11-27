@@ -6,7 +6,8 @@ public sealed record CurrentUserDto(
     string? PhoneNumber,
     string FirstName,
     string? MiddleName,
-    string LastName)
+    string LastName,
+    Guid CompanyId)
 {
     
 }

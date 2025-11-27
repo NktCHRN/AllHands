@@ -13,8 +13,8 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
 {
     private readonly Guid _companyId = Guid.Parse("48a9758c-07c3-493d-83d8-d0bf55835112");
     private readonly Guid _adminRoleId = Guid.Parse("f34632fc-b45e-4fcb-9c68-8ba404037a9b");
-    private readonly Guid _adminUserId = Guid.Parse("62cba5a1-0ff2-4db5-b218-3fc154f16fc4");
-    private readonly Guid _managerId = Guid.Parse("f09b184e-bef7-4735-8b94-348480554478");
+    private readonly Guid _adminUserId = Guid.Parse("a502c3da-e280-4193-9ed0-7937620ccd93");
+    private readonly Guid _managerId = Guid.Parse("36a02307-b81d-4b9a-aac3-72485cfb1d08");
     private readonly Position[] _positions =
     [
         new Position()
@@ -97,7 +97,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
         var userId = Guid.Parse("a502c3da-e280-4193-9ed0-7937620ccd93");
         var employeeId = Guid.Parse("36a02307-b81d-4b9a-aac3-72485cfb1d08");
 
-        var stream = documentSession.Events.StartStream<Employee>(new EmployeeCreatedEvent(
+        var stream = documentSession.Events.StartStream<Employee>(employeeId, new EmployeeCreatedEvent(
             employeeId,
             _adminUserId,
             userId,
@@ -150,7 +150,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
         var employeeId = Guid.Parse("686cc75f-35fc-4477-aaa6-e1694cacb327");
         var companyId = Guid.Parse("9a8953a9-dbd2-4f6a-9151-1367c777b68c");
 
-        var stream = documentSession.Events.StartStream<Employee>(new EmployeeCreatedEvent(
+        var stream = documentSession.Events.StartStream<Employee>(employeeId, new EmployeeCreatedEvent(
                 employeeId,
                 _adminUserId,
                 userId,
@@ -188,7 +188,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
         var userId = Guid.Parse("69d1e588-1d16-4647-8f49-359c0a76f9a7");
         var employeeId = Guid.Parse("b8900ae9-011b-4184-b813-7d35e83f8082");
 
-        var stream = documentSession.Events.StartStream<Employee>(new EmployeeCreatedEvent(
+        var stream = documentSession.Events.StartStream<Employee>(employeeId, new EmployeeCreatedEvent(
                 employeeId,
                 _adminUserId,
                 userId,

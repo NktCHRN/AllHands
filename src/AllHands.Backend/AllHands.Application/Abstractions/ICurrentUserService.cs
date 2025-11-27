@@ -7,5 +7,7 @@ public interface ICurrentUserService
     string? GetPhoneNumber();
     CurrentUserDto GetCurrentUser();
     bool IsAllowed(string permission);
-    string GetCompanyId();
+    Guid GetCompanyId();
+    IReadOnlyList<string> GetRoles();
+    IReadOnlyList<string> GetPermissions();
 }

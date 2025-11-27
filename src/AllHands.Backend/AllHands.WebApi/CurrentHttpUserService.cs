@@ -30,9 +30,13 @@ public sealed class CurrentHttpUserService(IHttpContextAccessor httpContextAcces
         return User.FindFirst(ClaimTypes.MobilePhone)?.Value;
     }
 
-    public string GetCompanyId()
+    public Guid GetCompanyId()
     {
-        return User.FindFirst("companyid")?.Value ?? throw new InvalidOperationException("Invalid company id.");
+        var isParsed = Guid.TryParse(User.FindFirst("companyid")?.Value ?? string.Empty, out var companyId);
+        
+        return isParsed
+            ? companyId
+            : throw new InvalidOperationException("Invalid company id.");
     }
 
     public CurrentUserDto GetCurrentUser()
@@ -43,11 +47,42 @@ public sealed class CurrentHttpUserService(IHttpContextAccessor httpContextAcces
             GetPhoneNumber(),
             User.FindFirst(ClaimTypes.GivenName)?.Value ?? throw new InvalidOperationException("Invalid user first name."),
             User.FindFirst("middlename")?.Value ?? throw new InvalidOperationException("Invalid user middle name."),
-            User.FindFirst(ClaimTypes.Surname)?.Value ?? throw new InvalidOperationException("Invalid user last name."));
+            User.FindFirst(ClaimTypes.Surname)?.Value ?? throw new InvalidOperationException("Invalid user last name."),
+            GetCompanyId());
     }
 
     public bool IsAllowed(string permission)
     {
         return User.IsAllowed(permissionsContainer, permission);
+    }
+
+    public IReadOnlyList<string> GetRoles()
+    {
+        return User
+            .FindAll(ClaimTypes.Role)
+            .Where(r => !string.IsNullOrEmpty(r.Value))
+            .Select(x => x.Value)
+            .ToList();
+    }
+
+    public IReadOnlyList<string> GetPermissions()
+    {
+        var claim = User.FindFirst(AuthConstants.PermissionClaimName)?.Value;
+        if (string.IsNullOrEmpty(claim))
+        {
+            return Array.Empty<string>();
+        }
+        var permissionsBitArray = new BitArray(Convert.FromBase64String(claim));
+        
+        var permissions = new List<string>();
+        foreach (var (permission, index) in permissionsContainer.Permissions)
+        {
+            if (permissionsBitArray.Length > index && permissionsBitArray[index])
+            {
+                permissions.Add(permission);
+            }
+        }
+        
+        return permissions;
     }
 }
