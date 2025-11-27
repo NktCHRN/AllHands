@@ -122,7 +122,8 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
                 DefaultCompanyId =  _companyId,
                 Email = "user@example.com",
                 NormalizedEmail = "user@example.com".ToUpperInvariant()
-            }
+            },
+            IsInvitationAccepted = true
         };
         _ = await userManager.CreateAsync(identityUser, "P@ssw0rd");
     }

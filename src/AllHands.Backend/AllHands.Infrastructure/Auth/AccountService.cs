@@ -32,6 +32,7 @@ public sealed class AccountService(
         var user = await userManager.FindByNameAsync(GetUserName(globalUser.Email, globalUser.DefaultCompanyId));
         var checkPasswordResult = user is not null 
                                   && !user.DeletedAt.HasValue 
+                                  && user.IsInvitationAccepted
                                   && await userManager.CheckPasswordAsync(user, password);
         if (!checkPasswordResult)
         {
@@ -130,6 +131,11 @@ public sealed class AccountService(
         if (user.DeletedAt.HasValue)
         {
             throw new UserUnauthorizedException("Invalid invitation token.");
+        }
+
+        if (user.IsInvitationAccepted)
+        {
+            throw new UserUnauthorizedException("Invitation is already accepted.");
         }
 
         if (user.GlobalUser!.Users.Count > 1)
