@@ -1,4 +1,5 @@
-﻿using AllHands.Application.Features.User.ChangePassword;
+﻿using AllHands.Application.Features.Accounts.Get;
+using AllHands.Application.Features.User.ChangePassword;
 using AllHands.Application.Features.User.Get;
 using AllHands.Application.Features.User.GetDetails;
 using AllHands.Application.Features.User.Login;
@@ -8,18 +9,25 @@ using AllHands.Application.Features.User.ResetPassword;
 using AllHands.WebApi.Contracts;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Options;
 
 namespace AllHands.WebApi.Controllers;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
-public sealed class AccountController(IMediator mediator, IOptionsSnapshot<CookieAuthenticationOptions> cookieOptions) : ControllerBase
+public sealed class AccountController(IMediator mediator) : ControllerBase
 {
+    [HttpGet("~/api/v{version:apiVersion}/accounts")]
+    [ProducesResponseType(typeof(ApiResponse<GetAccountsResult>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAccounts(CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetAccountsQuery(), cancellationToken);
+        
+        return Ok(ApiResponse.FromResult(result));
+    }
+    
     [HttpPost("login")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Login([FromBody] LoginCommand command, CancellationToken cancellationToken)

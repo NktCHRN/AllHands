@@ -1,4 +1,4 @@
-﻿using AllHands.Application.Features.User.Dto;
+﻿using AllHands.Application.Dto;
 
 namespace AllHands.Application.Features.User.Get;
 

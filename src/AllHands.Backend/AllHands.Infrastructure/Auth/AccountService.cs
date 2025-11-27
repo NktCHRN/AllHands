@@ -273,4 +273,13 @@ public sealed class AccountService(
         
         await transaction.CommitAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<Guid>> GetUserIds(Guid currentUserId)
+    {
+        var users = await dbContext.Users
+            .Where(u => u.GlobalUser!.Users.Any(gu => gu.Id == currentUserId))
+            .ToListAsync();
+        
+        return users.Select(u => u.Id).ToList();
+    }
 }

@@ -12,4 +12,5 @@ public interface IAccountService
     Task ReloginAsync(Guid companyId, CancellationToken cancellationToken = default);
     Task<GenerateResetPasswordTokenResult> GenerateResetPasswordToken(string email, CancellationToken cancellationToken);
     Task ChangePassword(ChangePasswordCommand command, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Guid>> GetUserIds(Guid currentUserId);
 }

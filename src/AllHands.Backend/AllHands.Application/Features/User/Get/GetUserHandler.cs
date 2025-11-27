@@ -1,5 +1,5 @@
 ﻿using AllHands.Application.Abstractions;
-using AllHands.Application.Features.User.Dto;
+using AllHands.Application.Dto;
 using AllHands.Domain.Exceptions;
 using AllHands.Domain.Models;
 using Marten;

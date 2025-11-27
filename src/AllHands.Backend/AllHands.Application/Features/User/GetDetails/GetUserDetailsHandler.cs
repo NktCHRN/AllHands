@@ -1,5 +1,5 @@
 ﻿using AllHands.Application.Abstractions;
-using AllHands.Application.Features.User.Dto;
+using AllHands.Application.Dto;
 using AllHands.Domain.Exceptions;
 using AllHands.Domain.Models;
 using Marten;
@@ -28,7 +28,7 @@ public sealed class GetUserDetailsHandler(ICurrentUserService currentUserService
             .FirstOrDefaultAsync(x => x.Id == employee.Manager.PositionId, token: cancellationToken)
                                     ?? throw new EntityNotFoundException("Manager position was not found");
 
-        employee.Company = await querySession.Query<Company>()
+        employee.Company = await querySession.Query<Domain.Models.Company>()
                                .FirstOrDefaultAsync(x => x.Id == employee.CompanyId, token: cancellationToken)
                            ?? throw new EntityNotFoundException("Company was not found");
 
@@ -39,6 +39,7 @@ public sealed class GetUserDetailsHandler(ICurrentUserService currentUserService
             employee.LastName,
             employee.Email,
             employee.PhoneNumber,
+            employee.WorkStartDate,
             new EmployeeDto{
         Id = employee.Manager.Id,
         FirstName = employee.Manager.FirstName,

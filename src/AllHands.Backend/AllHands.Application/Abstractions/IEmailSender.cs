@@ -1,4 +1,4 @@
-﻿using AllHands.Application.Features.Employee.Create;
+﻿using AllHands.Application.Features.Employees.Create;
 using AllHands.Application.Features.User.ResetPassword;
 
 namespace AllHands.Application.Abstractions;

@@ -1,4 +1,4 @@
-﻿namespace AllHands.Application.Features.User.Dto;
+﻿namespace AllHands.Application.Dto;
 
 public sealed class PositionDto
 {

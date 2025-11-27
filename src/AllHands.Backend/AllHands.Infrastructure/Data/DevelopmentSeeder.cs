@@ -40,7 +40,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
         {
             Id = _companyId,
             CreatedAt = DateTime.UtcNow,
-            EmailDomain = "@allhands.com",
+            EmailDomain = "allhands.com",
             IanaTimeZone = "Europe/Kyiv",
             Name = "AllHands test company"
         });
@@ -50,7 +50,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
         {
             Id = Guid.Parse("9a8953a9-dbd2-4f6a-9151-1367c777b68c"),
             CreatedAt = DateTime.UtcNow,
-            EmailDomain = "@test.com",
+            EmailDomain = "test.com",
             IanaTimeZone = "Europe/Kyiv",
             Name = "AllHands test company 2"
         });
