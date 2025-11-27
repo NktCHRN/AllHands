@@ -30,7 +30,9 @@ public sealed class AccountService(
         }
         
         var user = await userManager.FindByNameAsync(GetUserName(globalUser.Email, globalUser.DefaultCompanyId));
-        var checkPasswordResult = user is not null && await userManager.CheckPasswordAsync(user, password);
+        var checkPasswordResult = user is not null 
+                                  && !user.DeletedAt.HasValue 
+                                  && await userManager.CheckPasswordAsync(user, password);
         if (!checkPasswordResult)
         {
             throw new UserUnauthorizedException("Invalid login or password.");
