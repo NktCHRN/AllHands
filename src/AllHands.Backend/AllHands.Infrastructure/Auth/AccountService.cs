@@ -23,6 +23,7 @@ public sealed class AccountService(
     {
         var normalizedEmail = GetNormalizedEmail(email);
         var globalUser = await dbContext.GlobalUsers
+            .AsNoTracking()
             .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail, cancellationToken);
         if (globalUser is null)
         {
@@ -40,9 +41,6 @@ public sealed class AccountService(
         }
         
         var claimsPrincipal = await CreateClaimsPrincipalAsync(user!);
-        
-        globalUser.DefaultCompanyId = user!.CompanyId;
-        await dbContext.SaveChangesAsync(cancellationToken);
         
         return new LoginResult(claimsPrincipal);
     }
