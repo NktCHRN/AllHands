@@ -277,7 +277,9 @@ public sealed class AccountService(
     public async Task<IReadOnlyList<Guid>> GetUserIds(Guid currentUserId)
     {
         var users = await dbContext.Users
-            .Where(u => u.GlobalUser!.Users.Any(gu => gu.Id == currentUserId))
+            .Where(u => u.GlobalUser!.Users.Any(gu => gu.Id == currentUserId) 
+                        && !u.DeletedAt.HasValue 
+                        && u.IsInvitationAccepted)
             .ToListAsync();
         
         return users.Select(u => u.Id).ToList();

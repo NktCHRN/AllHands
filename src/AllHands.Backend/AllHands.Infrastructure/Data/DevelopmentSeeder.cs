@@ -1,5 +1,6 @@
 ﻿using AllHands.Application.Abstractions;
 using AllHands.Domain.Events.Employee;
+using AllHands.Domain.Events.TimeOffBalance;
 using AllHands.Domain.Models;
 using AllHands.Domain.Utilities;
 using AllHands.Infrastructure.Auth;
@@ -15,19 +16,23 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
     private readonly Guid _adminRoleId = Guid.Parse("f34632fc-b45e-4fcb-9c68-8ba404037a9b");
     private readonly Guid _adminUserId = Guid.Parse("a502c3da-e280-4193-9ed0-7937620ccd93");
     private readonly Guid _managerId = Guid.Parse("36a02307-b81d-4b9a-aac3-72485cfb1d08");
+    private readonly Guid _vacationId = Guid.Parse("9bee803f-e8b0-4afb-b440-a9578d002adc");
+    private readonly Guid _sickLeaveId = Guid.Parse("4bcb9bfe-62fd-4f09-a234-154134699099");
     private readonly Position[] _positions =
     [
         new Position()
         {
             Id = Guid.Parse("be4bcdc3-0530-4e72-9bea-2413d9d44f0f"),
             CompanyId = Guid.Parse("48a9758c-07c3-493d-83d8-d0bf55835112"),
-            Name = "Employee"
+            Name = "Employee",
+            NormalizedName = StringUtilities.GetNormalizedName("Employee"),
         }
     ];
     
     public async Task SeedAsync(CancellationToken cancellationToken)
     {
         await SeedCompany(cancellationToken);
+        await SeedTimeOffTypeAsync(cancellationToken);
         await SeedPositions(cancellationToken);
         await SeedRoles(cancellationToken);
         await SeedActiveUser(cancellationToken);
@@ -54,6 +59,40 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
             IanaTimeZone = "Europe/Kyiv",
             Name = "AllHands test company 2"
         });
+        await documentSession.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task SeedTimeOffTypeAsync(CancellationToken cancellationToken)
+    {
+        var timeOffTypes = new TimeOffType[]
+        {
+            new TimeOffType()
+            {
+                Id = _vacationId,
+                CompanyId = _companyId,
+                CreatedAt = DateTime.UtcNow,
+                Emoji = "🌴",
+                Name = "Vacation"
+            },
+            new TimeOffType()
+            {
+                Id = _sickLeaveId,
+                CompanyId = _companyId,
+                CreatedAt = DateTime.UtcNow,
+                Emoji = "🤒",
+                Name = "Sick leave (Undocumented)"
+            },
+            new TimeOffType()
+            {
+                Id = Guid.CreateVersion7(),
+                CompanyId = _companyId,
+                CreatedAt = DateTime.UtcNow,
+                Emoji = "🏥",
+                Name = "Sick leave (documented)"
+            }
+        };
+        
+        documentSession.Insert(timeOffTypes);
         await documentSession.SaveChangesAsync(cancellationToken);
     }
 
@@ -140,6 +179,15 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
             IsInvitationAccepted = true
         };
         _ = await userManager.CreateAsync(identityUser, "P@ssw0rd");
+
+        var vacationBalanceId = Guid.CreateVersion7();
+        documentSession.Events.StartStream<TimeOffBalance>(vacationBalanceId, 
+            new TimeOffBalanceCreatedEvent(vacationBalanceId, employeeId, _vacationId),
+            new TimeOffBalanceAutomaticallyUpdated(vacationBalanceId, 5));
+        var sickLeaveBalanceId = Guid.CreateVersion7();
+        documentSession.Events.StartStream<TimeOffBalance>(sickLeaveBalanceId, 
+            new TimeOffBalanceCreatedEvent(sickLeaveBalanceId, employeeId, _vacationId),
+            new TimeOffBalanceAutomaticallyUpdated(sickLeaveBalanceId, 2));
 
         await CreateActiveUser2(globalUserId, cancellationToken);
     }

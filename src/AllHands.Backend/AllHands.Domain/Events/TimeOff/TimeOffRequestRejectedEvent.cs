@@ -7,5 +7,6 @@ public sealed record TimeOffRequestRejectedEvent(
     Guid PerformedByUserId,
     Guid PerformedByEmployeeId,
     string Reason,
-    decimal WorkingDaysCount) : AuditableEvent(EntityId, PerformedByUserId);
+    decimal WorkingDaysCount,
+    Guid TimeOffBalanceId) : AuditableEvent(EntityId, PerformedByUserId);
     

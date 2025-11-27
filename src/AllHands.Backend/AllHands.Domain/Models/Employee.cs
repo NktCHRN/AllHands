@@ -1,4 +1,5 @@
 ﻿using AllHands.Domain.Abstractions;
+using Newtonsoft.Json;
 
 namespace AllHands.Domain.Models;
 
@@ -18,10 +19,13 @@ public sealed class Employee : ISoftDeletable, ICompanyResource
     public DateOnly WorkStartDate { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }
     public Guid ManagerId { get; set; }
+    [JsonIgnore]
     public Employee? Manager { get; set; }
     public Guid PositionId { get; set; }
+    [JsonIgnore]
     public Position? Position { get; set; }
     public Guid CompanyId { get; set; }
+    [JsonIgnore]
     public Company? Company { get; set; }
     
     public Guid UserId { get; set; }

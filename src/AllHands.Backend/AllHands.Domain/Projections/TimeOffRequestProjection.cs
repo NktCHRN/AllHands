@@ -13,6 +13,7 @@ public sealed class TimeOffRequestProjection : SingleStreamProjection<TimeOffReq
         {
             Id = @event.EntityId,
             EmployeeId = @event.EmployeeId,
+            CompanyId = @event.CompanyId,
             TypeId = @event.TypeId,
             StartDate = @event.StartDate,
             EndDate = @event.EndDate,

@@ -1,5 +1,4 @@
-﻿using AllHands.Domain.EventGroupers;
-using AllHands.Domain.Events.TimeOff;
+﻿using AllHands.Domain.Events.TimeOff;
 using AllHands.Domain.Events.TimeOffBalance;
 using AllHands.Domain.Models;
 using JasperFx.Events;
@@ -12,21 +11,23 @@ public sealed class EmployeeTimeOffBalanceItemProjection : MultiStreamProjection
 {
     public EmployeeTimeOffBalanceItemProjection()
     {
-        Identity<IEvent<TimeOffBalanceAutomaticallyUpdated>>(x => x.StreamId);
-        Identity<IEvent<TimeOffBalanceManuallyUpdated>>(x => x.StreamId);
-        
-        CustomGrouping(new TimeOffBalanceTimeOffRequestedEventGrouper());
-        CustomGrouping(new TimeOffBalanceTimeOffRequestCancelledRejectedEventGrouper());
+        Identity<IEvent<TimeOffBalanceCreatedEvent>>(x => x.Data.EntityId);
+        Identity<IEvent<TimeOffBalanceAutomaticallyUpdated>>(x => x.Data.EntityId);
+        Identity<IEvent<TimeOffBalanceManuallyUpdated>>(x => x.Data.EntityId);
+
+        Identity<IEvent<TimeOffRequestedEvent>>(x => x.Data.TimeOffBalanceId);
+        Identity<IEvent<TimeOffRequestCancelledEvent>>(x => x.Data.TimeOffBalanceId);
+        Identity<IEvent<TimeOffRequestRejectedEvent>>(x => x.Data.TimeOffBalanceId);
     }
 
-    public TimeOffBalance Create(TimeOffRequestedEvent @event)
+    public TimeOffBalance Create(TimeOffBalanceCreatedEvent @event)
     {
-        return new TimeOffBalance()
+        return new TimeOffBalance
         {
-            Id = TimeOffBalance.GetId(@event.EmployeeId, @event.TypeId),
+            Id = @event.EntityId,
             EmployeeId = @event.EmployeeId,
             TypeId = @event.TypeId,
-            Days = -@event.WorkingDaysCount
+            Days = 0
         };
     }
 
@@ -44,30 +45,12 @@ public sealed class EmployeeTimeOffBalanceItemProjection : MultiStreamProjection
     {
         view.Days += @event.WorkingDaysCount;
     }
-    
-    public TimeOffBalance Create(TimeOffBalanceAutomaticallyUpdated @event)
-    {
-        return new TimeOffBalance()
-        {
-            Id = @event.EntityId,
-            Days = @event.Amount
-        };
-    }
 
     public void Apply(TimeOffBalanceAutomaticallyUpdated @event, TimeOffBalance view)
     {
         view.Days += @event.Amount;
     }
-    
-    public TimeOffBalance Create(TimeOffBalanceManuallyUpdated @event)
-    {
-        return new TimeOffBalance()
-        {
-            Id = @event.EntityId,
-            Days = @event.Amount
-        };
-    }
-    
+
     public void Apply(TimeOffBalanceManuallyUpdated @event, TimeOffBalance view)
     {
         view.Days += @event.Amount;
