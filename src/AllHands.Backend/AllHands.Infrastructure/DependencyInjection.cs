@@ -97,7 +97,7 @@ public static class DependencyInjection
                 options.Projections.Add<TimeOffRequestProjection>(ProjectionLifecycle.Inline);
 
                 options.Schema.For<Employee>()
-                    .Index(x => x.Email)
+                    .Index(x => x.NormalizedEmail)
                     .Index(x => x.UserId)
                     .Index(x => x.CompanyId)
                     .Index(x => x.ManagerId);
