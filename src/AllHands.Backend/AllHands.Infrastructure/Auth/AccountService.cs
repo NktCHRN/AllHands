@@ -5,6 +5,7 @@ using AllHands.Application.Abstractions;
 using AllHands.Application.Features.User.Login;
 using AllHands.Application.Features.User.RegisterFromInvitation;
 using AllHands.Domain.Exceptions;
+using AllHands.Domain.Utilities;
 using AllHands.Infrastructure.Abstractions;
 using AllHands.Infrastructure.Auth.Entities;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -22,7 +23,7 @@ public sealed class AccountService(
 {
     public async Task<LoginResult> LoginAsync(string email, string password, CancellationToken cancellationToken = default)
     {
-        var normalizedEmail = GetNormalizedEmail(email);
+        var normalizedEmail = StringUtilities.GetNormalizedEmail(email);
         var globalUser = await dbContext.GlobalUsers
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail, cancellationToken);
@@ -147,7 +148,7 @@ public sealed class AccountService(
                 .ThenInclude(g => g.Users.Where(u => !u.DeletedAt.HasValue))
             .Where(u => u.Invitations.Any(i => i.Id == command.InvitationId))
             .FirstOrDefaultAsync(cancellationToken)
-                   ?? throw new InvalidOperationException("User was not found.");
+                   ?? throw new EntityNotFoundException("User was not found.");
         
         if (user.DeletedAt.HasValue)
         {
@@ -186,7 +187,4 @@ public sealed class AccountService(
     {
         return $"{email}_{companyId}";
     }
-
-    private static string GetNormalizedEmail(string email)
-        => email.Trim().ToUpperInvariant();
 }

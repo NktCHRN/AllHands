@@ -8,6 +8,7 @@ public sealed record EmployeeInfoUpdatedEvent(
     Guid PositionId,
     Guid ManagerId,
     string Email, 
+    string NormalizedEmail,
     string FirstName,
     string? MiddleName,
     string LastName,

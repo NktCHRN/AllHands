@@ -1,4 +1,5 @@
 ﻿using AllHands.Application.Abstractions;
+using AllHands.Domain.Models;
 using AllHands.Domain.Projections;
 using AllHands.Infrastructure.Abstractions;
 using AllHands.Infrastructure.Auth;
@@ -94,6 +95,20 @@ public static class DependencyInjection
                 options.Projections.Add<EmployeeProjection>(ProjectionLifecycle.Inline);
                 options.Projections.Add<EmployeeTimeOffBalanceItemProjection>(ProjectionLifecycle.Inline);
                 options.Projections.Add<TimeOffRequestProjection>(ProjectionLifecycle.Inline);
+
+                options.Schema.For<Employee>()
+                    .Index(x => x.Email)
+                    .Index(x => x.UserId)
+                    .Index(x => x.CompanyId)
+                    .Index(x => x.ManagerId);
+                options.Schema.For<Holiday>()
+                    .Index(x => x.CompanyId);
+                options.Schema.For<Position>()
+                    .Index(x => x.CompanyId);
+                options.Schema.For<TimeOffBalance>()
+                    .Index(x => new { x.EmployeeId, x.TypeId });
+                options.Schema.For<TimeOffType>()
+                    .Index(x => x.CompanyId);
             })
             .UseLightweightSessions();
         

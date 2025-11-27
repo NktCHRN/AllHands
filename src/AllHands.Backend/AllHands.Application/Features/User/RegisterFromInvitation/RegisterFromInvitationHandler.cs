@@ -21,10 +21,10 @@ public sealed class RegisterFromInvitationHandler(IDocumentSession documentSessi
 
         if (employee.Status != EmployeeStatus.Unactivated)
         {
-            throw new ValidationException("The user is already activated.");
+            throw new EntityValidationFailedException("The user is already activated.");
         }
 
-        documentSession.Events.Append(employee.Id, cancellationToken, new EmployeeRegisteredEvent(employee.Id, employee.UserId));
+        documentSession.Events.Append(employee.Id, new EmployeeRegisteredEvent(employee.Id, employee.UserId));
         await documentSession.SaveChangesAsync(cancellationToken);
     }
 }

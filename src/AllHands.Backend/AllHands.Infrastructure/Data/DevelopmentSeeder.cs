@@ -1,6 +1,7 @@
 ﻿using AllHands.Application.Abstractions;
 using AllHands.Domain.Events.Employee;
 using AllHands.Domain.Models;
+using AllHands.Domain.Utilities;
 using AllHands.Infrastructure.Auth;
 using AllHands.Infrastructure.Auth.Entities;
 using Marten;
@@ -104,6 +105,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
             _positions[0].Id,
             _managerId,
             "user@example.com",
+            StringUtilities.GetNormalizedEmail("user@example.com"),
             "Anastasiia",
             "Vadymivna",
             "Linchuk",
@@ -156,6 +158,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
                 _positions[0].Id,
                 _managerId,
                 "user@example.com",
+                StringUtilities.GetNormalizedEmail("user@example.com"),
                 "Anastasiia",
                 "Vadymivna",
                 "Linchuk",
@@ -193,6 +196,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
                 _positions[0].Id,
                 _managerId,
                 "14nik20@gmail.com",
+                StringUtilities.GetNormalizedEmail("14nik20@gmail.com"),
                 "Nikita",
                 "Mykolaiovych",
                 "Chernikov",
@@ -222,7 +226,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
 
         var invitation = new Invitation()
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.Parse("3f8ecd64-897c-4224-90f6-1754ea4d631f"),
             TokenHash = BCrypt.Net.BCrypt.HashPassword("1122334455", 12, true),
             IssuerId = Guid.Parse("a502c3da-e280-4193-9ed0-7937620ccd93"),
             IssuedAt = DateTime.UtcNow,

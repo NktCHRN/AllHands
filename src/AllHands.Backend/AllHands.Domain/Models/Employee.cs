@@ -4,26 +4,27 @@ namespace AllHands.Domain.Models;
 
 public sealed class Employee : ISoftDeletable, ICompanyResource
 {
-    public Guid Id { get; internal set; }
-    public string FirstName { get; internal set; } = string.Empty;
-    public string? MiddleName { get; internal set; }
-    public string LastName { get; internal set; } = string.Empty;
-    public string Email { get; internal set; } = string.Empty;
-    public string? PhoneNumber { get; internal set; }
-    public EmployeeStatus Status { get; internal set; } = EmployeeStatus.Active;
-    public string? AvatarFileName { get; internal set; }
-    public DateTimeOffset CreatedAt { get; internal set; }
-    public DateTimeOffset? UpdatedAt { get; internal set; }
-    public DateOnly WorkStartDate { get; internal set; }
-    public DateTimeOffset? DeletedAt { get; internal set; }
-    public Guid ManagerId { get; internal set; }
-    public Employee? Manager { get; internal set; }
-    public Guid PositionId { get; internal set; }
-    public Position? Position { get; internal set; }
-    public Guid CompanyId { get; internal set; }
-    public Company? Company { get; internal set; }
+    public Guid Id { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string? MiddleName { get; set; }
+    public string LastName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string NormalizedEmail { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
+    public string? AvatarFileName { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateOnly WorkStartDate { get; set; }
+    public DateTimeOffset? DeletedAt { get; set; }
+    public Guid ManagerId { get; set; }
+    public Employee? Manager { get; set; }
+    public Guid PositionId { get; set; }
+    public Position? Position { get; set; }
+    public Guid CompanyId { get; set; }
+    public Company? Company { get; set; }
     
-    public Guid UserId { get; internal set; }
+    public Guid UserId { get; set; }
 
-    internal Employee() { }
+    public Employee() { }
 }

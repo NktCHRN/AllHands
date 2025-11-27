@@ -1,19 +1,14 @@
-﻿using AllHands.Domain.EventGroupers;
-using AllHands.Domain.Events.TimeOffBalance;
-using AllHands.Domain.Events.TimeOff;
-using DeterministicGuids;
-using JasperFx.Events;
-using Marten.Events.Projections;
+﻿using DeterministicGuids;
 
 namespace AllHands.Domain.Models;
 
 public sealed class TimeOffBalance
 {
-    public Guid Id { get; internal set; }
-    public Guid EmployeeId { get; internal set; }
-    public Guid TypeId { get; internal set; }
-    public TimeOffType? Type { get; internal set; }
-    public decimal Days { get; internal set; }
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public Guid TypeId { get; set; }
+    public TimeOffType? Type { get; set; }
+    public decimal Days { get; set; }
 
     public static Guid GetId(Guid employeeId, Guid typeId) =>
         DeterministicGuid.Create(employeeId, typeId.ToString());

@@ -17,6 +17,7 @@ public sealed class EmployeeProjection : SingleStreamProjection<Employee, Guid>
             PositionId = @event.PositionId,
             ManagerId = @event.ManagerId,
             Email = @event.Email, 
+            NormalizedEmail = @event.NormalizedEmail,
             FirstName = @event.FirstName,
             MiddleName = @event.MiddleName,
             LastName = @event.LastName,
@@ -50,6 +51,7 @@ public sealed class EmployeeProjection : SingleStreamProjection<Employee, Guid>
         view.PhoneNumber = @event.PhoneNumber;
         view.WorkStartDate = @event.WorkStartDate;
         view.AvatarFileName = @event.AvatarFileName;
+        view.NormalizedEmail = @event.NormalizedEmail;
     }
 
     public void Apply(EmployeeRegisteredEvent @event, Employee view)
