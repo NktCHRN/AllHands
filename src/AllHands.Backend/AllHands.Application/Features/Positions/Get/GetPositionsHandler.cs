@@ -13,7 +13,8 @@ public sealed class GetPositionsHandler(ICurrentUserService currentUserService, 
     {
         var companyId = currentUserService.GetCompanyId();
 
-        IQueryable<Position> positionsQuery = querySession.Query<Position>();
+        IQueryable<Position> positionsQuery = querySession.Query<Position>()
+            .Where(p => !p.DeletedAt.HasValue);
 
         if (!string.IsNullOrEmpty(request.Search))
         {
