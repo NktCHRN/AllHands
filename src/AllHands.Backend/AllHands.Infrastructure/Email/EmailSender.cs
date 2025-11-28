@@ -3,6 +3,7 @@ using System.Text.Json;
 using AllHands.Application.Abstractions;
 using AllHands.Application.Features.Employees.Create;
 using AllHands.Application.Features.User.ResetPassword;
+using AllHands.Infrastructure.Utilities;
 using Amazon.SimpleEmailV2;
 using Amazon.SimpleEmailV2.Model;
 using Microsoft.AspNetCore.WebUtilities;
@@ -46,7 +47,7 @@ public sealed class EmailSender(IAmazonSimpleEmailServiceV2 ses, IOptionsMonitor
         };
 
         var result = await ses.SendEmailAsync(request, cancellationToken);
-        if (!IsSuccess(result.HttpStatusCode))
+        if (!HttpResponseUtility.IsSuccess(result.HttpStatusCode))
         {
             logger.LogError("Email sending failed {Response}", result);
             throw new InvalidOperationException("Email sending failed");
@@ -88,13 +89,10 @@ public sealed class EmailSender(IAmazonSimpleEmailServiceV2 ses, IOptionsMonitor
         };
 
         var result = await ses.SendEmailAsync(request, cancellationToken);
-        if (!IsSuccess(result.HttpStatusCode))
+        if (!HttpResponseUtility.IsSuccess(result.HttpStatusCode))
         {
             logger.LogError("Email sending failed {Response}", result);
             throw new InvalidOperationException("Email sending failed");
         }
     }
-
-    private static bool IsSuccess(HttpStatusCode statusCode)
-        => (int)statusCode >= 200 && (int)statusCode <= 299;
 }

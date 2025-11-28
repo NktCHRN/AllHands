@@ -1,4 +1,5 @@
 ﻿using AllHands.Application.Features.Company.Get;
+using AllHands.Application.Features.Company.GetLogo;
 using AllHands.WebApi.Contracts;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -18,5 +19,14 @@ public sealed class CompanyController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(new GetCompanyQuery());
         
         return Ok(ApiResponse.FromResult(result));
+    }
+    
+    [Authorize]
+    [HttpGet("logo")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetLogo(CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetCompanyLogoQuery(), cancellationToken);
+        return File(result.File.Stream, result.File.ContentType, result.File.OriginalFileName);
     }
 }

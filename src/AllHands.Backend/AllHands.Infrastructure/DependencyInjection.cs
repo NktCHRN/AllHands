@@ -5,6 +5,8 @@ using AllHands.Infrastructure.Abstractions;
 using AllHands.Infrastructure.Auth;
 using AllHands.Infrastructure.Auth.Entities;
 using AllHands.Infrastructure.Email;
+using AllHands.Infrastructure.Files;
+using Amazon.S3;
 using Amazon.SimpleEmailV2;
 using JasperFx.Events.Projections;
 using Marten;
@@ -156,6 +158,13 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.AddAWSService<IAmazonSimpleEmailServiceV2>();
         services.AddSingleton<IEmailSender, EmailSender>();
+        
+        services.AddOptions<S3Options>()
+            .BindConfiguration("S3")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services.AddAWSService<IAmazonS3>();
+        services.AddSingleton<IFileService, FileService>();
         
         return services;
     }

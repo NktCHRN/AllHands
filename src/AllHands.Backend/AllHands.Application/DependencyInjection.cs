@@ -1,4 +1,6 @@
-﻿using AllHands.Application.Behaviors;
+﻿using AllHands.Application.Abstractions;
+using AllHands.Application.Behaviors;
+using AllHands.Application.Validation;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +19,8 @@ public static class DependencyInjection
                 .AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
         services.AddSingleton(_ => PhoneNumberUtil.GetInstance());
+
+        services.AddSingleton<IImageValidator, ImageValidator>();
         
         return services.AddSingleton(TimeProvider.System);
     }
