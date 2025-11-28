@@ -11,8 +11,7 @@ public sealed class UpdateCompanyHandler(ICurrentUserService currentUserService,
     {
         var companyId = currentUserService.GetCompanyId();
         
-        var company = await documentSession.Query<Domain.Models.Company>()
-            .FirstOrDefaultAsync(c => c.Id == companyId, token: cancellationToken)
+        var company = await documentSession.LoadAsync<Domain.Models.Company>(companyId, cancellationToken)
             ?? throw new EntityNotFoundException("Company was not found");
         
         company.Name = request.Name;
