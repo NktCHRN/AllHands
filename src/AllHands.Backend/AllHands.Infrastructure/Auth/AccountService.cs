@@ -205,6 +205,8 @@ public sealed class AccountService(
             {
                 throw new EntityValidationFailedException(IdentityUtilities.IdentityErrorsToString(identityResult.Errors));
             }
+            
+            await ticketModifier.ExpireActiveSessionsAsync(dbContext, user.Id, cancellationToken);
         }
         
         await transaction.CommitAsync(cancellationToken);

@@ -66,7 +66,9 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
         if (cachedTicket != null)
         {
             session = JsonSerializer.Deserialize<AllHandsSession>(cachedTicket);
-            return ticketSerializer.Deserialize(session!.TicketValue);
+            return session!.IsRevoked
+                ? null
+                : ticketSerializer.Deserialize(session.TicketValue);
         }
 
         var sessionId = Guid.Parse(key);
@@ -98,6 +100,7 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
         }
         
         session.ExpiresAt = timeProvider.GetUtcNow();
+        session.IsRevoked = true;
         await dbContext.SaveChangesAsync();
         
         await cache.RemoveAsync($"sessions:{session.Key}");
@@ -137,12 +140,31 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
         await dbContext.SaveChangesAsync(cancellationToken);
     }
     
+    public async Task ExpireActiveSessionsAsync(AuthDbContext dbContext, Guid userId, CancellationToken cancellationToken)
+    {
+        var currentDateTime = timeProvider.GetUtcNow();
+        var activeSessions = await GetActiveSessions(dbContext, userId, cancellationToken);
+
+        foreach (var session in activeSessions)
+        {
+            session.ExpiresAt = currentDateTime;
+            session.IsRevoked = true;
+            
+            await cache.SetStringAsync($"sessions:{session.Key}", JsonSerializer.Serialize(session), new DistributedCacheEntryOptions()
+            {
+                AbsoluteExpiration = session.ExpiresAt?.AddMinutes(1)       // Just to prevent failures and weird cache overwrites before saving changes to DB. Token is revoked anyway.
+            }, token: cancellationToken);
+        };
+        
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+    
     private async Task<IReadOnlyList<AllHandsSession>> GetActiveSessions(AuthDbContext dbContext, Guid userId, CancellationToken cancellationToken)
     {
         var currentDateTime = timeProvider.GetUtcNow();
 
         var sessions = await dbContext.Sessions
-            .Where(x => x.UserId == userId && x.ExpiresAt >= currentDateTime)
+            .Where(x => x.UserId == userId && x.ExpiresAt >= currentDateTime && !x.IsRevoked)
             .ToListAsync(cancellationToken: cancellationToken);
 
         return sessions;
