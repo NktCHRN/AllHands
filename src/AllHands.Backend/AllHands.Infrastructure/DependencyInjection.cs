@@ -120,7 +120,8 @@ public static class DependencyInjection
                     .Index(x => x.NormalizedEmail)
                     .Index(x => x.UserId)
                     .Index(x => x.CompanyId)
-                    .Index(x => x.ManagerId);
+                    .Index(x => x.ManagerId)
+                    .FullTextIndex(x => x.FirstName, x => x.MiddleName!, x => x.LastName, x => x.Email);
                 options.Schema.For<Holiday>()
                     .Index(x => x.CompanyId);
                 options.Schema.For<Position>()
