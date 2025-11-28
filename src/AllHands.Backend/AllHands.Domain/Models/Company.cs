@@ -6,7 +6,7 @@ public sealed class Company : ISoftDeletable
 {
     public required Guid Id { get; set; }
     public required string Name { get; set; }
-    public required string? Description { get; set; }
+    public string? Description { get; set; }
     public required string EmailDomain { get; set; }
     public required string IanaTimeZone {get;set;}
     public required DateTimeOffset CreatedAt { get; set; }
