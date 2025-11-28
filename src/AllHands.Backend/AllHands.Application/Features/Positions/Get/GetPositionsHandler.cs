@@ -14,7 +14,7 @@ public sealed class GetPositionsHandler(ICurrentUserService currentUserService, 
         var companyId = currentUserService.GetCompanyId();
 
         IQueryable<Position> positionsQuery = querySession.Query<Position>()
-            .Where(p => !p.DeletedAt.HasValue);
+            .Where(p => !p.DeletedAt.HasValue && p.CompanyId == companyId);
 
         if (!string.IsNullOrEmpty(request.Search))
         {
