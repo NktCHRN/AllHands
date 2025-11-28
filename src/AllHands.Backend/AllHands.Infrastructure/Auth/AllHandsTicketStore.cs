@@ -135,7 +135,7 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
             {
                 AbsoluteExpiration = session.ExpiresAt
             }, token: cancellationToken);
-        };
+        }
         
         await dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -154,7 +154,7 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
             {
                 AbsoluteExpiration = session.ExpiresAt?.AddMinutes(1)       // Just to prevent failures and weird cache overwrites before saving changes to DB. Token is revoked anyway.
             }, token: cancellationToken);
-        };
+        }
         
         await dbContext.SaveChangesAsync(cancellationToken);
     }
