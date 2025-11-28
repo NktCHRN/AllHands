@@ -19,7 +19,9 @@ public sealed class GetCompanyQueryHandler(ICurrentUserService currentUserServic
             company.Id,
             company.Name,
             company.EmailDomain,
+            company.IsSameDomainValidationEnforced,
             company.IanaTimeZone,
+            company.WorkDays.Order().ToList(),
             company.CreatedAt,
             company.UpdatedAt,
             company.DeletedAt);

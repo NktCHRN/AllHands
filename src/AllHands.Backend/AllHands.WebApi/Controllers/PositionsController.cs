@@ -1,5 +1,5 @@
 ﻿using AllHands.Application.Dto;
-using AllHands.Application.Features.Positions.Get;
+using AllHands.Application.Features.Positions.Search;
 using AllHands.WebApi.Contracts;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -14,10 +14,10 @@ public sealed class PositionsController(IMediator mediator) : ControllerBase
     [Authorize]
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PagedResponse<PositionDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPositions([FromQuery] SearchPaginationParametersRequest request,
+    public async Task<IActionResult> SearchPositions([FromQuery] SearchPaginationParametersRequest request,
         CancellationToken cancellationToken = default)
     {
-        var result = await mediator.Send(new GetPositionsQuery(request.PerPage, request.Page, request.Search), cancellationToken);
+        var result = await mediator.Send(new SearchPositionsQuery(request.PerPage, request.Page, request.Search), cancellationToken);
         return Ok(ApiResponse.FromResult(PagedResponse.FromDto(result)));
     }
 }

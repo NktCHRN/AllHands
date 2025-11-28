@@ -5,11 +5,11 @@ using AllHands.Domain.Utilities;
 using Marten;
 using MediatR;
 
-namespace AllHands.Application.Features.Positions.Get;
+namespace AllHands.Application.Features.Positions.Search;
 
-public sealed class GetPositionsHandler(ICurrentUserService currentUserService, IQuerySession querySession) : IRequestHandler<GetPositionsQuery, PagedDto<PositionDto>>
+public sealed class SearchPositionsHandler(ICurrentUserService currentUserService, IQuerySession querySession) : IRequestHandler<SearchPositionsQuery, PagedDto<PositionDto>>
 {
-    public async Task<PagedDto<PositionDto>> Handle(GetPositionsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedDto<PositionDto>> Handle(SearchPositionsQuery request, CancellationToken cancellationToken)
     {
         var companyId = currentUserService.GetCompanyId();
 

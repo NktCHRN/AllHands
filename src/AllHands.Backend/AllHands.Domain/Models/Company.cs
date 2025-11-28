@@ -9,6 +9,7 @@ public sealed class Company : ISoftDeletable
     public string? Description { get; set; }
     public required string EmailDomain { get; set; }
     public required string IanaTimeZone {get;set;}
+    public bool IsSameDomainValidationEnforced { get; set; }
     public required ISet<DayOfWeek> WorkDays { get; set; }
     public required DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }

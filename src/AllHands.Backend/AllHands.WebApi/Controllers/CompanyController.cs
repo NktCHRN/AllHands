@@ -1,6 +1,7 @@
 ﻿using AllHands.Application;
 using AllHands.Application.Features.Company.Get;
 using AllHands.Application.Features.Company.GetLogo;
+using AllHands.Application.Features.Company.Update;
 using AllHands.Application.Features.Company.UpdateLogo;
 using AllHands.WebApi.Auth;
 using AllHands.WebApi.Contracts;
@@ -53,6 +54,15 @@ public sealed class CompanyController(IMediator mediator) : ControllerBase
         await using var stream = file.OpenReadStream();
         await mediator.Send(new UpdateLogoCommand(stream, file.FileName, file.ContentType), cancellationToken);
         
+        return NoContent();
+    }
+
+    [HasPermission(Permissions.CompanyEdit)]
+    [HttpPut]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Update([FromBody] UpdateCompanyCommand command, CancellationToken cancellationToken)
+    {
+        await mediator.Send(command, cancellationToken);
         return NoContent();
     }
 }
