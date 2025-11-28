@@ -108,7 +108,7 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
     {
         var activeSessions = await GetActiveSessions(dbContext, userId, cancellationToken);
 
-        await Parallel.ForEachAsync(activeSessions, cancellationToken, async (session, ct) =>
+        foreach (var session in activeSessions)
         {
             var ticketValue = ticketSerializer.Deserialize(session.TicketValue);
             var newClaims = createNewClaims();
@@ -129,8 +129,8 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
             await cache.SetStringAsync($"sessions:{session.Key}", JsonSerializer.Serialize(session), new DistributedCacheEntryOptions()
             {
                 AbsoluteExpiration = session.ExpiresAt
-            }, token: ct);
-        });
+            }, token: cancellationToken);
+        };
         
         await dbContext.SaveChangesAsync(cancellationToken);
     }
