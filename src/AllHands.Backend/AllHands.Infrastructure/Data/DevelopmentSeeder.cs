@@ -14,7 +14,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
 {
     private readonly Guid _companyId = Guid.Parse("48a9758c-07c3-493d-83d8-d0bf55835112");
     private readonly Guid _adminRoleId = Guid.Parse("f34632fc-b45e-4fcb-9c68-8ba404037a9b");
-    private readonly Guid _adminUserId = Guid.Parse("a502c3da-e280-4193-9ed0-7937620ccd93");
+    private static readonly Guid _adminUserId = Guid.Parse("a502c3da-e280-4193-9ed0-7937620ccd93");
     private readonly Guid _managerId = Guid.Parse("36a02307-b81d-4b9a-aac3-72485cfb1d08");
     private readonly Guid _vacationId = Guid.Parse("9bee803f-e8b0-4afb-b440-a9578d002adc");
     private readonly Guid _sickLeaveId = Guid.Parse("4bcb9bfe-62fd-4f09-a234-154134699099");
@@ -26,6 +26,8 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
             CompanyId = Guid.Parse("48a9758c-07c3-493d-83d8-d0bf55835112"),
             Name = "Employee",
             NormalizedName = StringUtilities.GetNormalizedName("Employee"),
+            CreatedAt = DateTime.UtcNow,
+            CreatedByUserId = _adminUserId
         }
     ];
     
@@ -83,7 +85,8 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
                 CreatedAt = DateTime.UtcNow,
                 Emoji = "🌴",
                 Name = "Vacation",
-                DaysPerYear = 20
+                DaysPerYear = 20,
+                CreatedByUserId = _adminUserId
             },
             new TimeOffType()
             {
@@ -92,7 +95,8 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
                 CreatedAt = DateTime.UtcNow,
                 Emoji = "🤒",
                 Name = "Sick leave (Undocumented)",
-                DaysPerYear = 10
+                DaysPerYear = 10,
+                CreatedByUserId = _adminUserId
             },
             new TimeOffType()
             {
@@ -101,7 +105,8 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
                 CreatedAt = DateTime.UtcNow,
                 Emoji = "🏥",
                 Name = "Sick leave (documented)",
-                DaysPerYear = 0
+                DaysPerYear = 0,
+                CreatedByUserId = _adminUserId
             }
         };
         

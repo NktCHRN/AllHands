@@ -12,5 +12,6 @@ public sealed class Company : ISoftDeletable
     public required ISet<DayOfWeek> WorkDays { get; set; }
     public required DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
+    public Guid? UpdatedByUserId { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }
 }
