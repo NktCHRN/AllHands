@@ -6,11 +6,13 @@ using AllHands.Application.Features.User.ChangePassword;
 using AllHands.Application.Features.User.Login;
 using AllHands.Application.Features.User.RegisterFromInvitation;
 using AllHands.Application.Features.User.ResetPassword;
+using AllHands.Application.Features.User.Update;
 using AllHands.Domain.Exceptions;
 using AllHands.Domain.Utilities;
 using AllHands.Infrastructure.Abstractions;
 using AllHands.Infrastructure.Auth.Entities;
 using Humanizer;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +26,8 @@ public sealed class AccountService(
     IInvitationService invitationService,
     ICurrentUserService currentUserService,
     IPasswordResetTokenProvider passwordResetTokenProvider,
-    TimeProvider timeProvider) : IAccountService
+    TimeProvider timeProvider,
+    ITicketModifier ticketModifier) : IAccountService
 {
     public async Task<LoginResult> LoginAsync(string email, string password, CancellationToken cancellationToken = default)
     {
@@ -95,18 +98,14 @@ public sealed class AccountService(
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Email ?? string.Empty),
+            new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
             new Claim(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty),
             new Claim(ClaimTypes.GivenName, user.FirstName),
+            new Claim("middlename", user.MiddleName ?? string.Empty),
             new Claim(ClaimTypes.Surname, user.LastName),
             new Claim(AuthConstants.PermissionClaimName, permissionsString),
             new Claim("companyid", user.CompanyId.ToString()),
         };
-
-        if (!string.IsNullOrEmpty(user.MiddleName))
-        {
-            claims.Add(new Claim("middlename", user.MiddleName));
-        }
 
         foreach (var role in userWithClaims.Roles.Select(r => r.Role!))
         {
@@ -283,5 +282,30 @@ public sealed class AccountService(
             .ToListAsync();
         
         return users.Select(u => u.Id).ToList();
+    }
+
+    public async Task Update(UpdateUserCommand command, Guid userId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
+        
+        var user = await userManager.FindByIdAsync(userId.ToString())
+            ?? throw new EntityNotFoundException("User was not found");
+        
+        user.FirstName = command.FirstName;
+        user.MiddleName = command.MiddleName;
+        user.LastName = command.LastName;
+        user.PhoneNumber = command.PhoneNumber;
+        
+        await userManager.UpdateAsync(user);
+        
+        await ticketModifier.UpdateClaimsAsync(dbContext, userId, () =>
+        [
+            new Claim(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty),
+            new Claim(ClaimTypes.GivenName, user.FirstName),
+            new Claim("middlename", user.MiddleName ?? string.Empty),
+            new Claim(ClaimTypes.Surname, user.LastName)
+        ], cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
     }
 }

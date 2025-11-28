@@ -39,7 +39,7 @@ public sealed class EmployeeProjection : SingleStreamProjection<Employee, Guid>
         view.Status = EmployeeStatus.Fired;
     }
 
-    public void Apply(EmployeeInfoUpdatedEvent @event, Employee view)
+    public void Apply(EmployeeUpdatedEvent @event, Employee view)
     {
         view.UpdatedAt = @event.OccurredAt;
         view.PositionId = @event.PositionId;
@@ -50,8 +50,22 @@ public sealed class EmployeeProjection : SingleStreamProjection<Employee, Guid>
         view.LastName = @event.LastName;
         view.PhoneNumber = @event.PhoneNumber;
         view.WorkStartDate = @event.WorkStartDate;
-        view.AvatarFileName = @event.AvatarFileName;
         view.NormalizedEmail = @event.NormalizedEmail;
+    }
+    
+    public void Apply(EmployeeUpdatedBySelfEvent @event, Employee view)
+    {
+        view.UpdatedAt = @event.OccurredAt;
+        view.FirstName = @event.FirstName;
+        view.MiddleName = @event.MiddleName;
+        view.LastName = @event.LastName;
+        view.PhoneNumber = @event.PhoneNumber;
+    }
+    
+    public void Apply(EmployeeAvatarUpdatedEvent @event, Employee view)
+    {
+        view.UpdatedAt = @event.OccurredAt;
+        view.AvatarFileName = @event.AvatarFileName;
     }
 
     public void Apply(EmployeeRegisteredEvent @event, Employee view)

@@ -22,7 +22,7 @@ public sealed class CurrentHttpUserService(IHttpContextAccessor httpContextAcces
 
     public string GetEmail()
     {
-        return User.FindFirst(ClaimTypes.Name)?.Value ?? throw new InvalidOperationException("Invalid user email.");
+        return User.FindFirst(ClaimTypes.Email)?.Value ?? throw new InvalidOperationException("Invalid user email.");
     }
 
     public string? GetPhoneNumber()

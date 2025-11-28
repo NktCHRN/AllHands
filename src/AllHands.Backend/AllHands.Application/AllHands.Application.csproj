@@ -13,6 +13,7 @@
     <ItemGroup>
       <PackageReference Include="FluentValidation" Version="12.1.0" />
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.0" />
+      <PackageReference Include="libphonenumber-csharp" Version="9.0.19" />
       <PackageReference Include="MediatR" Version="12.5.0" />
     </ItemGroup>
 

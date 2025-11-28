@@ -2,6 +2,7 @@
 using AllHands.Application.Features.User.Login;
 using AllHands.Application.Features.User.RegisterFromInvitation;
 using AllHands.Application.Features.User.ResetPassword;
+using AllHands.Application.Features.User.Update;
 
 namespace AllHands.Application.Abstractions;
 
@@ -13,4 +14,5 @@ public interface IAccountService
     Task<GenerateResetPasswordTokenResult> GenerateResetPasswordToken(string email, CancellationToken cancellationToken);
     Task ChangePassword(ChangePasswordCommand command, CancellationToken cancellationToken);
     Task<IReadOnlyList<Guid>> GetUserIds(Guid currentUserId);
+    Task Update(UpdateUserCommand command, Guid userId, CancellationToken cancellationToken);
 }

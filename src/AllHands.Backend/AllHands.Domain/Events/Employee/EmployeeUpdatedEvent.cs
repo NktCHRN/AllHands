@@ -2,7 +2,7 @@
 
 namespace AllHands.Domain.Events.Employee;
 
-public sealed record EmployeeInfoUpdatedEvent(
+public sealed record EmployeeUpdatedEvent(
     Guid EntityId, 
     Guid PerformedByUserId,
     Guid PositionId,
@@ -13,6 +13,5 @@ public sealed record EmployeeInfoUpdatedEvent(
     string? MiddleName,
     string LastName,
     string? PhoneNumber,
-    DateOnly WorkStartDate,
-    string? AvatarFileName): AuditableEvent(EntityId, PerformedByUserId);
+    DateOnly WorkStartDate): AuditableEvent(EntityId, PerformedByUserId);
     

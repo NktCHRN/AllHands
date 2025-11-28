@@ -72,6 +72,8 @@ public static class DependencyInjection
             .ValidateOnStart();
         
         services.AddSingleton<IPasswordResetTokenProvider, PasswordResetTokenProvider>();
+
+        services.AddSingleton<ITicketModifier, AllHandsTicketStore>();
         
         services.AddScoped<IInvitationService, InvitationService>();
         services.AddScoped<IAccountService, AccountService>();

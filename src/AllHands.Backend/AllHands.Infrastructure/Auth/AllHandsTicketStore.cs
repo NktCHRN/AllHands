@@ -8,7 +8,7 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace AllHands.Infrastructure.Auth;
 
-public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbContextFactory, IDistributedCache cache, TicketSerializer ticketSerializer, TimeProvider timeProvider) : ITicketStore
+public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbContextFactory, IDistributedCache cache, TicketSerializer ticketSerializer, TimeProvider timeProvider) : ITicketStore, ITicketModifier
 {
     public async Task<string> StoreAsync(AuthenticationTicket ticket)
     {
@@ -101,5 +101,48 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
         await dbContext.SaveChangesAsync();
         
         await cache.RemoveAsync($"sessions:{session.Key}");
+    }
+
+    public async Task UpdateClaimsAsync(AuthDbContext dbContext, Guid userId,
+        Func<IReadOnlyList<Claim>> createNewClaims, CancellationToken cancellationToken)
+    {
+        var activeSessions = await GetActiveSessions(dbContext, userId, cancellationToken);
+
+        await Parallel.ForEachAsync(activeSessions, cancellationToken, async (session, ct) =>
+        {
+            var ticketValue = ticketSerializer.Deserialize(session.TicketValue);
+            var newClaims = createNewClaims();
+            var claims = ticketValue!.Principal.Claims
+                .Where(c => newClaims.All(nc => c.Type != nc.Type))
+                .ToList();
+            claims.AddRange(newClaims);
+            var newPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+            var newTicket = new AuthenticationTicket(
+                newPrincipal, 
+                ticketValue.Properties, 
+                ticketValue.AuthenticationScheme
+            );
+            session.ExpiresAt = session.ExpiresAt?.AddMinutes(1);
+            newTicket.Properties.ExpiresUtc = session.ExpiresAt;
+            session.TicketValue = ticketSerializer.Serialize(newTicket);
+            
+            await cache.SetStringAsync($"sessions:{session.Key}", JsonSerializer.Serialize(session), new DistributedCacheEntryOptions()
+            {
+                AbsoluteExpiration = session.ExpiresAt
+            }, token: ct);
+        });
+        
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+    
+    private async Task<IReadOnlyList<AllHandsSession>> GetActiveSessions(AuthDbContext dbContext, Guid userId, CancellationToken cancellationToken)
+    {
+        var currentDateTime = timeProvider.GetUtcNow();
+
+        var sessions = await dbContext.Sessions
+            .Where(x => x.UserId == userId && x.ExpiresAt >= currentDateTime)
+            .ToListAsync(cancellationToken: cancellationToken);
+
+        return sessions;
     }
 }

@@ -6,6 +6,7 @@ using AllHands.Application.Features.User.Login;
 using AllHands.Application.Features.User.RegisterFromInvitation;
 using AllHands.Application.Features.User.Relogin;
 using AllHands.Application.Features.User.ResetPassword;
+using AllHands.Application.Features.User.Update;
 using AllHands.WebApi.Contracts;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
@@ -19,6 +20,7 @@ namespace AllHands.WebApi.Controllers;
 [Route("api/v{version:apiVersion}/[controller]")]
 public sealed class AccountController(IMediator mediator) : ControllerBase
 {
+    [Authorize]
     [HttpGet("~/api/v{version:apiVersion}/accounts")]
     [ProducesResponseType(typeof(ApiResponse<GetAccountsResult>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAccounts(CancellationToken cancellationToken)
@@ -64,6 +66,16 @@ public sealed class AccountController(IMediator mediator) : ControllerBase
     [EnableRateLimiting("ResetPasswordLimiter")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command, CancellationToken cancellationToken)
+    {
+        await mediator.Send(command, cancellationToken);
+        
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpPut]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Update([FromBody] UpdateUserCommand command, CancellationToken cancellationToken)
     {
         await mediator.Send(command, cancellationToken);
         

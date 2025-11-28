@@ -41,18 +41,19 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.MapControllers();
 
-//
-await using var scope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope();
-var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
-await dbContext.Database.MigrateAsync();
-var seeder = new DevelopmentSeeder(
-    scope.ServiceProvider.GetRequiredService<IDocumentSession>(),
-    dbContext,
-    scope.ServiceProvider.GetRequiredService<UserManager<AllHandsIdentityUser>>(),
-    scope.ServiceProvider.GetRequiredService<RoleManager<AllHandsRole>>(),
-    scope.ServiceProvider.GetRequiredService<IPermissionsContainer>());
+if (app.Environment.IsDevelopment())
+{
+    await using var scope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+    await dbContext.Database.MigrateAsync();
+    var seeder = new DevelopmentSeeder(
+        scope.ServiceProvider.GetRequiredService<IDocumentSession>(),
+        dbContext,
+        scope.ServiceProvider.GetRequiredService<UserManager<AllHandsIdentityUser>>(),
+        scope.ServiceProvider.GetRequiredService<RoleManager<AllHandsRole>>(),
+        scope.ServiceProvider.GetRequiredService<IPermissionsContainer>());
 //await seeder.SeedAsync(CancellationToken.None);
 
-//
+}
 
 app.Run();

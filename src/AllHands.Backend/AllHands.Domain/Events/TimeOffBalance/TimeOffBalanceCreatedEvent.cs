@@ -1,3 +1,9 @@
-﻿namespace AllHands.Domain.Events.TimeOffBalance;
+﻿using AllHands.Domain.Abstractions;
 
-public sealed record TimeOffBalanceCreatedEvent(Guid EntityId, Guid EmployeeId, Guid TypeId);
+namespace AllHands.Domain.Events.TimeOffBalance;
+
+public sealed record TimeOffBalanceCreatedEvent(Guid EntityId, Guid EmployeeId, Guid TypeId) : IDomainEvent<Guid>
+{
+    public DateTimeOffset OccurredAt { get; init; } = DateTimeOffset.UtcNow;
+    public Guid StreamId => EntityId;
+}

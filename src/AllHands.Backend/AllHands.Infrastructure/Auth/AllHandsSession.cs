@@ -1,4 +1,5 @@
-﻿using AllHands.Infrastructure.Auth.Entities;
+﻿using System.Text.Json.Serialization;
+using AllHands.Infrastructure.Auth.Entities;
 
 namespace AllHands.Infrastructure.Auth;
 
@@ -9,5 +10,6 @@ public sealed class AllHandsSession
     public required DateTimeOffset? IssuedAt { get; set; }
     public required DateTimeOffset? ExpiresAt { get; set; }
     public required Guid UserId { get; set; }
+    [JsonIgnore]
     public AllHandsIdentityUser? User { get; set; }
 }

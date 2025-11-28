@@ -1,8 +1,11 @@
-﻿namespace AllHands.Domain.Events.TimeOffBalance;
+﻿using AllHands.Domain.Abstractions;
+
+namespace AllHands.Domain.Events.TimeOffBalance;
 
 public sealed record TimeOffBalanceAutomaticallyUpdated(
     Guid EntityId,
-    decimal Amount)
+    decimal Amount) : IDomainEvent<Guid>
 {
-    public DateTimeOffset OccurredAt { get; init; } = DateTimeOffset.UtcNow;   
+    public DateTimeOffset OccurredAt { get; init; } = DateTimeOffset.UtcNow;
+    public Guid StreamId => EntityId;
 }
