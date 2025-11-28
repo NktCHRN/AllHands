@@ -6,6 +6,7 @@ public sealed class TimeOffType
     public required Guid CompanyId { get; set; }
     public required string Name { get; set; }
     public required string Emoji { get; set; }
+    public required decimal DaysPerYear { get; set; }
     public required DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }
