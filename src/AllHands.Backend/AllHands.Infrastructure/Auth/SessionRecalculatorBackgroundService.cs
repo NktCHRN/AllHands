@@ -22,6 +22,8 @@ public sealed class SessionRecalculatorBackgroundService(
             try
             {
                 await using var dbContext = await dbContextFactory.CreateDbContextAsync(stoppingToken);
+                
+                await using var transaction = await dbContext.Database.BeginTransactionAsync(stoppingToken);
 
                 var currentRow = await dbContext.RecalculateCompanySessionsTasks.FromSql($"""
                                          SELECT *
@@ -43,6 +45,8 @@ public sealed class SessionRecalculatorBackgroundService(
                     
                     currentRow.CompletedAt = DateTimeOffset.UtcNow;
                     await dbContext.SaveChangesAsync(stoppingToken);
+                    
+                    await transaction.CommitAsync(stoppingToken);
                 }
                 catch (OperationCanceledException ex) when (ex.CancellationToken == stoppingToken ||
                                                             ex.CancellationToken.IsCancellationRequested)
@@ -51,6 +55,8 @@ public sealed class SessionRecalculatorBackgroundService(
                 }
                 catch
                 {
+                    await transaction.RollbackAsync(stoppingToken);
+                    
                     currentRow.FailedAttempts++;
                     await dbContext.SaveChangesAsync(stoppingToken);
 

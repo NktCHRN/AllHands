@@ -8,10 +8,9 @@ public sealed class SessionsUpdater(IDbContextFactory<AuthDbContext> dbContextFa
     public async Task UpdateAll(Guid companyId, int batchSize, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        
-        var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         var usersQueryable = dbContext.Users
+            .AsNoTracking()
             .Include(u => u.Roles)
             .ThenInclude(r => r.Role)
             .ThenInclude(r => r!.Claims)
@@ -20,24 +19,26 @@ public sealed class SessionsUpdater(IDbContextFactory<AuthDbContext> dbContextFa
         
         for (var skip = 0; skip < totalCount; skip += batchSize)
         {
-            var batch = await usersQueryable
-                .OrderBy(u => u.Id)
-                .Skip(skip)
-                .Take(batchSize)
-                .ToListAsync(cancellationToken);
+            var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+            
+                var batch = await usersQueryable
+                    .OrderBy(u => u.Id)
+                    .Skip(skip)
+                    .Take(batchSize)
+                    .ToListAsync(cancellationToken);
 
-            foreach (var user in batch)
-            {
-                await ticketModifier.UpdateClaimsAsync(
-                    dbContext,
-                    user.Id,
-                    () => userClaimsFactory.CreateClaims(user),
-                    takeOnlyNewClaims: true,
-                    cancellationToken);
-            }
+                foreach (var user in batch)
+                {
+                    await ticketModifier.UpdateClaimsAsync(
+                        dbContext,
+                        user.Id,
+                        () => userClaimsFactory.CreateClaims(user),
+                        takeOnlyNewClaims: true,
+                        cancellationToken);
+                }
+            
+            await transaction.CommitAsync(cancellationToken);
         }
-        
-        await transaction.CommitAsync(cancellationToken);
     }
     
     public async Task UpdateUser(AuthDbContext dbContext, Guid userId, CancellationToken cancellationToken = default)
