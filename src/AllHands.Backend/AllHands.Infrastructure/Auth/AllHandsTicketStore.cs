@@ -76,7 +76,7 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Key == sessionId);
 
-        if (session == null || session.ExpiresAt < timeProvider.GetUtcNow())
+        if (session == null || session.ExpiresAt < timeProvider.GetUtcNow() || session.IsRevoked)
         {
             return null;
         }
