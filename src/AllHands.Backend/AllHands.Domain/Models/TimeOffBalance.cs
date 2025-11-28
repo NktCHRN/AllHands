@@ -1,5 +1,5 @@
 ﻿using DeterministicGuids;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AllHands.Domain.Models;
 
@@ -12,6 +12,5 @@ public sealed class TimeOffBalance
     public TimeOffType? Type { get; set; }
     public decimal Days { get; set; }
 
-    public static Guid GetId(Guid employeeId, Guid typeId) =>
-        DeterministicGuid.Create(employeeId, typeId.ToString());
+    public DateTimeOffset? LastAutoUpdate { get; set; }
 }

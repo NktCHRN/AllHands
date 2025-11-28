@@ -136,6 +136,8 @@ public static class DependencyInjection
                     .Index(x => new {x.CompanyId, x.StartDate});
                 options.Schema.For<TimeOffBalance>()
                     .Index(x => new { x.EmployeeId, x.TypeId });
+                options.Schema.For<TimeOffBalance>()
+                    .Duplicate(x => x.LastAutoUpdate, "timestamp with time zone", notNull: false);
                 options.Schema.For<TimeOffType>()
                     .Index(x => x.CompanyId);
             })

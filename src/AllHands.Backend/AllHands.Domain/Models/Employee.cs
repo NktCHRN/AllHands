@@ -1,5 +1,5 @@
 ﻿using AllHands.Domain.Abstractions;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AllHands.Domain.Models;
 
