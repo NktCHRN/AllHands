@@ -8,7 +8,6 @@ using AllHands.Infrastructure.Email;
 using Amazon.SimpleEmailV2;
 using JasperFx.Events.Projections;
 using Marten;
-using Marten.Schema;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +25,7 @@ public static class DependencyInjection
             .AddRedis(configuration)
             .AddDatabase(configuration)
             .AddMartenDb(configuration)
-            .AddIdentityServices(configuration)
+            .AddIdentityServices()
             .AddSingleton<IPermissionsContainer, PermissionsContainer>()
             .AddAwsServices(configuration);
     }
@@ -46,7 +45,7 @@ public static class DependencyInjection
         return services;
     }
     
-    private static IServiceCollection AddIdentityServices(this IServiceCollection services, IConfiguration configuration)
+    private static IServiceCollection AddIdentityServices(this IServiceCollection services)
     {
         services.AddSingleton<IPasswordHasher<AllHandsIdentityUser>, BCryptUserPasswordHasher>();
         
@@ -75,8 +74,17 @@ public static class DependencyInjection
 
         services.AddSingleton<ITicketModifier, AllHandsTicketStore>();
         
+        services.AddSingleton<IUserClaimsFactory, UserClaimsFactory>();
+        services.AddSingleton<ISessionsUpdater, SessionsUpdater>();
+        
         services.AddScoped<IInvitationService, InvitationService>();
         services.AddScoped<IAccountService, AccountService>();
+        
+        services.AddOptions<SessionRecalculatorBackgroundServiceOptions>()
+            .BindConfiguration(nameof(SessionRecalculatorBackgroundServiceOptions))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services.AddHostedService<SessionRecalculatorBackgroundService>();
         
         return services;
     }

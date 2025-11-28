@@ -104,7 +104,7 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
     }
 
     public async Task UpdateClaimsAsync(AuthDbContext dbContext, Guid userId,
-        Func<IReadOnlyList<Claim>> createNewClaims, CancellationToken cancellationToken)
+        Func<IReadOnlyList<Claim>> createNewClaims, bool takeOnlyNewClaims, CancellationToken cancellationToken)
     {
         var activeSessions = await GetActiveSessions(dbContext, userId, cancellationToken);
 
@@ -112,14 +112,16 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
         {
             var ticketValue = ticketSerializer.Deserialize(session.TicketValue);
             var newClaims = createNewClaims();
-            var claims = ticketValue!.Principal.Claims
+            var claims = takeOnlyNewClaims 
+                ? new List<Claim>() 
+                : ticketValue!.Principal.Claims
                 .Where(c => newClaims.All(nc => c.Type != nc.Type))
                 .ToList();
             claims.AddRange(newClaims);
             var newPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
             var newTicket = new AuthenticationTicket(
                 newPrincipal, 
-                ticketValue.Properties, 
+                ticketValue!.Properties, 
                 ticketValue.AuthenticationScheme
             );
             session.ExpiresAt = session.ExpiresAt?.AddMinutes(1);

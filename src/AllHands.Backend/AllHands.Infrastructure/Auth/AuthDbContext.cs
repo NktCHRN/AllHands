@@ -13,6 +13,7 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
     public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
     public DbSet<AllHandsRoleClaim> AllHandsRoleClaims { get; set; }
     public DbSet<AllHandsGlobalUser> GlobalUsers { get; set; }
+    public DbSet<RecalculateCompanySessionsTask> RecalculateCompanySessionsTasks { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -126,5 +127,13 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
         modelBuilder.Entity<AllHandsGlobalUser>()
             .Property(x => x.NormalizedEmail)
             .HasMaxLength(256);
+
+        modelBuilder.Entity<RecalculateCompanySessionsTask>()
+            .HasOne<AllHandsIdentityUser>()
+            .WithMany()
+            .HasForeignKey(x => x.RequesterUserId);
+        modelBuilder.Entity<RecalculateCompanySessionsTask>()
+            .HasIndex(x => x.RequestedAt)
+            .HasFilter($"\"{nameof(RecalculateCompanySessionsTask.CompletedAt)}\" IS NULL");
     }
 }
