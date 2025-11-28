@@ -21,7 +21,8 @@ public sealed class UpdateCompanyHandler(ICurrentUserService currentUserService,
         company.IsSameDomainValidationEnforced = request.IsSameDomainValidationEnforced;
         company.IanaTimeZone = request.IanaTimeZone;
         company.WorkDays = request.WorkDays.ToHashSet();
-
+        
+        documentSession.Update(company);
         await documentSession.SaveChangesAsync(cancellationToken);
     }
 }
