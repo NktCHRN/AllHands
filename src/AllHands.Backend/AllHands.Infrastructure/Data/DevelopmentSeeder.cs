@@ -47,7 +47,8 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
             CreatedAt = DateTime.UtcNow,
             EmailDomain = "allhands.com",
             IanaTimeZone = "Europe/Kyiv",
-            Name = "AllHands test company"
+            Name = "AllHands test company",
+            Description = "Phasellus id congue massa. Cras massa tortor, gravida ut sollicitudin non, rutrum eget risus. Vivamus lobortis urna et feugiat venenatis. Fusce imperdiet augue id metus scelerisque egestas id a enim. Mauris felis mi, blandit nec molestie ut, sollicitudin at massa. Quisque at laoreet nulla. Suspendisse volutpat justo bibendum mattis mollis. Integer vel ligula posuere velit auctor porta. Proin ut malesuada augue, sed venenatis ex. Sed a dolor consequat, elementum orci eget, tempor dui. Proin ut nisl sed metus finibus dignissim et in tellus. Proin porttitor vitae enim ac lobortis. Fusce et turpis diam. Praesent in sagittis odio. Phasellus egestas cursus nisi quis feugiat. Morbi tempor dapibus metus vel iaculis. "
         });
         await documentSession.SaveChangesAsync(cancellationToken);
         
@@ -57,7 +58,8 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
             CreatedAt = DateTime.UtcNow,
             EmailDomain = "test.com",
             IanaTimeZone = "Europe/Kyiv",
-            Name = "AllHands test company 2"
+            Name = "AllHands test company 2",
+            Description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec vehicula dignissim dignissim. Ut a erat molestie, tincidunt nisi id, pellentesque erat. Proin pulvinar vel tortor auctor cursus. Vestibulum rutrum lacus at quam elementum laoreet et sit amet leo. Proin congue vulputate ante vel dignissim. Ut a enim luctus, finibus dolor sed, porttitor velit. Sed et diam vel nunc laoreet pharetra. Aliquam aliquam posuere leo, nec tincidunt justo porta vitae. Proin volutpat dui eget urna tempus dictum vitae et lorem. Nunc id fringilla tortor. Etiam ac magna lacinia nunc finibus efficitur vel non nulla. Nam venenatis at lorem nec consequat. "
         });
         await documentSession.SaveChangesAsync(cancellationToken);
     }

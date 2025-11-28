@@ -142,6 +142,8 @@ public static class DependencyInjection
                     .Duplicate(x => x.LastAutoUpdate, "timestamp with time zone", notNull: false);
                 options.Schema.For<TimeOffType>()
                     .Index(x => x.CompanyId);
+                options.Schema.For<NewsPost>()
+                    .Index(x => x.CompanyId);
             })
             .UseLightweightSessions();
         

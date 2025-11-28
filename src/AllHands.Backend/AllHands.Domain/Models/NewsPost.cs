@@ -2,13 +2,12 @@
 
 namespace AllHands.Domain.Models;
 
-public sealed class Company : ISoftDeletable
+public sealed class NewsPost : ISoftDeletable
 {
     public required Guid Id { get; set; }
-    public required string Name { get; set; }
-    public required string? Description { get; set; }
-    public required string EmailDomain { get; set; }
-    public required string IanaTimeZone {get;set;}
+    public required string Text { get; set; }
+    public required Guid AuthorId { get; set; }
+    public required Guid CompanyId { get; set; }
     public required DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }
