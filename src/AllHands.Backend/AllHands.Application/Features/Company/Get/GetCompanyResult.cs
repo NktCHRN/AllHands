@@ -3,6 +3,7 @@
 public sealed record GetCompanyResult(
     Guid Id,
     string Name,
+    string? Description,
     string EmailDomain,
     bool IsSameDomainValidationEnforced,
     string IanaTimeZone,

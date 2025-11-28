@@ -18,6 +18,7 @@ public sealed class GetCompanyQueryHandler(ICurrentUserService currentUserServic
         return new GetCompanyResult(
             company.Id,
             company.Name,
+            company.Description,
             company.EmailDomain,
             company.IsSameDomainValidationEnforced,
             company.IanaTimeZone,
