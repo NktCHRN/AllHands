@@ -73,4 +73,9 @@ public sealed class EmployeeProjection : SingleStreamProjection<Employee, Guid>
         view.UpdatedAt = @event.OccurredAt;
         view.Status = EmployeeStatus.Active;
     }
+
+    public void Apply(EmployeeAvatarUpdated @event, Employee view)
+    {
+        view.UpdatedAt = @event.OccurredAt;
+    }
 }
