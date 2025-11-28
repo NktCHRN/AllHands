@@ -13,23 +13,26 @@ public sealed class GetUserDetailsHandler(ICurrentUserService currentUserService
     {
         var currentUser = currentUserService.GetCurrentUser();
 
+        Position position = null!;
+        Employee manager = null!;
+        Domain.Models.Company company = null!;
         var employee = await querySession.Query<Domain.Models.Employee>()
+                           .Include<Position>(x => position = x).On(x => x.PositionId)
+                           .Include<Employee>(x => manager = x).On(x => x.ManagerId)
+                           .Include<Domain.Models.Company>(x => company = x).On(x => x.CompanyId)
                            .FirstOrDefaultAsync(e => e.UserId == currentUser.Id, token: cancellationToken)
                        ?? throw new EntityNotFoundException("User was not found");
 
-        employee.Position = await querySession.Query<Position>()
-                                .FirstOrDefaultAsync(x => x.Id == employee.PositionId, cancellationToken)
+        employee.Position = position
                             ?? throw new EntityNotFoundException("Position was not found");
 
-        employee.Manager = await querySession.Query<Domain.Models.Employee>()
-                               .FirstOrDefaultAsync(x => x.Id == employee.ManagerId, token: cancellationToken)
+        employee.Manager = manager
                            ?? throw new EntityNotFoundException("Manager was not found");
         employee.Manager.Position = await querySession.Query<Position>()
             .FirstOrDefaultAsync(x => x.Id == employee.Manager.PositionId, token: cancellationToken)
                                     ?? throw new EntityNotFoundException("Manager position was not found");
 
-        employee.Company = await querySession.Query<Domain.Models.Company>()
-                               .FirstOrDefaultAsync(x => x.Id == employee.CompanyId, token: cancellationToken)
+        employee.Company = company
                            ?? throw new EntityNotFoundException("Company was not found");
 
         return new GetUserDetailsResult(

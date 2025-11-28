@@ -31,7 +31,7 @@ public sealed class InvitationService(AuthDbContext dbContext, TimeProvider time
         }
         
         var token = RandomNumberGenerator.GetString(Alphanumeric, TokenLength);     
-        // TODO: Send email with token here or return token and send later.
+        // TODO: Return token and send email later.
         
         var invitation = new Invitation()
         {
