@@ -2,6 +2,7 @@
 using AllHands.Application.Features.Positions.Get;
 using AllHands.WebApi.Contracts;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AllHands.WebApi.Controllers;
@@ -10,6 +11,7 @@ namespace AllHands.WebApi.Controllers;
 [Route("api/v{version:apiVersion}/[controller]")]
 public sealed class PositionsController(IMediator mediator) : ControllerBase
 {
+    [Authorize]
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PagedResponse<PositionDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPositions([FromQuery] SearchPaginationParametersRequest request,
