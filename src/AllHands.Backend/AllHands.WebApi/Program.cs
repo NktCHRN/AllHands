@@ -52,8 +52,7 @@ if (app.Environment.IsDevelopment())
         scope.ServiceProvider.GetRequiredService<UserManager<AllHandsIdentityUser>>(),
         scope.ServiceProvider.GetRequiredService<RoleManager<AllHandsRole>>(),
         scope.ServiceProvider.GetRequiredService<IPermissionsContainer>());
-//await seeder.SeedAsync(CancellationToken.None);
-
+    //await seeder.SeedAsync(CancellationToken.None);
 }
 
 app.Run();
