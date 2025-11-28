@@ -61,12 +61,6 @@ public sealed class EmployeeProjection : SingleStreamProjection<Employee, Guid>
         view.LastName = @event.LastName;
         view.PhoneNumber = @event.PhoneNumber;
     }
-    
-    public void Apply(EmployeeAvatarUpdatedEvent @event, Employee view)
-    {
-        view.UpdatedAt = @event.OccurredAt;
-        view.AvatarFileName = @event.AvatarFileName;
-    }
 
     public void Apply(EmployeeRegisteredEvent @event, Employee view)
     {

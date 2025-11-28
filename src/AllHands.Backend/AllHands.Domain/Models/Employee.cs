@@ -13,7 +13,6 @@ public sealed class Employee : ISoftDeletable, ICompanyResource
     public string NormalizedEmail { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
-    public string? AvatarFileName { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
     public DateOnly WorkStartDate { get; set; }
