@@ -1,8 +1,10 @@
 ﻿using AllHands.Application;
 using AllHands.Application.Dto;
+using AllHands.Application.Features.News;
 using AllHands.Application.Features.News.Create;
 using AllHands.Application.Features.News.Delete;
 using AllHands.Application.Features.News.Get;
+using AllHands.Application.Features.News.GetById;
 using AllHands.Application.Features.News.Update;
 using AllHands.WebApi.Auth;
 using AllHands.WebApi.Contracts;
@@ -24,6 +26,15 @@ public sealed class NewsController(IMediator mediator) : ControllerBase
         var query = new GetNewsQuery(parameters.PerPage, parameters.Page);
         var result = await mediator.Send(query, cancellationToken);
         return Ok(ApiResponse.FromResult(PagedResponse.FromDto(result)));
+    }
+
+    [Authorize]
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<NewsPostDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetNewsPostByIdQuery(id), cancellationToken);
+        return Ok(ApiResponse.FromResult(result));
     }
 
     [HasPermission(Permissions.NewsCreate)]
