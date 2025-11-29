@@ -1,6 +1,7 @@
 ﻿using AllHands.Application.Abstractions;
 using AllHands.Application.Dto;
 using AllHands.Application.Features.Roles.Get;
+using AllHands.Application.Features.Roles.GetById;
 using AllHands.Application.Features.Roles.GetUsersInRole;
 using Microsoft.EntityFrameworkCore;
 
@@ -52,5 +53,32 @@ public sealed class RoleService(ICurrentUserService currentUserService, AuthDbCo
                     PhoneNumber = u.PhoneNumber
                 }).ToList(),
             count);
+    }
+
+    public async Task<GetRoleByIdResult?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var companyId = currentUserService.GetCompanyId();
+
+        var role = await dbContext.Roles
+            .Include(r => r.Claims.Where(c => c.ClaimType == AuthConstants.PermissionClaimName))
+            .AsNoTracking()
+            .Where(r => r.CompanyId == companyId && r.Id == id)
+            .Select(r => new {Role = r, UsersCount = r.Users.Count(u => !u.User!.DeletedAt.HasValue)})
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (role is null)
+        {
+            return null;
+        }
+
+        return new GetRoleByIdResult(
+            role.Role.Id, 
+            role.Role.Name ?? string.Empty, 
+            role.Role.IsDefault, 
+            role.UsersCount, 
+            role.Role.Claims
+                .Select(c => c.ClaimValue)
+                .Order()
+                .ToList());
     }
 }

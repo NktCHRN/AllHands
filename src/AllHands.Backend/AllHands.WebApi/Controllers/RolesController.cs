@@ -1,6 +1,7 @@
 ﻿using AllHands.Application;
 using AllHands.Application.Dto;
 using AllHands.Application.Features.Roles.Get;
+using AllHands.Application.Features.Roles.GetById;
 using AllHands.Application.Features.Roles.GetUsersInRole;
 using AllHands.WebApi.Auth;
 using AllHands.WebApi.Contracts;
@@ -22,6 +23,15 @@ public sealed class RolesController(IMediator mediator) : ControllerBase
         return Ok(ApiResponse.FromResult(result.Roles));
     }
 
+    [HasPermission(Permissions.RolesView)]
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<GetRoleByIdResult>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetRoleById([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetRoleByIdQuery(id), cancellationToken);
+        return Ok(ApiResponse.FromResult(result));
+    }
+    
     [HasPermission(Permissions.RolesView)]
     [HttpGet("{id:guid}/users")]
     [ProducesResponseType(typeof(ApiResponse<PagedResponse<EmployeeDto>>), StatusCodes.Status200OK)]
