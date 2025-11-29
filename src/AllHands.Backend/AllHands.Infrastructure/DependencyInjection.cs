@@ -4,12 +4,14 @@ using AllHands.Domain.Projections;
 using AllHands.Infrastructure.Abstractions;
 using AllHands.Infrastructure.Auth;
 using AllHands.Infrastructure.Auth.Entities;
+using AllHands.Infrastructure.Data;
 using AllHands.Infrastructure.Email;
 using AllHands.Infrastructure.Files;
 using Amazon.S3;
 using Amazon.SimpleEmailV2;
 using JasperFx.Events.Projections;
 using Marten;
+using Marten.Storage;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -106,47 +108,47 @@ public static class DependencyInjection
     private static IServiceCollection AddMartenDb(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddMarten(options =>
-            {
-                // Establish the connection string to your Marten database
-                options.Connection(configuration.GetConnectionString("postgres")!);
-                
-                options.UseSystemTextJsonForSerialization();
+        {
+            // Establish the connection string to your Marten database
+            options.Connection(configuration.GetConnectionString("postgres")!);
 
-                options.Projections.Add<EmployeeProjection>(ProjectionLifecycle.Inline);
-                options.Projections.Add<EmployeeTimeOffBalanceItemProjection>(ProjectionLifecycle.Inline);
-                options.Projections.Add<TimeOffRequestProjection>(ProjectionLifecycle.Inline);
+            options.UseSystemTextJsonForSerialization();
 
-                options.Schema.For<Employee>()
-                    .Index(x => x.NormalizedEmail)
-                    .Index(x => x.UserId)
-                    .Index(x => x.CompanyId)
-                    .Index(x => x.ManagerId)
-                    .FullTextIndex(x => x.FirstName, x => x.MiddleName!, x => x.LastName, x => x.Email);
-                options.Schema.For<Holiday>()
-                    .Index(x => x.CompanyId);
-                options.Schema.For<Position>()
-                    .Index(x => new {x.CompanyId, x.NormalizedName}, cfg =>
-                    {
-                        cfg.IsUnique = true;
-                        cfg.Predicate = $"(data->>'{nameof(Position.DeletedAt)}') IS NULL";
-                    });
-                options.Schema.For<TimeOffRequest>()
-                    .Duplicate(x => x.StartDate, "timestamp with time zone", notNull: true)
-                    .Duplicate(x => x.EndDate, "timestamp with time zone", notNull: true);
-                options.Schema.For<TimeOffRequest>()
-                    .Index(x => new {x.EmployeeId, x.EndDate});
-                options.Schema.For<TimeOffRequest>()
-                    .Index(x => new {x.CompanyId, x.StartDate});
-                options.Schema.For<TimeOffBalance>()
-                    .Index(x => new { x.EmployeeId, x.TypeId });
-                options.Schema.For<TimeOffBalance>()
-                    .Duplicate(x => x.LastAutoUpdate, "timestamp with time zone", notNull: false);
-                options.Schema.For<TimeOffType>()
-                    .Index(x => x.CompanyId);
-                options.Schema.For<NewsPost>()
-                    .Index(x => x.CompanyId);
-            })
-            .UseLightweightSessions();
+            options.Projections.Add<EmployeeProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<EmployeeTimeOffBalanceItemProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<TimeOffRequestProjection>(ProjectionLifecycle.Inline);
+            
+            options.Policies.AllDocumentsAreMultiTenanted();
+            options.Events.TenancyStyle = TenancyStyle.Conjoined;
+
+            options.Schema.For<Employee>()
+                .Index(x => x.NormalizedEmail)
+                .Index(x => x.UserId)
+                .Index(x => x.CompanyId)
+                .Index(x => x.ManagerId)
+                .FullTextIndex(x => x.FirstName, x => x.MiddleName!, x => x.LastName, x => x.Email);
+            options.Schema.For<Holiday>()
+                .Index(x => x.CompanyId);
+            options.Schema.For<Position>()
+                .Index(x => new { x.CompanyId, x.NormalizedName }, cfg =>
+                {
+                    cfg.IsUnique = true;
+                    cfg.Predicate = $"(data->>'{nameof(Position.DeletedAt)}') IS NULL";
+                });
+            options.Schema.For<TimeOffRequest>()
+                .Duplicate(x => x.StartDate, "timestamp with time zone", notNull: true)
+                .Duplicate(x => x.EndDate, "timestamp with time zone", notNull: true)
+                .Index(x => new { x.EmployeeId, x.EndDate })
+                .Index(x => new { x.CompanyId, x.StartDate });
+            options.Schema.For<TimeOffBalance>()
+                .Index(x => new { x.EmployeeId, x.TypeId })
+                .Duplicate(x => x.LastAutoUpdate, "timestamp with time zone", notNull: false);
+            options.Schema.For<TimeOffType>()
+                .Index(x => x.CompanyId);
+            options.Schema.For<NewsPost>()
+                .Index(x => x.CompanyId);
+        });
+        services.AddSingleton<ISessionFactory, TenantSessionFactory>();
         
         return services;
     }

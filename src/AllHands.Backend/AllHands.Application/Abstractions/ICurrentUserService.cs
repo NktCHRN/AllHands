@@ -10,4 +10,5 @@ public interface ICurrentUserService
     Guid GetCompanyId();
     IReadOnlyList<string> GetRoles();
     IReadOnlyList<string> GetPermissions();
+    bool TryGetCompanyId(out Guid companyId);
 }

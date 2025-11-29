@@ -17,7 +17,7 @@ public sealed class GetAccountsHandler(ICurrentUserService currentUserService, I
         var companies = new Dictionary<Guid, Domain.Models.Company>();
         var employees = await querySession.Query<Employee>()
             .Include(companies).On(u => u.CompanyId)
-            .Where(e => usersIds.Contains(e.UserId))
+            .Where(e => e.AnyTenant() && usersIds.Contains(e.UserId))
             .ToListAsync(cancellationToken);
 
         foreach (var employee in employees)

@@ -1,4 +1,5 @@
 ﻿using AllHands.Application.Dto;
+using AllHands.Application.Features.Positions.GetById;
 using AllHands.Application.Features.Positions.Search;
 using AllHands.WebApi.Contracts;
 using MediatR;
@@ -19,5 +20,14 @@ public sealed class PositionsController(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(new SearchPositionsQuery(request.PerPage, request.Page, request.Search), cancellationToken);
         return Ok(ApiResponse.FromResult(PagedResponse.FromDto(result)));
+    }
+    
+    [Authorize]
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<PositionDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SearchPositions(Guid id, CancellationToken cancellationToken = default)
+    {
+        var result = await mediator.Send(new GetPositionByIdQuery(id), cancellationToken);
+        return Ok(ApiResponse.FromResult(result));
     }
 }

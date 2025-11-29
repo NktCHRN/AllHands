@@ -32,11 +32,24 @@ public sealed class CurrentHttpUserService(IHttpContextAccessor httpContextAcces
 
     public Guid GetCompanyId()
     {
-        var isParsed = Guid.TryParse(User.FindFirst("companyid")?.Value ?? string.Empty, out var companyId);
+        var isParsed = TryGetCompanyId(out var companyId);
         
         return isParsed
             ? companyId
             : throw new InvalidOperationException("Invalid company id.");
+    }
+
+    public bool TryGetCompanyId(out Guid companyId)
+    {
+        if (httpContextAccessor.HttpContext is null)
+        {
+            companyId = Guid.Empty;
+            return false;
+        }
+        
+        var isParsed = Guid.TryParse(User.FindFirst("companyid")?.Value ?? string.Empty, out companyId);
+
+        return isParsed;
     }
 
     public CurrentUserDto GetCurrentUser()

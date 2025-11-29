@@ -7,14 +7,12 @@ using MediatR;
 
 namespace AllHands.Application.Features.Positions.Search;
 
-public sealed class SearchPositionsHandler(ICurrentUserService currentUserService, IQuerySession querySession) : IRequestHandler<SearchPositionsQuery, PagedDto<PositionDto>>
+public sealed class SearchPositionsHandler(IQuerySession querySession) : IRequestHandler<SearchPositionsQuery, PagedDto<PositionDto>>
 {
     public async Task<PagedDto<PositionDto>> Handle(SearchPositionsQuery request, CancellationToken cancellationToken)
     {
-        var companyId = currentUserService.GetCompanyId();
-
         IQueryable<Position> positionsQuery = querySession.Query<Position>()
-            .Where(p => !p.DeletedAt.HasValue && p.CompanyId == companyId);
+            .Where(p => !p.DeletedAt.HasValue);
 
         if (!string.IsNullOrEmpty(request.Search))
         {

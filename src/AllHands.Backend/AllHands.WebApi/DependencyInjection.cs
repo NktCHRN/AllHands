@@ -49,7 +49,7 @@ public static class DependencyInjection
         services.AddSingleton<IAuthorizationHandler, PermissionRequirementHandler>();
         
         services.AddHttpContextAccessor();
-        services.AddScoped<ICurrentUserService, CurrentHttpUserService>();
+        services.AddSingleton<ICurrentUserService, CurrentHttpUserService>();
         services.AddControllers(options =>
             {
                 options.Conventions.Add(new RouteTokenTransformerConvention(new SlugifyParameterTransformer()));

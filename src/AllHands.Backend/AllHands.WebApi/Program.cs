@@ -47,7 +47,7 @@ if (app.Environment.IsDevelopment())
     var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
     await dbContext.Database.MigrateAsync();
     var seeder = new DevelopmentSeeder(
-        scope.ServiceProvider.GetRequiredService<IDocumentSession>(),
+        scope.ServiceProvider.GetRequiredService<IDocumentStore>(),
         dbContext,
         scope.ServiceProvider.GetRequiredService<UserManager<AllHandsIdentityUser>>(),
         scope.ServiceProvider.GetRequiredService<RoleManager<AllHandsRole>>(),

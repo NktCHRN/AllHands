@@ -10,11 +10,12 @@ using Microsoft.AspNetCore.Identity;
 
 namespace AllHands.Infrastructure.Data;
 
-public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbContext dbContext, UserManager<AllHandsIdentityUser> userManager, RoleManager<AllHandsRole> roleManager, IPermissionsContainer permissionsContainer)
+public sealed class DevelopmentSeeder(IDocumentStore documentStore, AuthDbContext dbContext, UserManager<AllHandsIdentityUser> userManager, RoleManager<AllHandsRole> roleManager, IPermissionsContainer permissionsContainer)
 {
     private readonly Guid _companyId = Guid.Parse("48a9758c-07c3-493d-83d8-d0bf55835112");
     private readonly Guid _adminRoleId = Guid.Parse("f34632fc-b45e-4fcb-9c68-8ba404037a9b");
     private static readonly Guid _adminUserId = Guid.Parse("a502c3da-e280-4193-9ed0-7937620ccd93");
+    private readonly Guid _adminGlobalUserId = Guid.Parse("037c90c3-1404-42b8-8121-faa3d86080be");
     private readonly Guid _managerId = Guid.Parse("36a02307-b81d-4b9a-aac3-72485cfb1d08");
     private readonly Guid _vacationId = Guid.Parse("9bee803f-e8b0-4afb-b440-a9578d002adc");
     private readonly Guid _sickLeaveId = Guid.Parse("4bcb9bfe-62fd-4f09-a234-154134699099");
@@ -31,19 +32,34 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
         }
     ];
     
+    private IDocumentSession _documentSession;
+    
     public async Task SeedAsync(CancellationToken cancellationToken)
     {
-        await SeedCompany(cancellationToken);
-        await SeedTimeOffTypeAsync(cancellationToken);
-        await SeedPositions(cancellationToken);
-        await SeedRoles(cancellationToken);
-        await SeedActiveUser(cancellationToken);
-        await SeedInvitedUser(cancellationToken);
+        await using (var documentSession = documentStore.LightweightSession(_companyId.ToString()))
+        {
+            _documentSession = documentSession;
+
+            await SeedCompany(cancellationToken);
+            await SeedTimeOffTypeAsync(cancellationToken);
+            await SeedPositions(cancellationToken);
+            await SeedRoles(cancellationToken);
+            await SeedActiveUser(cancellationToken);
+            await SeedInvitedUser(cancellationToken);
+        }
+
+
+        await using (var documentSession2 = documentStore.LightweightSession("9a8953a9-dbd2-4f6a-9151-1367c777b68c"))
+        {
+            _documentSession = documentSession2;
+            
+            await CreateActiveUser2(_adminGlobalUserId, cancellationToken);
+        }
     }
 
     private async Task SeedCompany(CancellationToken cancellationToken)
     {
-        documentSession.Insert(new Company()
+        _documentSession.Insert(new Company()
         {
             Id = _companyId,
             CreatedAt = DateTime.UtcNow,
@@ -56,9 +72,9 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
                 DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday
             }
         });
-        await documentSession.SaveChangesAsync(cancellationToken);
+        await _documentSession.SaveChangesAsync(cancellationToken);
         
-        documentSession.Insert(new Company()
+        _documentSession.Insert(new Company()
         {
             Id = Guid.Parse("9a8953a9-dbd2-4f6a-9151-1367c777b68c"),
             CreatedAt = DateTime.UtcNow,
@@ -71,7 +87,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
                 DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday
             }
         });
-        await documentSession.SaveChangesAsync(cancellationToken);
+        await _documentSession.SaveChangesAsync(cancellationToken);
     }
 
     private async Task SeedTimeOffTypeAsync(CancellationToken cancellationToken)
@@ -110,14 +126,14 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
             }
         };
         
-        documentSession.Insert(timeOffTypes);
-        await documentSession.SaveChangesAsync(cancellationToken);
+        _documentSession.Insert(timeOffTypes);
+        await _documentSession.SaveChangesAsync(cancellationToken);
     }
 
     private async Task SeedPositions(CancellationToken cancellationToken)
     {
-        documentSession.Insert(_positions);
-        await documentSession.SaveChangesAsync(cancellationToken);
+        _documentSession.Insert(_positions);
+        await _documentSession.SaveChangesAsync(cancellationToken);
     }
 
     private async Task SeedRoles(CancellationToken cancellationToken)
@@ -154,7 +170,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
         var userId = Guid.Parse("a502c3da-e280-4193-9ed0-7937620ccd93");
         var employeeId = Guid.Parse("36a02307-b81d-4b9a-aac3-72485cfb1d08");
 
-        var stream = documentSession.Events.StartStream<Employee>(employeeId, new EmployeeCreatedEvent(
+        var stream = _documentSession.Events.StartStream<Employee>(employeeId, new EmployeeCreatedEvent(
             employeeId,
             _adminUserId,
             userId,
@@ -169,9 +185,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
             "+380681112233",
             new DateOnly(2025, 11, 26)),
             new EmployeeRegisteredEvent(employeeId, employeeId));
-        await documentSession.SaveChangesAsync(cancellationToken);
-
-        var globalUserId = Guid.Parse("037c90c3-1404-42b8-8121-faa3d86080be");
+        await _documentSession.SaveChangesAsync(cancellationToken);
 
         var identityUser = new AllHandsIdentityUser()
         {
@@ -189,7 +203,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
             }],
             GlobalUser = new AllHandsGlobalUser()
             {
-                Id = globalUserId,
+                Id = _adminGlobalUserId,
                 DefaultCompanyId =  _companyId,
                 Email = "user@example.com",
                 NormalizedEmail = "user@example.com".ToUpperInvariant()
@@ -199,15 +213,13 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
         _ = await userManager.CreateAsync(identityUser, "P@ssw0rd");
 
         var vacationBalanceId = Guid.CreateVersion7();
-        documentSession.Events.StartStream<TimeOffBalance>(vacationBalanceId, 
+        _documentSession.Events.StartStream<TimeOffBalance>(vacationBalanceId, 
             new TimeOffBalanceCreatedEvent(vacationBalanceId, employeeId, _vacationId),
             new TimeOffBalanceAutomaticallyUpdated(vacationBalanceId, 5));
         var sickLeaveBalanceId = Guid.CreateVersion7();
-        documentSession.Events.StartStream<TimeOffBalance>(sickLeaveBalanceId, 
+        _documentSession.Events.StartStream<TimeOffBalance>(sickLeaveBalanceId, 
             new TimeOffBalanceCreatedEvent(sickLeaveBalanceId, employeeId, _vacationId),
             new TimeOffBalanceAutomaticallyUpdated(sickLeaveBalanceId, 2));
-
-        await CreateActiveUser2(globalUserId, cancellationToken);
     }
 
     private async Task CreateActiveUser2(Guid globalUserId, CancellationToken cancellationToken)
@@ -216,7 +228,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
         var employeeId = Guid.Parse("686cc75f-35fc-4477-aaa6-e1694cacb327");
         var companyId = Guid.Parse("9a8953a9-dbd2-4f6a-9151-1367c777b68c");
 
-        var stream = documentSession.Events.StartStream<Employee>(employeeId, new EmployeeCreatedEvent(
+        var stream = _documentSession.Events.StartStream<Employee>(employeeId, new EmployeeCreatedEvent(
                 employeeId,
                 _adminUserId,
                 userId,
@@ -231,7 +243,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
                 "+380681112233",
                 new DateOnly(2025, 11, 26)),
             new EmployeeRegisteredEvent(employeeId, employeeId));
-        await documentSession.SaveChangesAsync(cancellationToken);
+        await _documentSession.SaveChangesAsync(cancellationToken);
 
         var identityUser = new AllHandsIdentityUser()
         {
@@ -254,7 +266,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
         var userId = Guid.Parse("69d1e588-1d16-4647-8f49-359c0a76f9a7");
         var employeeId = Guid.Parse("b8900ae9-011b-4184-b813-7d35e83f8082");
 
-        var stream = documentSession.Events.StartStream<Employee>(employeeId, new EmployeeCreatedEvent(
+        var stream = _documentSession.Events.StartStream<Employee>(employeeId, new EmployeeCreatedEvent(
                 employeeId,
                 _adminUserId,
                 userId,
@@ -268,7 +280,7 @@ public sealed class DevelopmentSeeder(IDocumentSession documentSession, AuthDbCo
                 "Chernikov",
                 "+380682223344",
                 new DateOnly(2025, 11, 27)));
-        await documentSession.SaveChangesAsync(cancellationToken);
+        await _documentSession.SaveChangesAsync(cancellationToken);
 
         var identityUser = new AllHandsIdentityUser()
         {
