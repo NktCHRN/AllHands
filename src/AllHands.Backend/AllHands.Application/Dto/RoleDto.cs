@@ -1,3 +1,3 @@
 ﻿namespace AllHands.Application.Dto;
 
-public record RoleDto(string Name, bool IsDefault);
+public record RoleDto(Guid Id, string Name, bool IsDefault);
