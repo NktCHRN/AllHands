@@ -1,13 +1,18 @@
-﻿using AllHands.Application.Abstractions;
+﻿using System.Data;
+using AllHands.Application.Abstractions;
 using AllHands.Application.Dto;
+using AllHands.Application.Features.Roles.Create;
 using AllHands.Application.Features.Roles.Get;
 using AllHands.Application.Features.Roles.GetById;
 using AllHands.Application.Features.Roles.GetUsersInRole;
+using AllHands.Domain.Exceptions;
+using AllHands.Infrastructure.Auth.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace AllHands.Infrastructure.Auth;
 
-public sealed class RoleService(ICurrentUserService currentUserService, AuthDbContext dbContext) : IRoleService
+public sealed class RoleService(ICurrentUserService currentUserService, AuthDbContext dbContext, RoleManager<AllHandsRole> roleManager) : IRoleService
 {
     public async Task<IReadOnlyList<RoleWithUsersCountDto>> GetRolesAsync(CancellationToken cancellationToken)
     {
@@ -80,5 +85,36 @@ public sealed class RoleService(ICurrentUserService currentUserService, AuthDbCo
                 .Select(c => c.ClaimValue)
                 .Order()
                 .ToList());
+    }
+
+    public async Task<Guid> CreateRoleAsync(CreateRoleCommand command, CancellationToken cancellationToken)
+    {
+        var companyId = currentUserService.GetCompanyId();
+
+        var role = new AllHandsRole()
+        {
+            Id = Guid.CreateVersion7(),
+            Name = command.Name,
+            CompanyId = companyId,
+            Claims = command.Permissions.Select(p => new AllHandsRoleClaim
+            {
+                Id = Guid.CreateVersion7(),
+                ClaimType = AuthConstants.PermissionClaimName,
+                ClaimValue = p
+            }).ToList()
+        };
+        var result = await roleManager.CreateAsync(role);
+        if (!result.Succeeded)
+        {
+            throw new EntityValidationFailedException(IdentityUtilities.IdentityErrorsToString(result.Errors));
+        }
+        
+        return role.Id;
+    }
+
+    private async Task<AllHandsRole?> GetDefaultRoleAsync(Guid companyId, CancellationToken cancellationToken)
+    {
+        return await dbContext.Roles
+            .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.IsDefault, cancellationToken: cancellationToken);
     }
 }

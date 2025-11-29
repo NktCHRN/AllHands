@@ -1,5 +1,6 @@
 ﻿using AllHands.Application;
 using AllHands.Application.Dto;
+using AllHands.Application.Features.Roles.Create;
 using AllHands.Application.Features.Roles.Get;
 using AllHands.Application.Features.Roles.GetById;
 using AllHands.Application.Features.Roles.GetUsersInRole;
@@ -41,5 +42,14 @@ public sealed class RolesController(IMediator mediator) : ControllerBase
         var query = new GetUsersInRoleQuery(id, request.PerPage, request.Page);
         var result = await mediator.Send(query, cancellationToken);
         return Ok(ApiResponse.FromResult(PagedResponse.FromDto(result)));
+    }
+
+    [HasPermission(Permissions.RolesCreate)]
+    [HttpPost]
+    [ProducesResponseType(typeof(ApiResponse<CreatedEntityDto>), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateRole([FromBody] CreateRoleCommand command, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse.FromResult(result));
     }
 }
