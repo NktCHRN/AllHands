@@ -43,7 +43,7 @@ public sealed class PositionsController(IMediator mediator) : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var result = await mediator.Send(command, cancellationToken);
-        return Ok(ApiResponse.FromResult(result));
+        return StatusCode(StatusCodes.Status201Created, ApiResponse.FromResult(result));
     }
 
     [HasPermission(Permissions.PositionEdit)]

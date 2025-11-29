@@ -52,7 +52,7 @@ public sealed class RolesController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateRoleCommand command, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(command, cancellationToken);
-        return Ok(ApiResponse.FromResult(result));
+        return StatusCode(StatusCodes.Status201Created, ApiResponse.FromResult(result));
     }
 
     [HasPermission(Permissions.RolesEdit)]
