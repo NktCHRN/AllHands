@@ -102,7 +102,8 @@ public sealed class DevelopmentSeeder(IDocumentStore documentStore, AuthDbContex
                 Emoji = "🌴",
                 Name = "Vacation",
                 DaysPerYear = 20,
-                CreatedByUserId = _adminUserId
+                CreatedByUserId = _adminUserId,
+                Order = 0
             },
             new TimeOffType()
             {
@@ -112,7 +113,8 @@ public sealed class DevelopmentSeeder(IDocumentStore documentStore, AuthDbContex
                 Emoji = "🤒",
                 Name = "Sick leave (Undocumented)",
                 DaysPerYear = 10,
-                CreatedByUserId = _adminUserId
+                CreatedByUserId = _adminUserId,
+                Order = 1
             },
             new TimeOffType()
             {
@@ -122,7 +124,8 @@ public sealed class DevelopmentSeeder(IDocumentStore documentStore, AuthDbContex
                 Emoji = "🏥",
                 Name = "Sick leave (documented)",
                 DaysPerYear = 0,
-                CreatedByUserId = _adminUserId
+                CreatedByUserId = _adminUserId,
+                Order = 3
             }
         };
         

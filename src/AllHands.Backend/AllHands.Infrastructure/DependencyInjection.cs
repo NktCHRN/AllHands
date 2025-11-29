@@ -169,6 +169,11 @@ public static class DependencyInjection
                     idx.TenancyScope = TenancyScope.PerTenant;
                 })
                 .Duplicate(x => x.LastAutoUpdate, "timestamp with time zone", notNull: false);
+            options.Schema.For<TimeOffType>()
+                .Index(x => x.Order, configure: idx =>
+                {
+                    idx.TenancyScope = TenancyScope.PerTenant;
+                });
         });
         services.AddSingleton<ISessionFactory, TenantSessionFactory>();
         
