@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace AllHands.WebApi;
+namespace AllHands.WebApi.Auth;
 
 public sealed partial class RemoveCookieOnLoginMiddleware(RequestDelegate next)
 {

@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using AllHands.Application;
 using AllHands.Application.Abstractions;
 using AllHands.Infrastructure;
@@ -6,6 +5,7 @@ using AllHands.Infrastructure.Auth;
 using AllHands.Infrastructure.Auth.Entities;
 using AllHands.Infrastructure.Data;
 using AllHands.WebApi;
+using AllHands.WebApi.Auth;
 using Marten;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
