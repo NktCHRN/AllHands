@@ -44,18 +44,38 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-if (app.Environment.IsDevelopment())
+var runMigrations = app.Configuration.GetValue<bool>("RUN_MIGRATIONS");
+var runMigrationsAndExit =  app.Configuration.GetValue<bool>("RUN_MIGRATIONS_AND_EXIT");
+if (runMigrations || runMigrationsAndExit)
+{
+    await MigrateAsync();
+}
+
+if (runMigrationsAndExit)
+{
+    return;
+}
+
+app.Run();
+return;
+
+async Task MigrateAsync()
 {
     await using var scope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
     await dbContext.Database.MigrateAsync();
-    var seeder = new DevelopmentSeeder(
-        scope.ServiceProvider.GetRequiredService<IDocumentStore>(),
-        dbContext,
-        scope.ServiceProvider.GetRequiredService<UserManager<AllHandsIdentityUser>>(),
-        scope.ServiceProvider.GetRequiredService<RoleManager<AllHandsRole>>(),
-        scope.ServiceProvider.GetRequiredService<IPermissionsContainer>());
-    //await seeder.SeedAsync(CancellationToken.None);
-}
+    
+    var documentStore = scope.ServiceProvider.GetRequiredService<IDocumentStore>();
+    await documentStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-app.Run();
+    if (app.Environment.IsDevelopment())
+    {
+        var seeder = new DevelopmentSeeder(
+            documentStore,
+            dbContext,
+            scope.ServiceProvider.GetRequiredService<UserManager<AllHandsIdentityUser>>(),
+            scope.ServiceProvider.GetRequiredService<RoleManager<AllHandsRole>>(),
+            scope.ServiceProvider.GetRequiredService<IPermissionsContainer>());
+        //await seeder.SeedAsync(CancellationToken.None);
+    }
+}
