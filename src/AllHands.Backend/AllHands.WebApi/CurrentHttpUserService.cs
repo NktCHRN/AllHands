@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Security.Claims;
 using AllHands.Application.Abstractions;
+using AllHands.Application.Dto;
 using AllHands.Infrastructure.Auth;
 
 namespace AllHands.WebApi;

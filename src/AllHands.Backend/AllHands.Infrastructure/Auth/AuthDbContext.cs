@@ -80,10 +80,9 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
             .HasPrincipalKey(x => x.Id);
         modelBuilder.Entity<AllHandsRole>()
             .HasQueryFilter(x => !x.DeletedAt.HasValue);
-        
-        modelBuilder.Entity<AllHandsUserRole>()
-            .HasOne(x => x.Role)
-            .WithMany()
+        modelBuilder.Entity<AllHandsRole>()
+            .HasMany(x => x.Users)
+            .WithOne(x => x.Role)
             .HasForeignKey(x => x.RoleId)
             .HasPrincipalKey(x => x.Id);
         
@@ -98,7 +97,7 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
             .HasMaxLength(255);
         modelBuilder.Entity<AllHandsIdentityUser>()
             .HasMany(x => x.Roles)
-            .WithOne()
+            .WithOne(x => x.User)
             .HasForeignKey(x => x.UserId)
             .HasPrincipalKey(x => x.Id);
         modelBuilder.Entity<AllHandsIdentityUser>()

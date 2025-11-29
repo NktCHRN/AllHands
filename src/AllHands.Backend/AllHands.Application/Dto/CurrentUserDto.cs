@@ -1,4 +1,4 @@
-﻿namespace AllHands.Application.Abstractions;
+﻿namespace AllHands.Application.Dto;
 
 public sealed record CurrentUserDto(
     Guid Id,

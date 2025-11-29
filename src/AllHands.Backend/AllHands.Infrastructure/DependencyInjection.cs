@@ -90,6 +90,8 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.AddHostedService<SessionRecalculatorBackgroundService>();
         
+        services.AddScoped<IRoleService, RoleService>();
+        
         return services;
     }
 

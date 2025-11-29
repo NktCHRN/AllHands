@@ -1,4 +1,6 @@
-﻿namespace AllHands.Application.Abstractions;
+﻿using AllHands.Application.Dto;
+
+namespace AllHands.Application.Abstractions;
 
 public interface ICurrentUserService
 {

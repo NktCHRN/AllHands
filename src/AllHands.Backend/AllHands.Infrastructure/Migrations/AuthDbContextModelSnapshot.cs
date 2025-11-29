@@ -480,18 +480,20 @@ namespace AllHands.Infrastructure.Migrations
             modelBuilder.Entity("AllHands.Infrastructure.Auth.Entities.AllHandsUserRole", b =>
                 {
                     b.HasOne("AllHands.Infrastructure.Auth.Entities.AllHandsRole", "Role")
-                        .WithMany()
+                        .WithMany("Users")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AllHands.Infrastructure.Auth.Entities.AllHandsIdentityUser", null)
+                    b.HasOne("AllHands.Infrastructure.Auth.Entities.AllHandsIdentityUser", "User")
                         .WithMany("Roles")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Role");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AllHands.Infrastructure.Auth.Entities.Invitation", b =>
@@ -588,6 +590,8 @@ namespace AllHands.Infrastructure.Migrations
             modelBuilder.Entity("AllHands.Infrastructure.Auth.Entities.AllHandsRole", b =>
                 {
                     b.Navigation("Claims");
+
+                    b.Navigation("Users");
                 });
 #pragma warning restore 612, 618
         }
