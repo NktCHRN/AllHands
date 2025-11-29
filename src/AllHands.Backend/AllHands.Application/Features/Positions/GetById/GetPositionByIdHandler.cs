@@ -1,5 +1,4 @@
-﻿using AllHands.Application.Abstractions;
-using AllHands.Application.Dto;
+﻿using AllHands.Application.Dto;
 using AllHands.Domain.Exceptions;
 using AllHands.Domain.Models;
 using Marten;
@@ -12,7 +11,7 @@ public sealed class GetPositionByIdHandler(IQuerySession querySession) : IReques
     public async Task<PositionDto> Handle(GetPositionByIdQuery request, CancellationToken cancellationToken)
     {
         var position = await querySession.Query<Position>()
-                           .Where(p => p.Id == request.Id)
+                           .Where(p => p.Id == request.Id && !p.DeletedAt.HasValue)
                            .FirstOrDefaultAsync(cancellationToken)
                        ?? throw new EntityNotFoundException("Position was not found");
 
