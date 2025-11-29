@@ -1,6 +1,7 @@
-﻿namespace AllHands.Domain.Abstractions;
+﻿using Marten.Metadata;
 
-public interface ISoftDeletable
+namespace AllHands.Domain.Abstractions;
+
+public interface ISoftDeletable : ISoftDeleted
 {
-    DateTimeOffset? DeletedAt { get; }
 }

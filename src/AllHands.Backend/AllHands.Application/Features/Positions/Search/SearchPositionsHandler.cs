@@ -11,8 +11,7 @@ public sealed class SearchPositionsHandler(IQuerySession querySession) : IReques
 {
     public async Task<PagedDto<PositionDto>> Handle(SearchPositionsQuery request, CancellationToken cancellationToken)
     {
-        IQueryable<Position> positionsQuery = querySession.Query<Position>()
-            .Where(p => !p.DeletedAt.HasValue);
+        IQueryable<Position> positionsQuery = querySession.Query<Position>();
 
         if (!string.IsNullOrEmpty(request.Search))
         {

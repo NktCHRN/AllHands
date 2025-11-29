@@ -1,9 +1,9 @@
-﻿using DeterministicGuids;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
+using AllHands.Domain.Abstractions;
 
 namespace AllHands.Domain.Models;
 
-public sealed class TimeOffBalance
+public sealed class TimeOffBalance : IIdentifiable
 {
     public Guid Id { get; set; }
     public Guid EmployeeId { get; set; }

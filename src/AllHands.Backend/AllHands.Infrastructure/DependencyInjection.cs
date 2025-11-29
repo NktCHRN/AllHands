@@ -147,7 +147,7 @@ public static class DependencyInjection
                 .Index(x => x.NormalizedName, cfg =>
                 {
                     cfg.IsUnique = true;
-                    cfg.Predicate = $"(data->>'{nameof(Position.DeletedAt)}') IS NULL";
+                    cfg.Predicate = "mt_deleted = false";
                     cfg.TenancyScope = TenancyScope.PerTenant;
                 });
             options.Schema.For<TimeOffRequest>()

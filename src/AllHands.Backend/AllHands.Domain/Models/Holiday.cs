@@ -1,6 +1,8 @@
-﻿namespace AllHands.Domain.Models;
+﻿using AllHands.Domain.Abstractions;
 
-public sealed class Holiday
+namespace AllHands.Domain.Models;
+
+public sealed class Holiday : IIdentifiable
 {
     public required Guid Id { get; set; }
     public required string Name { get; set; }

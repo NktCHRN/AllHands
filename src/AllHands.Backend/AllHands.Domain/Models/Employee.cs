@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace AllHands.Domain.Models;
 
-public sealed class Employee : ISoftDeletable, ICompanyResource
+public sealed class Employee : ISoftDeletable, ICompanyResource, IIdentifiable
 {
     public Guid Id { get; set; }
     public string FirstName { get; set; } = string.Empty;
@@ -16,6 +16,7 @@ public sealed class Employee : ISoftDeletable, ICompanyResource
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
     public DateOnly WorkStartDate { get; set; }
+    public bool Deleted { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }
     public Guid ManagerId { get; set; }
     [JsonIgnore]

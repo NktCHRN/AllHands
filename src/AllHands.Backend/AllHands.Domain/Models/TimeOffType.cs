@@ -1,6 +1,8 @@
-﻿namespace AllHands.Domain.Models;
+﻿using AllHands.Domain.Abstractions;
 
-public sealed class TimeOffType
+namespace AllHands.Domain.Models;
+
+public sealed class TimeOffType : IIdentifiable
 {
     public required Guid Id { get; set; }
     public required Guid CompanyId { get; set; }

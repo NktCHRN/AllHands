@@ -14,13 +14,13 @@ public sealed class UpdatePositionHandler(ICurrentUserService currentUserService
         var normalizedName = StringUtilities.GetNormalizedName(request.Name);
         
         var existingPosition = await documentSession.Query<Position>()
-                                   .FirstOrDefaultAsync(p => p.Id == request.Id && !p.DeletedAt.HasValue, cancellationToken)
+                                   .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken)
             ?? throw new EntityNotFoundException("Position not found");
 
         if (existingPosition.NormalizedName != normalizedName)
         {
             var positionExists = await documentSession.Query<Position>()
-                .AnyAsync(x => x.NormalizedName == normalizedName && !x.DeletedAt.HasValue, token: cancellationToken);
+                .AnyAsync(x => x.NormalizedName == normalizedName, token: cancellationToken);
 
             if (positionExists)
             {

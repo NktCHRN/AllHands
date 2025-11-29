@@ -1,8 +1,9 @@
 ﻿using System.Text.Json.Serialization;
+using AllHands.Domain.Abstractions;
 
 namespace AllHands.Domain.Models;
 
-public sealed class TimeOffRequest
+public sealed class TimeOffRequest : IIdentifiable
 {
     public Guid Id { get; set; } 
     public Guid TypeId { get; set; }

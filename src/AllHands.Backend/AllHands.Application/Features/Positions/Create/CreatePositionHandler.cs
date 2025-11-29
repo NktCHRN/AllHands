@@ -15,7 +15,7 @@ public sealed class CreatePositionHandler(IDocumentSession documentSession, ICur
         var normalizedName = StringUtilities.GetNormalizedName(request.Name);
         
         var positionExists = await documentSession.Query<Position>()
-            .AnyAsync(x => x.NormalizedName == normalizedName && !x.DeletedAt.HasValue, token: cancellationToken);
+            .AnyAsync(x => x.NormalizedName == normalizedName, token: cancellationToken);
 
         if (positionExists)
         {

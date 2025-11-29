@@ -2,7 +2,7 @@
 
 namespace AllHands.Domain.Models;
 
-public sealed class Position : ICompanyResource, ISoftDeletable
+public sealed class Position : ICompanyResource, ISoftDeletable, IIdentifiable
 {
     public required Guid Id {get; set;}
     public required string Name {get; set;}
@@ -12,6 +12,7 @@ public sealed class Position : ICompanyResource, ISoftDeletable
     public Guid? CreatedByUserId { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
     public Guid? UpdatedByUserId { get; set; }
+    public bool Deleted { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }
     public Guid? DeletedByUserId { get; set; }
 }
