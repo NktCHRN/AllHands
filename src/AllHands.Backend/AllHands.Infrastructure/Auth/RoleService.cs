@@ -1,4 +1,5 @@
-﻿using AllHands.Application.Abstractions;
+﻿using System.Data;
+using AllHands.Application.Abstractions;
 using AllHands.Application.Dto;
 using AllHands.Application.Features.Roles.Create;
 using AllHands.Application.Features.Roles.Get;
@@ -90,6 +91,8 @@ public sealed class RoleService(ICurrentUserService currentUserService, AuthDbCo
     public async Task<Guid> CreateAsync(CreateRoleCommand command, CancellationToken cancellationToken)
     {
         var companyId = currentUserService.GetCompanyId();
+        
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
         var role = new AllHandsRole()
         {
@@ -101,7 +104,9 @@ public sealed class RoleService(ICurrentUserService currentUserService, AuthDbCo
                 Id = Guid.CreateVersion7(),
                 ClaimType = AuthConstants.PermissionClaimName,
                 ClaimValue = p
-            }).ToList()
+            }).ToList(),
+            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedByUserId = currentUserService.GetId()
         };
         var result = await roleManager.CreateAsync(role);
         if (!result.Succeeded)
@@ -109,12 +114,16 @@ public sealed class RoleService(ICurrentUserService currentUserService, AuthDbCo
             throw new EntityValidationFailedException(IdentityUtilities.IdentityErrorsToString(result.Errors));
         }
         
+        await transaction.CommitAsync(cancellationToken);
+        
         return role.Id;
     }
 
     public async Task UpdateAsync(UpdateRoleCommand command, CancellationToken cancellationToken)
     {
         var companyId = currentUserService.GetCompanyId();
+        
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
         
         var role = await dbContext.Roles
             .Include(r => r.Claims.Where(c => c.ClaimType == AuthConstants.PermissionClaimName))
@@ -138,6 +147,8 @@ public sealed class RoleService(ICurrentUserService currentUserService, AuthDbCo
         
         role.Name = command.Name;
         role.IsDefault = command.IsDefault;
+        role.UpdatedAt = timeProvider.GetUtcNow();
+        role.UpdatedByUserId = currentUserService.GetId();
         
         var permissionsToRemove = role.Claims
             .ExceptBy(command.Permissions, c => c.ClaimValue)
@@ -172,6 +183,56 @@ public sealed class RoleService(ICurrentUserService currentUserService, AuthDbCo
         {
             throw new EntityValidationFailedException(IdentityUtilities.IdentityErrorsToString(result.Errors));
         }
+        
+        await transaction.CommitAsync(cancellationToken);
+    }
+    
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var companyId = currentUserService.GetCompanyId();
+        
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
+        
+        var role = await dbContext.Roles
+            .Include(r => r.Users.Where(u => !u.User!.DeletedAt.HasValue))
+            .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.Id == id, cancellationToken: cancellationToken)
+            ?? throw new EntityNotFoundException("Role was not found");
+
+        if (role.IsDefault)
+        {
+            throw new EntityValidationFailedException("Make another role default first");
+        }
+        
+        var defaultRole = await GetDefaultRoleAsync(companyId, cancellationToken);
+
+        if (defaultRole is not null)
+        {
+            foreach (var userRole in role.Users)
+            {
+                dbContext.UserRoles.Remove(userRole);
+                dbContext.UserRoles.Add(new AllHandsUserRole()
+                {
+                    UserId = userRole.UserId,
+                    RoleId = defaultRole.Id
+                });
+            }
+        }
+        
+        role.DeletedAt = timeProvider.GetUtcNow();
+        role.DeletedByUserId = currentUserService.GetId();
+        
+        var updateSessionsTask = new RecalculateCompanySessionsTask()
+        {
+            Id = Guid.CreateVersion7(),
+            CompanyId = companyId,
+            RequestedAt = timeProvider.GetUtcNow(),
+            RequesterUserId = currentUserService.GetId()
+        };
+        dbContext.RecalculateCompanySessionsTasks.Add(updateSessionsTask);
+        
+        await dbContext.SaveChangesAsync(cancellationToken);
+        
+        await transaction.CommitAsync(cancellationToken);
     }
 
     private async Task<AllHandsRole?> GetDefaultRoleAsync(Guid companyId, CancellationToken cancellationToken)

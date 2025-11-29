@@ -1,6 +1,7 @@
 ﻿using AllHands.Application;
 using AllHands.Application.Dto;
 using AllHands.Application.Features.Roles.Create;
+using AllHands.Application.Features.Roles.Delete;
 using AllHands.Application.Features.Roles.Get;
 using AllHands.Application.Features.Roles.GetById;
 using AllHands.Application.Features.Roles.GetUsersInRole;
@@ -60,6 +61,17 @@ public sealed class RolesController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateRoleCommand command, CancellationToken cancellationToken)
     {
         command.Id = id;
+        await mediator.Send(command, cancellationToken);
+        
+        return NoContent();
+    }
+    
+    [HasPermission(Permissions.RolesDelete)]
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var command = new DeleteRoleCommand(id);
         await mediator.Send(command, cancellationToken);
         
         return NoContent();

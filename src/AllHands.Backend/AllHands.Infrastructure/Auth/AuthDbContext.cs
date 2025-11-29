@@ -85,6 +85,21 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
             .WithOne(x => x.Role)
             .HasForeignKey(x => x.RoleId)
             .HasPrincipalKey(x => x.Id);
+        modelBuilder.Entity<AllHandsRole>()
+            .HasOne<AllHandsIdentityUser>()
+            .WithMany()
+            .HasForeignKey(x => x.CreatedByUserId)
+            .HasPrincipalKey(x => x.Id);
+        modelBuilder.Entity<AllHandsRole>()
+            .HasOne<AllHandsIdentityUser>()
+            .WithMany()
+            .HasForeignKey(x => x.UpdatedByUserId)
+            .HasPrincipalKey(x => x.Id);
+        modelBuilder.Entity<AllHandsRole>()
+            .HasOne<AllHandsIdentityUser>()
+            .WithMany()
+            .HasForeignKey(x => x.DeletedByUserId)
+            .HasPrincipalKey(x => x.Id);
         
         modelBuilder.Entity<AllHandsIdentityUser>()
             .Property(x => x.FirstName)

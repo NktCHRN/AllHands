@@ -155,14 +155,16 @@ public sealed class DevelopmentSeeder(IDocumentStore documentStore, AuthDbContex
                 Id = _adminRoleId,
                 CompanyId =  _companyId,
                 Name = "Admin",
-                Claims = claims
+                Claims = claims,
+                CreatedAt = DateTime.UtcNow,
             },
             new AllHandsRole()
             {
                 Id = Guid.CreateVersion7(),
                 CompanyId =  _companyId,
                 Name = "Employee",
-                IsDefault = true
+                IsDefault = true,
+                CreatedAt = DateTime.UtcNow,
             }
         };
 

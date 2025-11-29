@@ -10,5 +10,10 @@ public sealed class AllHandsRole : IdentityRole<Guid>
     public IList<AllHandsRoleClaim> Claims { get; set; } = [];
     public IList<AllHandsUserRole> Users { get; set; } = [];
     
-    public DateTimeOffset? DeletedAt { get; internal set; }
+    public required DateTimeOffset CreatedAt { get; set; }
+    public Guid? CreatedByUserId { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
+    public Guid? UpdatedByUserId { get; set; }
+    public DateTimeOffset? DeletedAt { get; set; }
+    public Guid? DeletedByUserId { get; set; }
 }
