@@ -11,6 +11,7 @@ using Amazon.S3;
 using Amazon.SimpleEmailV2;
 using JasperFx.Events.Projections;
 using Marten;
+using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -124,31 +125,50 @@ public static class DependencyInjection
             options.Events.TenancyStyle = TenancyStyle.Conjoined;
 
             options.Schema.For<Employee>()
-                .Index(x => x.NormalizedEmail)
-                .Index(x => x.UserId)
-                .Index(x => x.CompanyId)
-                .Index(x => x.ManagerId)
+                .Index(x => x.NormalizedEmail, configure: idx => 
+                {
+                    idx.TenancyScope = TenancyScope.PerTenant;
+                })
+                .Index(x => x.UserId, configure: idx => 
+                {
+                    idx.TenancyScope = TenancyScope.PerTenant;
+                })
+                .Index(x => x.ManagerId, configure: idx => 
+                {
+                    idx.TenancyScope = TenancyScope.PerTenant;
+                })
                 .FullTextIndex(x => x.FirstName, x => x.MiddleName!, x => x.LastName, x => x.Email);
             options.Schema.For<Holiday>()
-                .Index(x => x.CompanyId);
+                .Duplicate(x => x.Date, "date", notNull: true, configure: idx => 
+                {
+                    idx.TenancyScope = TenancyScope.PerTenant;
+                });
             options.Schema.For<Position>()
-                .Index(x => new { x.CompanyId, x.NormalizedName }, cfg =>
+                .Index(x => x.NormalizedName, cfg =>
                 {
                     cfg.IsUnique = true;
                     cfg.Predicate = $"(data->>'{nameof(Position.DeletedAt)}') IS NULL";
+                    cfg.TenancyScope = TenancyScope.PerTenant;
                 });
             options.Schema.For<TimeOffRequest>()
-                .Duplicate(x => x.StartDate, "timestamp with time zone", notNull: true)
-                .Duplicate(x => x.EndDate, "timestamp with time zone", notNull: true)
-                .Index(x => new { x.EmployeeId, x.EndDate })
-                .Index(x => new { x.CompanyId, x.StartDate });
+                .Duplicate(x => x.StartDate, "timestamp with time zone", notNull: true, configure: idx =>
+                {
+                    idx.TenancyScope = TenancyScope.PerTenant;
+                })
+                .Duplicate(x => x.EndDate, "timestamp with time zone", notNull: true, configure: idx =>
+                {
+                    idx.TenancyScope = TenancyScope.PerTenant;
+                })
+                .Index(x => x.EmployeeId, configure: idx =>
+                {
+                    idx.TenancyScope = TenancyScope.PerTenant;
+                });
             options.Schema.For<TimeOffBalance>()
-                .Index(x => new { x.EmployeeId, x.TypeId })
+                .Index(x => x.EmployeeId, configure: idx => 
+                {
+                    idx.TenancyScope = TenancyScope.PerTenant;
+                })
                 .Duplicate(x => x.LastAutoUpdate, "timestamp with time zone", notNull: false);
-            options.Schema.For<TimeOffType>()
-                .Index(x => x.CompanyId);
-            options.Schema.For<NewsPost>()
-                .Index(x => x.CompanyId);
         });
         services.AddSingleton<ISessionFactory, TenantSessionFactory>();
         
