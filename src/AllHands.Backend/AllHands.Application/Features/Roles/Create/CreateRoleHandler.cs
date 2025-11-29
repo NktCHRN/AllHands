@@ -8,7 +8,7 @@ public sealed class CreateRoleHandler(IRoleService roleService) : IRequestHandle
 {
     public async Task<CreatedEntityDto> Handle(CreateRoleCommand request, CancellationToken cancellationToken)
     {
-        var id = await roleService.CreateRoleAsync(request, cancellationToken);
+        var id = await roleService.CreateAsync(request, cancellationToken);
         return new CreatedEntityDto(id);
     }
 }

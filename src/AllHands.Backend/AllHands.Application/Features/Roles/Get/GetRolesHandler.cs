@@ -7,7 +7,7 @@ public sealed class GetRolesHandler(IRoleService roleService) : IRequestHandler<
 {
     public async Task<GetRolesResult> Handle(GetRolesQuery request, CancellationToken cancellationToken)
     {
-        var roles = await roleService.GetRolesAsync(cancellationToken);
+        var roles = await roleService.GetAsync(cancellationToken);
         return new GetRolesResult(roles);
     }
 }
