@@ -118,7 +118,7 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
         modelBuilder.Entity<AllHandsIdentityUser>()
             .HasIndex(x => x.NormalizedUserName)
             .IsUnique()
-            .HasFilter($"\"{nameof(AllHandsRole.DeletedAt)}\" IS NULL");
+            .HasFilter($"\"{nameof(AllHandsIdentityUser.DeletedAt)}\" IS NULL");
         modelBuilder.Entity<AllHandsIdentityUser>()
             .HasOne(x => x.GlobalUser)
             .WithMany(x => x.Users)
@@ -127,7 +127,7 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
             .Navigation(u => u.GlobalUser)
             .AutoInclude();
         modelBuilder.Entity<AllHandsIdentityUser>()
-            .HasQueryFilter(x => !x.DeletedAt.HasValue);
+            .HasQueryFilter(x => !x.DeletedAt.HasValue && !x.DeactivatedAt.HasValue);
         
         modelBuilder.Entity<AllHandsRoleClaim>()
             .Property(x => x.ClaimType)
