@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Security.Claims;
 using System.Text.Json;
 using AllHands.Domain.Exceptions;
 using Microsoft.AspNetCore.Authentication;
@@ -66,7 +67,7 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
         if (cachedTicket != null)
         {
             session = JsonSerializer.Deserialize<AllHandsSession>(cachedTicket);
-            return session!.IsRevoked
+            return IsExpired(session)
                 ? null
                 : ticketSerializer.Deserialize(session.TicketValue);
         }
@@ -76,7 +77,7 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Key == sessionId);
 
-        if (session == null || session.ExpiresAt < timeProvider.GetUtcNow() || session.IsRevoked)
+        if (IsExpired(session))
         {
             return null;
         }
@@ -87,6 +88,9 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
         });
         return ticketSerializer.Deserialize(session.TicketValue);
     }
+    
+    private bool IsExpired([NotNullWhen(false)] AllHandsSession? session)
+        => session == null || session.ExpiresAt < timeProvider.GetUtcNow() || session.IsRevoked;
 
     public async Task RemoveAsync(string key)
     {
