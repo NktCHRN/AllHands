@@ -156,6 +156,13 @@ public sealed class DevelopmentSeeder(IDocumentStore documentStore, AuthDbContex
                 CompanyId =  _companyId,
                 Name = "Admin",
                 Claims = claims
+            },
+            new AllHandsRole()
+            {
+                Id = Guid.CreateVersion7(),
+                CompanyId =  _companyId,
+                Name = "Employee",
+                IsDefault = true
             }
         };
 

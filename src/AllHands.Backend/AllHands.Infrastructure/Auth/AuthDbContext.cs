@@ -64,7 +64,12 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
         modelBuilder.Entity<AllHandsRole>()
             .HasIndex(e => new {e.CompanyId, e.NormalizedName})
             .HasDatabaseName("RoleNameIndex")
-            .IsUnique();
+            .IsUnique()
+            .HasFilter($"\"{nameof(AllHandsRole.DeletedAt)}\" IS NULL");
+        modelBuilder.Entity<AllHandsRole>()
+            .HasIndex(e => e.CompanyId)
+            .IsUnique()
+            .HasFilter($"\"{nameof(AllHandsRole.DeletedAt)}\" IS NULL AND \"{nameof(AllHandsRole.IsDefault)}\" = true");
         
         modelBuilder.Entity<AllHandsRole>()
             .HasKey(x => x.Id);
@@ -73,10 +78,6 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
             .WithOne()
             .HasForeignKey(x => x.RoleId)
             .HasPrincipalKey(x => x.Id);
-        modelBuilder.Entity<AllHandsRole>()
-            .HasIndex(x => new {x.CompanyId, x.NormalizedName})
-            .IsUnique()
-            .HasFilter($"\"{nameof(AllHandsRole.DeletedAt)}\" IS NULL");
         modelBuilder.Entity<AllHandsRole>()
             .HasQueryFilter(x => !x.DeletedAt.HasValue);
         
