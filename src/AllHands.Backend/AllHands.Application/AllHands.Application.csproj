@@ -17,4 +17,12 @@
       <PackageReference Include="MediatR" Version="12.5.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Features\Holiday\Create\" />
+      <Folder Include="Features\Holiday\Delete\" />
+      <Folder Include="Features\Holiday\GetById\" />
+      <Folder Include="Features\Holiday\Get\" />
+      <Folder Include="Features\Holiday\Update\" />
+    </ItemGroup>
+
 </Project>

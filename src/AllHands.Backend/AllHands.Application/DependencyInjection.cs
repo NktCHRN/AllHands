@@ -1,5 +1,6 @@
 ﻿using AllHands.Application.Abstractions;
 using AllHands.Application.Behaviors;
+using AllHands.Application.Utilities;
 using AllHands.Application.Validation;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
@@ -21,6 +22,7 @@ public static class DependencyInjection
         services.AddSingleton(_ => PhoneNumberUtil.GetInstance());
 
         services.AddSingleton<IImageValidator, ImageValidator>();
+        services.AddSingleton<ITimeOffEmojiValidator, TimeOffEmojiValidator>();
         
         return services.AddSingleton(TimeProvider.System);
     }
