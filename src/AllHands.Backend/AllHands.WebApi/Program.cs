@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using AllHands.Application;
 using AllHands.Application.Abstractions;
 using AllHands.Infrastructure;
@@ -34,10 +35,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.UseMiddleware<RemoveCookieOnLoginMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.MapControllers();
 
