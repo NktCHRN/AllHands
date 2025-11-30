@@ -26,7 +26,6 @@
       <Folder Include="Features\Employees\Search\" />
       <Folder Include="Features\Employees\UpdateAvatar\" />
       <Folder Include="Features\Employees\Update\" />
-      <Folder Include="Features\TimeOffBalances\Update\" />
       <Folder Include="Features\TimeOffRequests\Approve\" />
       <Folder Include="Features\TimeOffRequests\Cancel\" />
       <Folder Include="Features\TimeOffRequests\Create\" />

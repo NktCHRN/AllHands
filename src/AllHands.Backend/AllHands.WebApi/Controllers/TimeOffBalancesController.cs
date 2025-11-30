@@ -1,6 +1,9 @@
-﻿using AllHands.Application.Abstractions;
+﻿using AllHands.Application;
+using AllHands.Application.Abstractions;
 using AllHands.Application.Features.TimeOffBalances.GetByEmployeeId;
 using AllHands.Application.Features.TimeOffBalances.GetHistoryByEmployeeId;
+using AllHands.Application.Features.TimeOffBalances.Update;
+using AllHands.WebApi.Auth;
 using AllHands.WebApi.Contracts;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -52,5 +55,16 @@ public sealed class TimeOffBalancesController(IMediator mediator, ICurrentUserSe
         var query = new GetTimeOffBalancesQuery(employeeId);
         var result = await mediator.Send(query, cancellationToken);
         return Ok(ApiResponse.FromResult(result.Balances));
+    }
+    
+    [HasPermission(Permissions.TimeOffBalanceEdit)]
+    [HttpPut("employees/{employeeId:guid}/balances/types/{typeId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UpdateBalance([FromRoute] Guid employeeId, [FromRoute] Guid typeId, [FromBody] UpdateBalanceCommand command, CancellationToken cancellationToken)
+    {
+        command.EmployeeId = employeeId;
+        command.TypeId = typeId;
+        await mediator.Send(command, cancellationToken);
+        return NoContent();
     }
 }

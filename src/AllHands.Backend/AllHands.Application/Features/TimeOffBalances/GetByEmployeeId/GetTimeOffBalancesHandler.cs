@@ -23,7 +23,7 @@ public sealed class GetTimeOffBalancesHandler(IQuerySession querySession) : IReq
             var balance = balances.FirstOrDefault(b => b.TypeId == type.Id);
             if (balance is not null)
             {
-                dto = new TimeOffBalanceDto(type.Id, type.Name, type.Emoji, balance.Days, balance.DaysPerYear);
+                dto = new TimeOffBalanceDto(type.Id, type.Name, type.Emoji, Math.Round(balance.Days, 4), balance.DaysPerYear);
             }
             else
             {
