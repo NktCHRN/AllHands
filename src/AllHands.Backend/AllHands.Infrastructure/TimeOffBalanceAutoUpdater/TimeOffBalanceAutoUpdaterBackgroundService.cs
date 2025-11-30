@@ -1,4 +1,4 @@
-﻿using AllHands.Application.Features.TimeOffBalance.UpdateInCompany;
+﻿using AllHands.Application.Features.TimeOffBalances.UpdateInCompany;
 using AllHands.Domain.Models;
 using Marten;
 using MediatR;
@@ -39,6 +39,11 @@ public sealed class TimeOffBalanceAutoUpdaterBackgroundService(
                     {
                         await using var scope = serviceProvider.CreateAsyncScope();
                         await mediator.Send(new UpdateTimeOffBalanceInCompanyCommand(companyId), stoppingToken);
+                    }
+                    catch (OperationCanceledException ex) when (ex.CancellationToken == stoppingToken ||
+                                                                ex.CancellationToken.IsCancellationRequested)
+                    {
+                        break;
                     }
                     catch (Exception e)
                     {

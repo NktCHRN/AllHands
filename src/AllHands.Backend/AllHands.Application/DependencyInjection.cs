@@ -1,6 +1,6 @@
 ﻿using AllHands.Application.Abstractions;
 using AllHands.Application.Behaviors;
-using AllHands.Application.Features.TimeOffBalance.UpdateInCompany;
+using AllHands.Application.Features.TimeOffBalances.UpdateInCompany;
 using AllHands.Application.Utilities;
 using AllHands.Application.Validation;
 using FluentValidation;

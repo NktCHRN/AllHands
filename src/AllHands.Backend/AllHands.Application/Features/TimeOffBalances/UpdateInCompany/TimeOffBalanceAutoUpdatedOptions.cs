@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace AllHands.Application.Features.TimeOffBalance.UpdateInCompany;
+namespace AllHands.Application.Features.TimeOffBalances.UpdateInCompany;
 
 public class TimeOffBalanceAutoUpdaterOptions
 {

@@ -5,7 +5,7 @@ using Marten;
 using MediatR;
 using Microsoft.Extensions.Options;
 
-namespace AllHands.Application.Features.TimeOffBalance.UpdateInCompany;
+namespace AllHands.Application.Features.TimeOffBalances.UpdateInCompany;
 
 public sealed class UpdateTimeOffBalanceInCompanyHandler(IDocumentStore documentStore, TimeProvider timeProvider, IOptions<TimeOffBalanceAutoUpdaterOptions> options) : IRequestHandler<UpdateTimeOffBalanceInCompanyCommand>
 {
