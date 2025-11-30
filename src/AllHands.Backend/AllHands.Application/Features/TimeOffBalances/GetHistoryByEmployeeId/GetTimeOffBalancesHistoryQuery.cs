@@ -4,4 +4,4 @@ using MediatR;
 
 namespace AllHands.Application.Features.TimeOffBalances.GetHistoryByEmployeeId;
 
-public sealed record GetTimeOffBalancesHistoryQuery(Guid EmployeeId, int PerPage, int Page) : PagedQuery(Page, PerPage), IRequest<PagedDto<TimeOffBalancesHistoryItemDto>>;
+public sealed record GetTimeOffBalancesHistoryQuery(Guid EmployeeId, int PerPage, int Page) : PagedQuery(PerPage, Page), IRequest<PagedDto<TimeOffBalancesHistoryItemDto>>;
