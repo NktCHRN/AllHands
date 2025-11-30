@@ -1,5 +1,4 @@
-﻿using AllHands.Domain.Events.TimeOff;
-using AllHands.Domain.Events.TimeOffBalance;
+﻿using AllHands.Domain.Events.TimeOffBalance;
 using AllHands.Domain.Models;
 using JasperFx.Events;
 using Marten.Events.Projections;
@@ -15,10 +14,7 @@ public sealed class EmployeeTimeOffBalanceItemProjection : MultiStreamProjection
         Identity<IEvent<TimeOffBalanceAutomaticallyUpdated>>(x => x.Data.EntityId);
         Identity<IEvent<TimeOffBalanceManuallyUpdated>>(x => x.Data.EntityId);
         Identity<IEvent<TimeOffBalancePerYearUpdatedEvent>>(x => x.Data.EntityId);
-
-        Identity<IEvent<TimeOffRequestedEvent>>(x => x.Data.TimeOffBalanceId);
-        Identity<IEvent<TimeOffRequestCancelledEvent>>(x => x.Data.TimeOffBalanceId);
-        Identity<IEvent<TimeOffRequestRejectedEvent>>(x => x.Data.TimeOffBalanceId);
+        Identity<IEvent<TimeOffBalanceRequestChangeEvent>>(x => x.Data.EntityId);
     }
 
     public TimeOffBalance Create(TimeOffBalanceCreatedEvent @event)
@@ -31,21 +27,6 @@ public sealed class EmployeeTimeOffBalanceItemProjection : MultiStreamProjection
             Days = 0,
             DaysPerYear = @event.DaysPerYer
         };
-    }
-
-    public void Apply(TimeOffRequestedEvent @event, TimeOffBalance view)
-    {
-        view.Days -= @event.WorkingDaysCount;
-    }
-
-    public void Apply(TimeOffRequestCancelledEvent @event, TimeOffBalance view)
-    {
-        view.Days += @event.WorkingDaysCount;
-    }
-
-    public void Apply(TimeOffRequestRejectedEvent @event, TimeOffBalance view)
-    {
-        view.Days += @event.WorkingDaysCount;
     }
 
     public void Apply(TimeOffBalanceAutomaticallyUpdated @event, TimeOffBalance view)
@@ -74,5 +55,10 @@ public sealed class EmployeeTimeOffBalanceItemProjection : MultiStreamProjection
                 view.DaysPerYear = 0;
             }
         }
+    }
+
+    public void Apply(TimeOffBalanceRequestChangeEvent @event, TimeOffBalance view)
+    {
+        view.Days += @event.Delta;
     }
 }

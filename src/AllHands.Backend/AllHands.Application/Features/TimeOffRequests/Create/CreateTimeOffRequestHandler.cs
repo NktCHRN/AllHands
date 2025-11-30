@@ -56,7 +56,7 @@ public sealed class CreateTimeOffRequestHandler(IDocumentSession documentSession
             balanceId!.Value);
         documentSession.Events.StartStream(timeOffRequestId, @event);
         
-        documentSession.Events.Append(balanceId.Value, new TimeOffBalanceRequestChangeEvent(balanceId.Value, currentUserService.GetId(), timeOffRequestId, workDaysCount));
+        documentSession.Events.Append(balanceId.Value, new TimeOffBalanceRequestChangeEvent(balanceId.Value, currentUserService.GetId(), timeOffRequestId, -workDaysCount));
         
         await documentSession.SaveChangesAsync(cancellationToken);
 
