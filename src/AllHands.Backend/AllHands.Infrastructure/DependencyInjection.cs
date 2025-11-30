@@ -7,11 +7,13 @@ using AllHands.Infrastructure.Auth.Entities;
 using AllHands.Infrastructure.Data;
 using AllHands.Infrastructure.Email;
 using AllHands.Infrastructure.Files;
+using AllHands.Infrastructure.TimeOffBalanceAutoUpdater;
 using Amazon.S3;
 using Amazon.SimpleEmailV2;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
+using Marten.Exceptions;
 using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -19,6 +21,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
+using Polly;
 using StackExchange.Redis;
 
 namespace AllHands.Infrastructure;
@@ -33,7 +37,8 @@ public static class DependencyInjection
             .AddMartenDb(configuration)
             .AddIdentityServices()
             .AddSingleton<IPermissionsContainer, PermissionsContainer>()
-            .AddAwsServices(configuration);
+            .AddAwsServices(configuration)
+            .AddTimeOffBalanceAutoUpdaterBackgroundService(configuration);
     }
 
     private static IServiceCollection AddRedis(this IServiceCollection services, IConfiguration configuration)
@@ -115,32 +120,43 @@ public static class DependencyInjection
         {
             // Establish the connection string to your Marten database
             options.Connection(configuration.GetConnectionString("postgres")!);
-
+            
+            options.ConfigurePolly(builder =>
+            {
+                builder.AddRetry(new()
+                {
+                    ShouldHandle = new PredicateBuilder().Handle<NpgsqlException>().Handle<MartenCommandException>(),
+                    MaxRetryAttempts = configuration.GetValue<int>("Marten:MaxRetryAttempts"),
+                    Delay = configuration.GetValue<TimeSpan>("Marten:Delay"),
+                    BackoffType = DelayBackoffType.Linear
+                });
+            });
+            
             options.UseSystemTextJsonForSerialization();
 
             options.Projections.Add<EmployeeProjection>(ProjectionLifecycle.Inline);
-            options.Projections.Add<EmployeeTimeOffBalanceItemProjection>(ProjectionLifecycle.Async);
+            options.Projections.Add<EmployeeTimeOffBalanceItemProjection>(ProjectionLifecycle.Inline);
             options.Projections.Add<TimeOffRequestProjection>(ProjectionLifecycle.Inline);
-            
+
             options.Policies.AllDocumentsAreMultiTenanted();
             options.Events.TenancyStyle = TenancyStyle.Conjoined;
 
             options.Schema.For<Employee>()
-                .Index(x => x.NormalizedEmail, configure: idx => 
+                .Index(x => x.NormalizedEmail, configure: idx =>
                 {
                     idx.TenancyScope = TenancyScope.PerTenant;
                 })
-                .Index(x => x.UserId, configure: idx => 
+                .Index(x => x.UserId, configure: idx =>
                 {
                     idx.TenancyScope = TenancyScope.PerTenant;
                 })
-                .Index(x => x.ManagerId, configure: idx => 
+                .Index(x => x.ManagerId, configure: idx =>
                 {
                     idx.TenancyScope = TenancyScope.PerTenant;
                 })
                 .FullTextIndex(x => x.FirstName, x => x.MiddleName!, x => x.LastName, x => x.Email);
             options.Schema.For<Holiday>()
-                .Duplicate(x => x.Date, "date", notNull: true, configure: idx => 
+                .Duplicate(x => x.Date, "date", notNull: true, configure: idx =>
                 {
                     idx.TenancyScope = TenancyScope.PerTenant;
                 });
@@ -165,8 +181,9 @@ public static class DependencyInjection
                     idx.TenancyScope = TenancyScope.PerTenant;
                 });
             options.Schema.For<TimeOffBalance>()
-                .Index(x => x.EmployeeId, configure: idx => 
+                .Index(x => new { x.EmployeeId, x.TypeId }, configure: idx =>
                 {
+                    idx.IsUnique = true;
                     idx.TenancyScope = TenancyScope.PerTenant;
                 })
                 .Duplicate(x => x.LastAutoUpdate, "timestamp with time zone", notNull: false);
@@ -175,7 +192,7 @@ public static class DependencyInjection
                 {
                     idx.TenancyScope = TenancyScope.PerTenant;
                 });
-        }).AddAsyncDaemon(DaemonMode.Solo);
+        });
         services.AddSingleton<ISessionFactory, TenantSessionFactory>();
         
         return services;
@@ -198,6 +215,17 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.AddAWSService<IAmazonS3>();
         services.AddSingleton<IFileService, FileService>();
+        
+        return services;
+    }
+
+    private static IServiceCollection AddTimeOffBalanceAutoUpdaterBackgroundService(this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        if (configuration.GetValue<bool>("FEATURE_TIMEOFFBALANCE_AUTOUPDATER"))
+        {
+            services.AddHostedService<TimeOffBalanceAutoUpdaterBackgroundService>();
+        }
         
         return services;
     }

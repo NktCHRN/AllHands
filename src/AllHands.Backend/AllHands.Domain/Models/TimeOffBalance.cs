@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using AllHands.Domain.Abstractions;
+using DeterministicGuids;
 
 namespace AllHands.Domain.Models;
 
@@ -14,4 +15,6 @@ public sealed class TimeOffBalance : IIdentifiable
     public decimal DaysPerYear { get; set; }
 
     public DateTimeOffset? LastAutoUpdate { get; set; }
+    
+    public static Guid CreateId(Guid employeeId, Guid typeId) => DeterministicGuid.Create(employeeId, typeId.ToString()); 
 }

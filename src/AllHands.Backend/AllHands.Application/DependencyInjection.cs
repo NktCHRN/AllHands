@@ -1,5 +1,6 @@
 ﻿using AllHands.Application.Abstractions;
 using AllHands.Application.Behaviors;
+using AllHands.Application.Features.TimeOffBalance.UpdateInCompany;
 using AllHands.Application.Utilities;
 using AllHands.Application.Validation;
 using FluentValidation;
@@ -23,6 +24,11 @@ public static class DependencyInjection
 
         services.AddSingleton<IImageValidator, ImageValidator>();
         services.AddSingleton<ITimeOffEmojiValidator, TimeOffEmojiValidator>();
+        
+        services.AddOptions<TimeOffBalanceAutoUpdaterOptions>()
+            .BindConfiguration("TimeOffBalanceAutoUpdaterOptions")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
         
         return services.AddSingleton(TimeProvider.System);
     }

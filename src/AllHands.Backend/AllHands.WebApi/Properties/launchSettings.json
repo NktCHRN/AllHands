@@ -8,7 +8,8 @@
       "applicationUrl": "http://localhost:5273",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "RUN_MIGRATIONS": "true"
+        "RUN_MIGRATIONS": "true",
+        "FEATURE_TIMEOFFBALANCE_AUTOUPDATER": "true"
       }
     },
     "https": {

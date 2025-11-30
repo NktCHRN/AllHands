@@ -195,7 +195,7 @@ public sealed class DevelopmentSeeder(IDocumentStore documentStore, AuthDbContex
             "Vadymivna",
             "Linchuk",
             "+380681112233",
-            new DateOnly(2025, 11, 26)),
+            new DateOnly(2025, 09, 26)),
             new EmployeeRegisteredEvent(employeeId, employeeId));
         await _documentSession.SaveChangesAsync(cancellationToken);
 
@@ -224,14 +224,12 @@ public sealed class DevelopmentSeeder(IDocumentStore documentStore, AuthDbContex
         };
         _ = await userManager.CreateAsync(identityUser, "P@ssw0rd");
 
-        var vacationBalanceId = Guid.CreateVersion7();
+        var vacationBalanceId = Domain.Models.TimeOffBalance.CreateId(employeeId, _vacationId);
         _documentSession.Events.StartStream<TimeOffBalance>(vacationBalanceId, 
-            new TimeOffBalanceCreatedEvent(vacationBalanceId, employeeId, _vacationId, 20),
-            new TimeOffBalanceAutomaticallyUpdated(vacationBalanceId, 5));
-        var sickLeaveBalanceId = Guid.CreateVersion7();
+            new TimeOffBalanceCreatedEvent(vacationBalanceId, employeeId, _vacationId, 20));
+        var sickLeaveBalanceId = Domain.Models.TimeOffBalance.CreateId(employeeId, _sickLeaveId);
         _documentSession.Events.StartStream<TimeOffBalance>(sickLeaveBalanceId, 
-            new TimeOffBalanceCreatedEvent(sickLeaveBalanceId, employeeId, _vacationId, 0),
-            new TimeOffBalanceAutomaticallyUpdated(sickLeaveBalanceId, 2));
+            new TimeOffBalanceCreatedEvent(sickLeaveBalanceId, employeeId, _sickLeaveId, 0));
     }
 
     private async Task CreateActiveUser2(Guid globalUserId, CancellationToken cancellationToken)
