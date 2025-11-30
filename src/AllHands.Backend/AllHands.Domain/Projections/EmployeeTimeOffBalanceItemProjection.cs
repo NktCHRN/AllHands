@@ -27,7 +27,8 @@ public sealed class EmployeeTimeOffBalanceItemProjection : MultiStreamProjection
             Id = @event.EntityId,
             EmployeeId = @event.EmployeeId,
             TypeId = @event.TypeId,
-            Days = 0
+            Days = 0,
+            DaysPerYear = @event.DaysPerYer
         };
     }
 
@@ -55,5 +56,22 @@ public sealed class EmployeeTimeOffBalanceItemProjection : MultiStreamProjection
     public void Apply(TimeOffBalanceManuallyUpdated @event, TimeOffBalance view)
     {
         view.Days += @event.Amount;
+    }
+
+    public void Apply(TimeOffBalancePerYearUpdatedEvent @event, TimeOffBalance view)
+    {
+        if (@event.UpdateType == TimeOffPerYearUpdateType.Reset)
+        {
+            view.DaysPerYear = @event.NewDaysPerYear;
+        }
+
+        if (@event.UpdateType == TimeOffPerYearUpdateType.Update)
+        {
+            view.DaysPerYear += @event.NewDaysPerYear - @event.OldDaysPerYear;
+            if (view.DaysPerYear < 0)
+            {
+                view.DaysPerYear = 0;
+            }
+        }
     }
 }

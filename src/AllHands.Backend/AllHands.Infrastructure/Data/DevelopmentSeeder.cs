@@ -226,11 +226,11 @@ public sealed class DevelopmentSeeder(IDocumentStore documentStore, AuthDbContex
 
         var vacationBalanceId = Guid.CreateVersion7();
         _documentSession.Events.StartStream<TimeOffBalance>(vacationBalanceId, 
-            new TimeOffBalanceCreatedEvent(vacationBalanceId, employeeId, _vacationId),
+            new TimeOffBalanceCreatedEvent(vacationBalanceId, employeeId, _vacationId, 20),
             new TimeOffBalanceAutomaticallyUpdated(vacationBalanceId, 5));
         var sickLeaveBalanceId = Guid.CreateVersion7();
         _documentSession.Events.StartStream<TimeOffBalance>(sickLeaveBalanceId, 
-            new TimeOffBalanceCreatedEvent(sickLeaveBalanceId, employeeId, _vacationId),
+            new TimeOffBalanceCreatedEvent(sickLeaveBalanceId, employeeId, _vacationId, 0),
             new TimeOffBalanceAutomaticallyUpdated(sickLeaveBalanceId, 2));
     }
 

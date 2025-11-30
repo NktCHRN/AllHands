@@ -11,6 +11,7 @@ public sealed class TimeOffBalance : IIdentifiable
     [JsonIgnore]
     public TimeOffType? Type { get; set; }
     public decimal Days { get; set; }
+    public decimal DaysPerYear { get; set; }
 
     public DateTimeOffset? LastAutoUpdate { get; set; }
 }

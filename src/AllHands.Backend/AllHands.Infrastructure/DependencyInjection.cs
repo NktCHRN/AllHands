@@ -9,6 +9,7 @@ using AllHands.Infrastructure.Email;
 using AllHands.Infrastructure.Files;
 using Amazon.S3;
 using Amazon.SimpleEmailV2;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Schema.Indexing.Unique;
@@ -118,7 +119,7 @@ public static class DependencyInjection
             options.UseSystemTextJsonForSerialization();
 
             options.Projections.Add<EmployeeProjection>(ProjectionLifecycle.Inline);
-            options.Projections.Add<EmployeeTimeOffBalanceItemProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<EmployeeTimeOffBalanceItemProjection>(ProjectionLifecycle.Async);
             options.Projections.Add<TimeOffRequestProjection>(ProjectionLifecycle.Inline);
             
             options.Policies.AllDocumentsAreMultiTenanted();
@@ -174,7 +175,7 @@ public static class DependencyInjection
                 {
                     idx.TenancyScope = TenancyScope.PerTenant;
                 });
-        });
+        }).AddAsyncDaemon(DaemonMode.Solo);
         services.AddSingleton<ISessionFactory, TenantSessionFactory>();
         
         return services;
