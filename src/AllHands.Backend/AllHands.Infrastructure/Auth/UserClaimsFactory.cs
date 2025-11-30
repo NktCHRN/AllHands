@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Security.Claims;
 using AllHands.Application.Abstractions;
+using AllHands.Application.Constants;
 using AllHands.Infrastructure.Auth.Entities;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
@@ -8,9 +9,9 @@ namespace AllHands.Infrastructure.Auth;
 
 public sealed class UserClaimsFactory(IPermissionsContainer permissionsContainer) : IUserClaimsFactory
 {
-    public ClaimsPrincipal CreateClaimsPrincipal(AllHandsIdentityUser user)
+    public ClaimsPrincipal CreateClaimsPrincipal(AllHandsIdentityUser user, Guid employeeId)
     {
-        var claims = CreateClaims(user);
+        var claims = CreateClaims(user, employeeId);
 
         var claimsIdentity = new ClaimsIdentity(
             claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -18,7 +19,7 @@ public sealed class UserClaimsFactory(IPermissionsContainer permissionsContainer
         return new ClaimsPrincipal(claimsIdentity);
     }
 
-    public IReadOnlyList<Claim> CreateClaims(AllHandsIdentityUser user)
+    public IReadOnlyList<Claim> CreateClaims(AllHandsIdentityUser user, Guid employeeId)
     {
         var permissionsString = GetPermissionsString(user);
         var claims = new List<Claim>
@@ -31,6 +32,7 @@ public sealed class UserClaimsFactory(IPermissionsContainer permissionsContainer
             new Claim(ClaimTypes.Surname, user.LastName),
             new Claim(AuthConstants.PermissionClaimName, permissionsString),
             new Claim("companyid", user.CompanyId.ToString()),
+            new Claim(AllHandsClaimTypes.EmployeeId, employeeId.ToString())
         };
 
         foreach (var role in user.Roles.Select(r => r.Role!))

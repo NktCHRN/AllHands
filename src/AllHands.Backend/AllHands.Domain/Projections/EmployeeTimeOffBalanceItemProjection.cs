@@ -50,13 +50,13 @@ public sealed class EmployeeTimeOffBalanceItemProjection : MultiStreamProjection
 
     public void Apply(TimeOffBalanceAutomaticallyUpdated @event, TimeOffBalance view)
     {
-        view.Days += @event.Amount;
+        view.Days += @event.Delta;
         view.LastAutoUpdate = @event.OccurredAt;
     }
 
     public void Apply(TimeOffBalanceManuallyUpdated @event, TimeOffBalance view)
     {
-        view.Days += @event.Amount;
+        view.Days += @event.Delta;
     }
 
     public void Apply(TimeOffBalancePerYearUpdatedEvent @event, TimeOffBalance view)

@@ -18,4 +18,24 @@
       <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="9.0.11" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Features\Employees\Delete\" />
+      <Folder Include="Features\Employees\Fire\" />
+      <Folder Include="Features\Employees\Rehire\" />
+      <Folder Include="Features\Employees\ResendInvitation\" />
+      <Folder Include="Features\Employees\Search\" />
+      <Folder Include="Features\Employees\UpdateAvatar\" />
+      <Folder Include="Features\Employees\Update\" />
+      <Folder Include="Features\TimeOffBalances\Update\" />
+      <Folder Include="Features\TimeOffBalances\GetByEmployeeId\" />
+      <Folder Include="Features\TimeOffBalances\GetHistoryByEmployeeId\" />
+      <Folder Include="Features\TimeOffBalances\GetMy\" />
+      <Folder Include="Features\TimeOffRequests\Approve\" />
+      <Folder Include="Features\TimeOffRequests\Cancel\" />
+      <Folder Include="Features\TimeOffRequests\Create\" />
+      <Folder Include="Features\TimeOffRequests\GetByManagerId\" />
+      <Folder Include="Features\TimeOffRequests\GetMy\" />
+      <Folder Include="Features\TimeOffRequests\Reject\" />
+    </ItemGroup>
+
 </Project>

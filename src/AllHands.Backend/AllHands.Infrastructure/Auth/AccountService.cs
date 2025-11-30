@@ -8,6 +8,7 @@ using AllHands.Application.Features.User.RegisterFromInvitation;
 using AllHands.Application.Features.User.ResetPassword;
 using AllHands.Application.Features.User.Update;
 using AllHands.Domain.Exceptions;
+using AllHands.Domain.Models;
 using AllHands.Domain.Utilities;
 using AllHands.Infrastructure.Abstractions;
 using AllHands.Infrastructure.Auth.Entities;
@@ -25,7 +26,8 @@ public sealed class AccountService(
     ICurrentUserService currentUserService,
     IPasswordResetTokenProvider passwordResetTokenProvider,
     TimeProvider timeProvider,
-    ITicketModifier ticketModifier) : IAccountService
+    ITicketModifier ticketModifier,
+    Marten.IDocumentStore documentStore) : IAccountService
 {
     public async Task<LoginResult> LoginAsync(string email, string password, CancellationToken cancellationToken = default)
     {
@@ -62,7 +64,16 @@ public sealed class AccountService(
             .ThenInclude(r => r!.Claims)
             .Where(u => u.Id == user!.Id)
             .FirstAsync(cancellationToken: cancellationToken);
-        var claimsPrincipal = userClaimsFactory.CreateClaimsPrincipal(userWithClaims!);
+        await using var querySession = documentStore.QuerySession(userWithClaims.CompanyId.ToString());
+        var employeeId = await querySession.Query<Employee>()
+            .Where(e => e.Id == userWithClaims.Id)
+            .Select(e => e.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (employeeId == Guid.Empty)
+        {
+            throw new EntityNotFoundException("Employee was not found.");
+        }
+        var claimsPrincipal = userClaimsFactory.CreateClaimsPrincipal(userWithClaims!, employeeId);
         
         return new LoginResult(claimsPrincipal);
     }

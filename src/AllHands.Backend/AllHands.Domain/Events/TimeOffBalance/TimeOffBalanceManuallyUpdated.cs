@@ -7,4 +7,4 @@ public sealed record TimeOffBalanceManuallyUpdated(
     Guid PerformedByUserId, 
     Guid PerformedByEmployeeId,
     string Reason,
-    decimal Amount) : AuditableEvent(EntityId, PerformedByUserId);
+    decimal Delta) : AuditableEvent(EntityId, PerformedByUserId);
