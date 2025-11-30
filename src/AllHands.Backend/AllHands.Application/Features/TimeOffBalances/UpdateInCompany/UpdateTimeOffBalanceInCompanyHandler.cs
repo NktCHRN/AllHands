@@ -30,12 +30,14 @@ public sealed class UpdateTimeOffBalanceInCompanyHandler(IDocumentStore document
             .CountAsync(cancellationToken);
 
         var batchSize = options.Value.BatchSize;
-        for (var i = 0; i < employeesCount; i += batchSize)
+        for (var skip = 0; skip < employeesCount; skip += batchSize)
         {
             await using var documentSession = documentStore.LightweightSession(company.Id.ToString());
             var employees = await documentSession.Query<Employee>()
                 .Where(x => x.CompanyId == request.CompanyId && x.WorkStartDate < currentMonthStart)
                 .OrderBy(x => x.Id)
+                .Skip(skip)
+                .Take(batchSize)
                 .ToListAsync(cancellationToken);
 
             foreach (var employee in employees)
