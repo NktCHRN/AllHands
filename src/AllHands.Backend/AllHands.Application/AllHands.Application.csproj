@@ -28,8 +28,6 @@
       <Folder Include="Features\Employees\Update\" />
       <Folder Include="Features\TimeOffBalances\Update\" />
       <Folder Include="Features\TimeOffBalances\GetByEmployeeId\" />
-      <Folder Include="Features\TimeOffBalances\GetHistoryByEmployeeId\" />
-      <Folder Include="Features\TimeOffBalances\GetMy\" />
       <Folder Include="Features\TimeOffRequests\Approve\" />
       <Folder Include="Features\TimeOffRequests\Cancel\" />
       <Folder Include="Features\TimeOffRequests\Create\" />

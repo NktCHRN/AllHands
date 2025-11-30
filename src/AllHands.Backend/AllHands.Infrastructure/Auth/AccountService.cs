@@ -65,10 +65,11 @@ public sealed class AccountService(
             .Where(u => u.Id == user!.Id)
             .FirstAsync(cancellationToken: cancellationToken);
         await using var querySession = documentStore.QuerySession(userWithClaims.CompanyId.ToString());
-        var employeeId = await querySession.Query<Employee>()
-            .Where(e => e.Id == userWithClaims.Id)
-            .Select(e => e.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var employeeId = await Marten.QueryableExtensions.FirstOrDefaultAsync(
+            querySession.Query<Employee>()
+                .Where(e => e.UserId == userWithClaims.Id)
+                .Select(e => e.Id),
+                cancellationToken);
         if (employeeId == Guid.Empty)
         {
             throw new EntityNotFoundException("Employee was not found.");

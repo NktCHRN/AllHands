@@ -31,10 +31,11 @@ public sealed class SessionsUpdater(IDbContextFactory<AuthDbContext> dbContextFa
 
                 foreach (var user in batch)
                 {
-                    var employeeId = await querySession.Query<Employee>()
-                        .Where(e => e.Id == user.Id)
-                        .Select(e => e.Id)
-                        .FirstOrDefaultAsync(cancellationToken);
+                    var employeeId = await Marten.QueryableExtensions.FirstOrDefaultAsync(
+                        querySession.Query<Employee>()
+                            .Where(e => e.UserId == user.Id)
+                            .Select(e => e.Id),
+                        cancellationToken);
                     if (employeeId == Guid.Empty)
                     {
                         throw new EntityNotFoundException("Employee was not found.");
@@ -61,10 +62,11 @@ public sealed class SessionsUpdater(IDbContextFactory<AuthDbContext> dbContextFa
             ?? throw new EntityNotFoundException("User was not found");
         
         await using var querySession = documentStore.QuerySession(user.CompanyId.ToString());
-        var employeeId = await querySession.Query<Employee>()
-            .Where(e => e.Id == userId)
-            .Select(e => e.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var employeeId = await Marten.QueryableExtensions.FirstOrDefaultAsync(
+            querySession.Query<Employee>()
+                .Where(e => e.UserId == user.Id)
+                .Select(e => e.Id),
+            cancellationToken);
         if (employeeId == Guid.Empty)
         {
             throw new EntityNotFoundException("Employee was not found.");
