@@ -1,4 +1,5 @@
 ﻿using AllHands.Application.Dto;
+using AllHands.Domain.Events.TimeOff;
 using AllHands.Domain.Events.TimeOffBalance;
 using AllHands.Domain.Models;
 using Marten;
@@ -21,11 +22,13 @@ public sealed class GetTimeOffBalancesHistoryHandler(IQuerySession querySession)
         {
             b.Type = balanceTypes.GetValueOrDefault(b.TypeId);
         }
-        var streamIds = balances.Select(b => b.Id).ToList();
+        var streamIds = balances
+            .Select(b => b.Id)
+            .ToList();
 
         var eventsQuery = querySession.Events.QueryAllRawEvents()
             .Where(e => streamIds.Contains(e.StreamId)
-                        && e.EventTypesAre(typeof(TimeOffBalanceAutomaticallyUpdated), typeof(TimeOffBalanceManuallyUpdated)));
+                        && e.EventTypesAre(typeof(TimeOffBalanceAutomaticallyUpdated), typeof(TimeOffBalanceManuallyUpdated), typeof(TimeOffBalanceRequestChangeEvent)));
         var eventsCount = await eventsQuery.CountAsync(cancellationToken);
 
             var events = await eventsQuery
@@ -36,9 +39,7 @@ public sealed class GetTimeOffBalancesHistoryHandler(IQuerySession querySession)
 
         var eventDtos = events.Select(e =>
         {
-            var balanceId = e.StreamId;
-            var balance = balancesDict[balanceId];
-            var balanceType = balanceTypes.GetValueOrDefault(balance.TypeId);
+            var changeType = TimeOffBalancesHistoryItemType.Undefined;
             
             decimal delta = 0;
             Guid? updatedByEmployeeId = null;
@@ -49,6 +50,7 @@ public sealed class GetTimeOffBalancesHistoryHandler(IQuerySession querySession)
                 var eventData = (TimeOffBalanceAutomaticallyUpdated)e.Data;
                 delta = eventData.Delta;
                 timestamp = eventData.OccurredAt;
+                changeType = TimeOffBalancesHistoryItemType.AutoUpdate;
             }
             else if (e.EventType == typeof(TimeOffBalanceManuallyUpdated))
             {
@@ -56,7 +58,19 @@ public sealed class GetTimeOffBalancesHistoryHandler(IQuerySession querySession)
                 delta = eventData.Delta;
                 updatedByEmployeeId = eventData.PerformedByEmployeeId;
                 timestamp = eventData.OccurredAt;
+                changeType = TimeOffBalancesHistoryItemType.ManualAdjustment;
             }
+            else if (e.EventType == typeof(TimeOffBalanceRequestChangeEvent))
+            {
+                var eventData = (TimeOffBalanceRequestChangeEvent)e.Data;
+                delta = eventData.Delta;
+                timestamp = eventData.OccurredAt;
+                changeType = TimeOffBalancesHistoryItemType.TimeOffRequest;
+            }
+            
+            var balanceId = e.StreamId;
+            var balance = balancesDict[balanceId];
+            var balanceType = balanceTypes.GetValueOrDefault(balance.TypeId);
             
             return new TimeOffBalancesHistoryItemDto(
                 balanceId,
@@ -65,7 +79,8 @@ public sealed class GetTimeOffBalancesHistoryHandler(IQuerySession querySession)
                 balanceType?.Emoji ?? string.Empty,
                 timestamp, 
                 delta,
-                updatedByEmployeeId);
+                updatedByEmployeeId,
+                changeType);
         }).ToList();
         
         var employeesIds = eventDtos

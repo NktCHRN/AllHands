@@ -11,8 +11,6 @@ public sealed class UpdateBalanceHandler(IDocumentSession session, ICurrentUserS
 {
     public async Task Handle(UpdateBalanceCommand request, CancellationToken cancellationToken)
     {
-        var companyId = currentUserService.GetCompanyId();
-
         var timeOffTypeExists = await session.Query<TimeOffType>()
             .AnyAsync(t => t.Id == request.TypeId, cancellationToken);
 

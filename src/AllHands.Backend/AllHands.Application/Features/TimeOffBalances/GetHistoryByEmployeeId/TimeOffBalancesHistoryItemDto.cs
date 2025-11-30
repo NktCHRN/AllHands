@@ -9,7 +9,8 @@ public sealed record TimeOffBalancesHistoryItemDto(
     string TypeEmoji,
     DateTimeOffset Timestamp,
     decimal Delta,
-    Guid? UpdatedByEmployeeId)
+    Guid? UpdatedByEmployeeId,
+    TimeOffBalancesHistoryItemType ChangeType)
 {
     public EmployeeTitleDto? UpdatedBy { get; set; }
 }

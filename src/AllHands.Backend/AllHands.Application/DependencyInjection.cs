@@ -3,6 +3,8 @@ using AllHands.Application.Behaviors;
 using AllHands.Application.Features.TimeOffBalances.UpdateInCompany;
 using AllHands.Application.Utilities;
 using AllHands.Application.Validation;
+using AllHands.Domain.Abstractions;
+using AllHands.Domain.Services;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +31,8 @@ public static class DependencyInjection
             .BindConfiguration("TimeOffBalanceAutoUpdaterOptions")
             .ValidateDataAnnotations()
             .ValidateOnStart();
+
+        services.AddSingleton<IWorkDaysCalculator, WorkDaysCalculator>();
         
         return services.AddSingleton(TimeProvider.System);
     }

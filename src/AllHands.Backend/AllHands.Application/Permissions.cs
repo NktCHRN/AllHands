@@ -13,7 +13,7 @@ public static class Permissions
     public const string EmployeeDelete = "employee.delete";
     public const string EmployeeRehire = "employee.rehire";
 
-    public const string TimeOffRequestAdminApprove = "timeoffrequest.adminapprove";
+    public const string TimeOffRequestAdminApprove = "timeoffrequest.adminapprove";     // Can both approve and reject.
 
     public const string CompanyStatisticsView = "company.statistics.view";
     public const string RolesView = "roles.view";
