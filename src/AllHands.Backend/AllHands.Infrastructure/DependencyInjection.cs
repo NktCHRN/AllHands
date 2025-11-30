@@ -184,7 +184,6 @@ public static class DependencyInjection
                 .Index(x => new { x.EmployeeId, x.TypeId }, configure: idx =>
                 {
                     idx.IsUnique = true;
-                    idx.Predicate = "mt_deleted = false";
                     idx.TenancyScope = TenancyScope.PerTenant;
                 })
                 .Duplicate(x => x.LastAutoUpdate, "timestamp with time zone", notNull: false);
