@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Security.Claims;
 using AllHands.Application.Abstractions;
+using AllHands.Application.Constants;
 using AllHands.Application.Dto;
 using AllHands.Infrastructure.Auth;
 
@@ -19,6 +20,15 @@ public sealed class CurrentHttpUserService(IHttpContextAccessor httpContextAcces
         return parsed
             ? id
             : throw new InvalidOperationException("Invalid user identifier.");
+    }
+    
+    public Guid GetEmployeeId()
+    {
+        var parsed = Guid.TryParse(User.FindFirst(AllHandsClaimTypes.EmployeeId)?.Value, out Guid id);
+
+        return parsed
+            ? id
+            : throw new InvalidOperationException("Invalid employee identifier.");
     }
 
     public string GetEmail()
