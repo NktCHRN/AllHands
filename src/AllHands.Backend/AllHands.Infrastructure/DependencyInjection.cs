@@ -186,6 +186,10 @@ public static class DependencyInjection
                     idx.IsUnique = true;
                     idx.TenancyScope = TenancyScope.PerTenant;
                 })
+                .Index(x => x.TypeId, configure: idx =>
+                {
+                    idx.TenancyScope = TenancyScope.PerTenant;
+                })
                 .Duplicate(x => x.LastAutoUpdate, "timestamp with time zone", notNull: false);
             options.Schema.For<TimeOffType>()
                 .Index(x => x.Order, configure: idx =>
