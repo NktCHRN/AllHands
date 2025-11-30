@@ -1,14 +1,15 @@
-﻿using AllHands.Application.Dto;
+﻿using AllHands.Domain.Models;
 
-namespace AllHands.Application.Features.User.GetDetails;
+namespace AllHands.Application.Dto;
 
-public sealed record GetUserDetailsResult(
+public sealed record EmployeeDetailsDto(
     Guid EmployeeId,
     string FirstName,
     string? MiddleName,
     string LastName,
     string Email,
     string? PhoneNumber,
+    EmployeeStatus Status,
     DateOnly WorkStartDate,
     EmployeeDto Manager,
     PositionDto Position,

@@ -7,16 +7,16 @@ public sealed class TimeOffEmojiValidator : ITimeOffEmojiValidator
 {
     private readonly List<string> _allowedEmoji =
     [
-        "🤒",
-        "😷",
-        "🤕",
-        "🤧",
-        "🏥",
         "✈️",
         "☀️",
         "🏄",
         "🎉",
-        "🏖️"
+        "🌴",
+        "🤒",
+        "😷",
+        "🤕",
+        "🤧",
+        "🏥"
     ];
 
     private readonly FrozenSet<string> _allowedEmojiSet;

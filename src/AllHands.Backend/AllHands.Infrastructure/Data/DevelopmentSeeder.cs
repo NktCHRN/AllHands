@@ -103,7 +103,7 @@ public sealed class DevelopmentSeeder(IDocumentStore documentStore, AuthDbContex
                 Name = "Vacation",
                 DaysPerYear = 20,
                 CreatedByUserId = _adminUserId,
-                Order = 0
+                Order = 1
             },
             new TimeOffType()
             {
@@ -114,7 +114,7 @@ public sealed class DevelopmentSeeder(IDocumentStore documentStore, AuthDbContex
                 Name = "Sick leave (Undocumented)",
                 DaysPerYear = 10,
                 CreatedByUserId = _adminUserId,
-                Order = 1
+                Order = 2
             },
             new TimeOffType()
             {

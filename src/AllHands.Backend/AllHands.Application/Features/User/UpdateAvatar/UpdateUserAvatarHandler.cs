@@ -25,7 +25,7 @@ public sealed class UpdateUserAvatarHandler(IFileService fileService, ICurrentUs
         await fileService.SaveAvatarAsync(
             new AllHandsFile(
                 request.Stream,
-                userId.ToString(),
+                employee.Id.ToString(),
                 request.ContentType) {OriginalFileName = request.Name}, cancellationToken);
 
         documentSession.Events.Append(employee.Id, new EmployeeAvatarUpdated(employee.Id, userId));

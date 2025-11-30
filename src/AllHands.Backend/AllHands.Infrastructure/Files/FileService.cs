@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Text;
 using AllHands.Application.Abstractions;
 using AllHands.Application.Dto;
 using Amazon.S3;
@@ -21,7 +22,7 @@ public sealed class FileService(IAmazonS3 s3Client, IOptionsMonitor<S3Options> o
             ContentType = file.ContentType
         };
         
-        putRequest.Metadata.Add(OriginalFileNameHeader, file.OriginalFileName);
+        putRequest.Metadata.Add(OriginalFileNameHeader, Convert.ToBase64String(Encoding.UTF8.GetBytes(file.OriginalFileName ?? string.Empty)));
 
         await s3Client.PutObjectAsync(putRequest, cancellationToken);
     }
@@ -41,7 +42,7 @@ public sealed class FileService(IAmazonS3 s3Client, IOptionsMonitor<S3Options> o
             return new AllHandsFile(response.ResponseStream, id, response.Headers.ContentType)
             {
                 OriginalFileName = !string.IsNullOrEmpty(response.Metadata[OriginalFileNameHeader])
-                    ? response.Metadata[OriginalFileNameHeader]
+                    ? Encoding.UTF8.GetString(Convert.FromBase64String(response.Metadata[OriginalFileNameHeader])) 
                     : Path.GetFileName(response.Key)
             };
         }
@@ -62,9 +63,7 @@ public sealed class FileService(IAmazonS3 s3Client, IOptionsMonitor<S3Options> o
         
         return new AllHandsFile(response.ResponseStream, id, response.Headers.ContentType)
         {
-            OriginalFileName = !string.IsNullOrEmpty(response.Metadata[OriginalFileNameHeader]) 
-                ? response.Metadata[OriginalFileNameHeader] 
-                : Path.GetFileName(response.Key)
+            OriginalFileName = Path.GetFileName(response.Key)
         };
     }
 
@@ -78,7 +77,7 @@ public sealed class FileService(IAmazonS3 s3Client, IOptionsMonitor<S3Options> o
             ContentType = file.ContentType
         };
         
-        putRequest.Metadata.Add(OriginalFileNameHeader, file.OriginalFileName);
+        putRequest.Metadata.Add(OriginalFileNameHeader, Convert.ToBase64String(Encoding.UTF8.GetBytes(file.OriginalFileName ?? string.Empty)));
 
         await s3Client.PutObjectAsync(putRequest, cancellationToken);
     }
@@ -98,7 +97,7 @@ public sealed class FileService(IAmazonS3 s3Client, IOptionsMonitor<S3Options> o
             return new AllHandsFile(response.ResponseStream, id, response.Headers.ContentType)
             {
                 OriginalFileName = !string.IsNullOrEmpty(response.Metadata[OriginalFileNameHeader]) 
-                    ? response.Metadata[OriginalFileNameHeader] 
+                    ? Encoding.UTF8.GetString(Convert.FromBase64String(response.Metadata[OriginalFileNameHeader])) 
                     : Path.GetFileName(response.Key)
             };
         }
@@ -119,9 +118,7 @@ public sealed class FileService(IAmazonS3 s3Client, IOptionsMonitor<S3Options> o
         
         return new AllHandsFile(response.ResponseStream, id, response.Headers.ContentType)
         {
-            OriginalFileName = !string.IsNullOrEmpty(response.Metadata[OriginalFileNameHeader]) 
-                ? response.Metadata[OriginalFileNameHeader] 
-                : Path.GetFileName(response.Key)
+            OriginalFileName = Path.GetFileName(response.Key)
         };
     }
 }
