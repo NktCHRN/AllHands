@@ -15,8 +15,9 @@ public sealed class UpdateNewsPostHandler(IDocumentSession documentSession, ICur
                            .FirstOrDefaultAsync(e => e.UserId == userId, token: cancellationToken)
                        ?? throw new EntityNotFoundException("Employee was not found");
 
-        var post = await documentSession.LoadAsync<NewsPost>(request.Id, cancellationToken)
-            ?? throw new EntityNotFoundException("NewsPost was not found");
+        var post = await documentSession.Query<NewsPost>()
+                       .FirstOrDefaultAsync(p => p.Id == request.Id, token: cancellationToken)
+                   ?? throw new EntityNotFoundException("News post was not found");
 
         if (post.AuthorId != employee.Id)
         {

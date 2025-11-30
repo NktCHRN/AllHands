@@ -18,12 +18,4 @@
       <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="9.0.11" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Features\Holiday\Create\" />
-      <Folder Include="Features\Holiday\Delete\" />
-      <Folder Include="Features\Holiday\GetById\" />
-      <Folder Include="Features\Holiday\Get\" />
-      <Folder Include="Features\Holiday\Update\" />
-    </ItemGroup>
-
 </Project>

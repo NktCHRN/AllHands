@@ -12,5 +12,6 @@ public sealed record GetUserDetailsResult(
     DateOnly WorkStartDate,
     EmployeeDto Manager,
     PositionDto Position,
-    CompanyDto Company);
+    CompanyDto Company,
+    RoleDto Role);
     

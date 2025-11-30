@@ -1,4 +1,5 @@
-﻿using AllHands.Application.Features.User.ChangePassword;
+﻿using AllHands.Application.Dto;
+using AllHands.Application.Features.User.ChangePassword;
 using AllHands.Application.Features.User.Login;
 using AllHands.Application.Features.User.RegisterFromInvitation;
 using AllHands.Application.Features.User.ResetPassword;
@@ -15,4 +16,5 @@ public interface IAccountService
     Task ChangePassword(ChangePasswordCommand command, CancellationToken cancellationToken);
     Task<IReadOnlyList<Guid>> GetUserIds(Guid currentUserId);
     Task Update(UpdateUserCommand command, Guid userId, CancellationToken cancellationToken);
+    Task<RoleDto?> GetRoleByUserIdAsync(Guid userId, CancellationToken cancellationToken);
 }

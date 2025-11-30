@@ -7,7 +7,7 @@ using MediatR;
 
 namespace AllHands.Application.Features.User.GetDetails;
 
-public sealed class GetUserDetailsHandler(ICurrentUserService currentUserService, IQuerySession querySession) : IRequestHandler<GetUserDetailsQuery, GetUserDetailsResult>
+public sealed class GetUserDetailsHandler(ICurrentUserService currentUserService, IQuerySession querySession, IAccountService accountService) : IRequestHandler<GetUserDetailsQuery, GetUserDetailsResult>
 {
     public async Task<GetUserDetailsResult> Handle(GetUserDetailsQuery request, CancellationToken cancellationToken)
     {
@@ -34,6 +34,8 @@ public sealed class GetUserDetailsHandler(ICurrentUserService currentUserService
 
         employee.Company = company
                            ?? throw new EntityNotFoundException("Company was not found");
+        
+        var role = await accountService.GetRoleByUserIdAsync(currentUser.Id, cancellationToken);
 
         return new GetUserDetailsResult(
             employee.Id,
@@ -65,6 +67,7 @@ public sealed class GetUserDetailsHandler(ICurrentUserService currentUserService
             {
                 Id = employee.Company.Id,
                 Name = employee.Company.Name
-            });
+            }, 
+            role == null ? null! : new RoleDto(role.Id, role.Name, role.IsDefault));
     }
 }

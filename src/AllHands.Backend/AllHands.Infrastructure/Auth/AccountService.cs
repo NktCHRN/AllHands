@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using System.Security.Claims;
 using AllHands.Application.Abstractions;
+using AllHands.Application.Dto;
 using AllHands.Application.Features.User.ChangePassword;
 using AllHands.Application.Features.User.Login;
 using AllHands.Application.Features.User.RegisterFromInvitation;
@@ -246,5 +247,19 @@ public sealed class AccountService(
         ], cancellationToken: cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
+    }
+
+    public async Task<RoleDto?> GetRoleByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var role = await dbContext.Roles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Users.Any(u => u.UserId == userId), cancellationToken: cancellationToken);
+
+        if (role is null)
+        {
+            return null;
+        }
+
+        return new RoleDto(role.Id, role.Name ?? string.Empty, role.IsDefault);
     }
 }
