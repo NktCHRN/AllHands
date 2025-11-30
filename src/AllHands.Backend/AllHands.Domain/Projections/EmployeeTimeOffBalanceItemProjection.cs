@@ -62,12 +62,12 @@ public sealed class EmployeeTimeOffBalanceItemProjection : MultiStreamProjection
     {
         if (@event.UpdateType == TimeOffPerYearUpdateType.Reset)
         {
-            view.DaysPerYear = @event.NewDaysPerYear;
+            view.DaysPerYear = @event.Amount.GetValueOrDefault();
         }
 
         if (@event.UpdateType == TimeOffPerYearUpdateType.Update)
         {
-            view.DaysPerYear += @event.NewDaysPerYear - @event.OldDaysPerYear;
+            view.DaysPerYear += @event.Delta.GetValueOrDefault();
             if (view.DaysPerYear < 0)
             {
                 view.DaysPerYear = 0;

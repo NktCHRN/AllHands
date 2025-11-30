@@ -6,7 +6,7 @@ namespace AllHands.Domain.Events.TimeOffBalance;
 public sealed record TimeOffBalancePerYearUpdatedEvent(
     Guid EntityId, 
     Guid PerformedByUserId,
-    decimal OldDaysPerYear,
-    decimal NewDaysPerYear,
+    decimal? Amount,
+    decimal? Delta,
     TimeOffPerYearUpdateType UpdateType) : AuditableEvent(EntityId, PerformedByUserId);
     
