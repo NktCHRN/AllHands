@@ -14,6 +14,7 @@ public sealed class EmployeeTimeOffBalanceItemProjection : MultiStreamProjection
         Identity<IEvent<TimeOffBalanceCreatedEvent>>(x => x.Data.EntityId);
         Identity<IEvent<TimeOffBalanceAutomaticallyUpdated>>(x => x.Data.EntityId);
         Identity<IEvent<TimeOffBalanceManuallyUpdated>>(x => x.Data.EntityId);
+        Identity<IEvent<TimeOffBalancePerYearUpdatedEvent>>(x => x.Data.EntityId);
 
         Identity<IEvent<TimeOffRequestedEvent>>(x => x.Data.TimeOffBalanceId);
         Identity<IEvent<TimeOffRequestCancelledEvent>>(x => x.Data.TimeOffBalanceId);

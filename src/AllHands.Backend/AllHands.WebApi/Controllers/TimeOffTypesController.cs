@@ -6,6 +6,7 @@ using AllHands.Application.Features.TimeOffTypes.Delete;
 using AllHands.Application.Features.TimeOffTypes.Get;
 using AllHands.Application.Features.TimeOffTypes.GetAllowedEmoji;
 using AllHands.Application.Features.TimeOffTypes.GetById;
+using AllHands.Application.Features.TimeOffTypes.Update;
 using AllHands.WebApi.Auth;
 using AllHands.WebApi.Contracts;
 using MediatR;
@@ -55,6 +56,17 @@ public sealed class TimeOffTypesController(IMediator mediator) : ControllerBase
         return StatusCode(StatusCodes.Status201Created, ApiResponse.FromResult(result));
     }
 
+    [HasPermission(Permissions.TimeOffTypeEdit)]
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Edit(Guid id, [FromBody] UpdateTimeOffTypeCommand command,
+        CancellationToken cancellationToken)
+    {
+        command.Id = id;
+        await mediator.Send(command, cancellationToken);
+        return NoContent();
+    }
+
     [HasPermission(Permissions.TimeOffTypeDelete)]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -63,6 +75,4 @@ public sealed class TimeOffTypesController(IMediator mediator) : ControllerBase
         await mediator.Send(new DeleteTimeOffTypeCommand(id), cancellationToken);
         return NoContent();
     }
-    
-    // TODO: implement update.
 }

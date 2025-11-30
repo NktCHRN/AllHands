@@ -17,6 +17,7 @@ public sealed class TimeOffTypeBaseCommandValidator : AbstractValidator<TimeOffT
             .WithMessage("The emoji is not allowed. Please, pick emoji from a list of allowed ones.");
 
         RuleFor(t => t.DaysPerYear)
+            .PrecisionScale(5, 2, true)
             .GreaterThanOrEqualTo(0)
             .LessThanOrEqualTo(365);
     }
