@@ -8,10 +8,11 @@ using MediatR;
 
 namespace AllHands.Application.Features.User.RegisterFromInvitation;
 
-public sealed class RegisterFromInvitationHandler(IDocumentSession documentSession, IAccountService accountService) : IRequestHandler<RegisterFromInvitationCommand>
+public sealed class RegisterFromInvitationHandler(IDocumentStore documentStore, IAccountService accountService) : IRequestHandler<RegisterFromInvitationCommand>
 {
     public async Task Handle(RegisterFromInvitationCommand request, CancellationToken cancellationToken)
     {
+        await using var documentSession = documentStore.LightweightSession();
         var userId = await accountService.RegisterFromInvitationAsync(request, cancellationToken);
 
         var employee = await documentSession.Query<Domain.Models.Employee>()
@@ -23,8 +24,10 @@ public sealed class RegisterFromInvitationHandler(IDocumentSession documentSessi
         {
             throw new EntityValidationFailedException("The user is already activated.");
         }
+        
+        await using var tenantedDocumentSession = documentStore.LightweightSession(employee.CompanyId.ToString());
 
-        documentSession.Events.Append(employee.Id, new EmployeeRegisteredEvent(employee.Id, employee.UserId));
-        await documentSession.SaveChangesAsync(cancellationToken);
+        tenantedDocumentSession.Events.Append(employee.Id, new EmployeeRegisteredEvent(employee.Id, employee.UserId));
+        await tenantedDocumentSession.SaveChangesAsync(cancellationToken);
     }
 }

@@ -413,7 +413,7 @@ public sealed class AccountService(
                        .IgnoreQueryFilters()
                        .Include(u => u.Roles)
                        .ThenInclude(r => r.Role)
-                       .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+                       .FirstOrDefaultAsync(u => u.Id == userId && !u.DeletedAt.HasValue, cancellationToken)
                    ?? throw new EntityNotFoundException("User was not found");
 
         user.DeactivatedAt = null;
@@ -428,6 +428,20 @@ public sealed class AccountService(
                 RoleId = defaultRole.Id
             });
         }
+        
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users
+                       .IgnoreQueryFilters()
+                       .FirstOrDefaultAsync(u => u.Id == userId && !u.DeletedAt.HasValue, cancellationToken)
+                   ?? throw new EntityNotFoundException("User was not found");
+        
+        user.DeletedAt = timeProvider.GetUtcNow();
+        
+        await ticketModifier.ExpireActiveSessionsAsync(dbContext, userId, cancellationToken);
         
         await dbContext.SaveChangesAsync(cancellationToken);
     }

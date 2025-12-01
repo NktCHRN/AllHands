@@ -27,4 +27,5 @@ public interface IAccountService
     Task UpdateAsync(UpdateEmployeeCommand command, Guid userId, CancellationToken cancellationToken);
     Task DeactivateAsync(Guid userId, CancellationToken cancellationToken);
     Task ReactivateAsync(Guid userId, CancellationToken cancellationToken);
+    Task DeleteAsync(Guid userId, CancellationToken cancellationToken);
 }

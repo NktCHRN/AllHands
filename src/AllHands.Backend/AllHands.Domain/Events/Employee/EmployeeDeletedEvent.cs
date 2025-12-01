@@ -2,4 +2,4 @@
 
 namespace AllHands.Domain.Events.Employee;
 
-public sealed record EmployeeDeletedEvent(Guid EntityId, Guid PerformedByUserId): AuditableEvent(EntityId, PerformedByUserId);
+public sealed record EmployeeDeletedEvent(Guid EntityId, Guid PerformedByUserId, string Reason): AuditableEvent(EntityId, PerformedByUserId);

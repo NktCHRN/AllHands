@@ -1,6 +1,7 @@
 ﻿using AllHands.Application;
 using AllHands.Application.Dto;
 using AllHands.Application.Features.Employees.Create;
+using AllHands.Application.Features.Employees.Delete;
 using AllHands.Application.Features.Employees.DeleteAvatar;
 using AllHands.Application.Features.Employees.Fire;
 using AllHands.Application.Features.Employees.GetAvatarById;
@@ -134,6 +135,16 @@ public sealed class EmployeesController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> Rehire(Guid id, CancellationToken cancellationToken)
     {
         await mediator.Send(new RehireEmployeeCommand(id), cancellationToken);
+        return NoContent();
+    }
+    
+    [HasPermission(Permissions.EmployeeDelete)]
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(Guid id, [FromBody] DeleteEmployeeCommand command, CancellationToken cancellationToken)
+    {
+        command.EmployeeId = id;
+        await mediator.Send(command, cancellationToken);
         return NoContent();
     }
 }
