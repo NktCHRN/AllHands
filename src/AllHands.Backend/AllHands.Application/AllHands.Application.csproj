@@ -22,7 +22,7 @@
       <Folder Include="Features\Employees\Delete\" />
       <Folder Include="Features\Employees\Fire\" />
       <Folder Include="Features\Employees\GetById\" />
-      <Folder Include="Features\Employees\GetWithTImeOff\" />
+      <Folder Include="Features\Employees\GetInTimeOff\" />
       <Folder Include="Features\Employees\Rehire\" />
       <Folder Include="Features\Employees\ResendInvitation\" />
       <Folder Include="Features\Employees\Search\" />
@@ -30,9 +30,6 @@
       <Folder Include="Features\Employees\Update\" />
       <Folder Include="Features\TimeOffRequests\Approve\" />
       <Folder Include="Features\TimeOffRequests\Cancel\" />
-      <Folder Include="Features\TimeOffRequests\GetById\" />
-      <Folder Include="Features\TimeOffRequests\GetByManagerId\" />
-      <Folder Include="Features\TimeOffRequests\GetMy\" />
       <Folder Include="Features\TimeOffRequests\Reject\" />
     </ItemGroup>
 

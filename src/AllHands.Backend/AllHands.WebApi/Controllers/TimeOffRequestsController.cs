@@ -1,5 +1,9 @@
-﻿using AllHands.Application.Dto;
+﻿using AllHands.Application.Abstractions;
+using AllHands.Application.Dto;
+using AllHands.Application.Features.TimeOffRequests;
 using AllHands.Application.Features.TimeOffRequests.Create;
+using AllHands.Application.Features.TimeOffRequests.Get;
+using AllHands.Application.Features.TimeOffRequests.GetById;
 using AllHands.WebApi.Contracts;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +13,7 @@ namespace AllHands.WebApi.Controllers;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/time-off/requests")]
-public sealed class TimeOffRequestsController(IMediator mediator) : ControllerBase
+public sealed class TimeOffRequestsController(IMediator mediator, ICurrentUserService currentUserService) : ControllerBase
 {
     [Authorize]
     [HttpPost]
@@ -17,6 +21,33 @@ public sealed class TimeOffRequestsController(IMediator mediator) : ControllerBa
     public async Task<IActionResult> Create([FromBody] CreateTimeOffRequestCommand command, CancellationToken token)
     {
         var result = await mediator.Send(command, token);
-        return Ok(result);
+        return StatusCode(StatusCodes.Status201Created, ApiResponse.FromResult(result));
+    }
+
+    [Authorize]
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<TimeOffRequestDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetByIdAsync([FromRoute] Guid id, CancellationToken token)
+    {
+        var result = await mediator.Send(new GetTimeOffRequestByIdQuery(id), token);
+        return Ok(ApiResponse.FromResult(result));
+    }
+    
+    [Authorize]
+    [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PagedResponse<TimeOffRequestDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMyAsync([FromQuery] PaginationParametersRequest parameters, CancellationToken token)
+    {
+        var result = await mediator.Send(new GetTimeOffRequestsQuery(parameters.PerPage, parameters.Page, EmployeeId: currentUserService.GetEmployeeId()), token);
+        return Ok(ApiResponse.FromResult(PagedResponse.FromDto(result)));
+    }
+    
+    [Authorize]
+    [HttpGet("~/api/v{version:apiVersion}/time-off/employees/requests")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResponse<TimeOffRequestDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAsync([FromQuery] GetTimeOffRequestsQuery query, CancellationToken token)
+    {
+        var result = await mediator.Send(query, token);
+        return Ok(ApiResponse.FromResult(PagedResponse.FromDto(result)));
     }
 }

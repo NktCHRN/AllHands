@@ -1,9 +1,18 @@
-﻿namespace AllHands.Application.Dto;
+﻿using AllHands.Domain.Models;
+
+namespace AllHands.Application.Dto;
 
 public sealed record EmployeeTitleDto(
-    Guid Id, 
+    Guid Id,
     string FirstName,
     string? MiddleName,
     string LastName,
-    string Email);
+    string Email)
+{
+    public static EmployeeTitleDto FromModel(Employee model)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        return new EmployeeTitleDto(model.Id, model.FirstName, model.MiddleName, model.LastName, model.Email);
+    }
+}
     

@@ -3,7 +3,27 @@ using AllHands.Domain.Models;
 
 namespace AllHands.Application.Features.TimeOffRequests;
 
-public sealed record TimeOffRequestDto(Guid Id, DateTime Start, DateTime End, Guid TypeId, TimeOffRequestStatus Status, decimal WorkingDaysCount, EmployeeTitleDto? Approver)
+public sealed record TimeOffRequestDto(Guid Id, DateOnly StartDate, DateOnly EndDate, Guid TypeId, TimeOffRequestStatus Status, decimal WorkingDaysCount, EmployeeTitleDto? Approver)
 {
-    public EmployeeTitleDto? Employee {get; set;}    
+    public EmployeeTitleDto? Employee {get; set;}
+
+    public static TimeOffRequestDto FromModel(TimeOffRequest model)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        return new TimeOffRequestDto(
+            model.Id,
+            model.StartDate,
+            model.EndDate,
+            model.TypeId,
+            model.Status,
+            model.WorkingDaysCount,
+            model.Approver is not null 
+            ? EmployeeTitleDto.FromModel(model.Approver)
+            : null)
+        {
+            Employee = model.Employee is not null
+            ? EmployeeTitleDto.FromModel(model.Employee)
+            : null
+        };
+    }
 }
