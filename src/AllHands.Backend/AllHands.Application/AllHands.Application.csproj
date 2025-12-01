@@ -21,7 +21,6 @@
     <ItemGroup>
       <Folder Include="Features\Employees\Delete\" />
       <Folder Include="Features\Employees\Fire\" />
-      <Folder Include="Features\Employees\GetById\" />
       <Folder Include="Features\Employees\Rehire\" />
       <Folder Include="Features\Employees\ResendInvitation\" />
       <Folder Include="Features\Employees\Search\" />

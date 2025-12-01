@@ -18,8 +18,7 @@ public sealed class GetUserHandler(ICurrentUserService currentUserService, IQuer
                        ?? throw new EntityNotFoundException("User was not found");
 
         employee.Position = await querySession.Query<Position>()
-                                .FirstOrDefaultAsync(x => x.Id == employee.PositionId, cancellationToken)
-                            ?? throw new EntityNotFoundException("Position was not found");
+            .FirstOrDefaultAsync(x => x.Id == employee.PositionId, cancellationToken);
 
         var roles = currentUserService.GetRoles();
         var permissions = currentUserService.GetPermissions();
@@ -34,7 +33,7 @@ public sealed class GetUserHandler(ICurrentUserService currentUserService, IQuer
             new PositionDto
             {
                 Id = employee.PositionId, 
-                Name = employee.Position.Name
+                Name = employee.Position?.Name ?? string.Empty
             },
             roles,
             permissions);

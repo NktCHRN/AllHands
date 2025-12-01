@@ -26,54 +26,21 @@ public sealed class GetUserDetailsHandler(
                            .FirstOrDefaultAsync(e => e.UserId == currentUser.Id, token: cancellationToken)
                        ?? throw new EntityNotFoundException("User was not found");
 
-        employee.Position = position
-                            ?? throw new EntityNotFoundException("Position was not found");
+        employee.Position = position!;
 
-        employee.Manager = manager
-                           ?? throw new EntityNotFoundException("Manager was not found");
-        employee.Manager.Position = await querySession.Query<Position>()
-                                        .FirstOrDefaultAsync(x => x.Id == employee.Manager.PositionId,
-                                            token: cancellationToken)
-                                    ?? throw new EntityNotFoundException("Manager position was not found");
+        employee.Manager = manager!;
+        if (employee.Manager is not null)
+        {
+            employee.Manager.Position = await querySession.Query<Position>()
+                .FirstOrDefaultAsync(x => x.Id == employee.Manager.PositionId,
+                    token: cancellationToken);
+        }
 
         employee.Company = company
                            ?? throw new EntityNotFoundException("Company was not found");
 
         var role = await accountService.GetRoleByUserIdAsync(currentUser.Id, cancellationToken);
 
-        return new EmployeeDetailsDto(
-            employee.Id,
-            employee.FirstName,
-            employee.MiddleName,
-            employee.LastName,
-            employee.Email,
-            employee.PhoneNumber,
-            employee.Status,
-            employee.WorkStartDate,
-            new EmployeeDto
-            {
-                Id = employee.Manager.Id,
-                FirstName = employee.Manager.FirstName,
-                MiddleName = employee.Manager.MiddleName,
-                LastName = employee.Manager.LastName,
-                Email = employee.Manager.Email,
-                PhoneNumber = employee.Manager.PhoneNumber,
-                Position = new PositionDto
-                {
-                    Id = employee.Manager.PositionId,
-                    Name = employee.Manager.Position.Name
-                }
-            },
-            new PositionDto
-            {
-                Id = employee.PositionId,
-                Name = employee.Position.Name
-            },
-            new CompanyDto()
-            {
-                Id = employee.Company.Id,
-                Name = employee.Company.Name
-            },
-            role == null ? null! : new RoleDto(role.Id, role.Name, role.IsDefault));
+        return EmployeeDetailsDto.FromModel(employee, role);
     }
 }

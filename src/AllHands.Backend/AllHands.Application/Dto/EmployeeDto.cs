@@ -1,4 +1,6 @@
-﻿namespace AllHands.Application.Dto;
+﻿using AllHands.Domain.Models;
+
+namespace AllHands.Application.Dto;
 
 public class EmployeeDto
 {
@@ -9,4 +11,24 @@ public class EmployeeDto
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public PositionDto Position { get; set; } = null!;
+
+    public static EmployeeDto FromModel(Employee model)
+    {
+        return new EmployeeDto
+        {
+            Id = model.Id,
+            FirstName = model.FirstName,
+            MiddleName = model.MiddleName,
+            LastName = model.LastName,
+            Email = model.Email,
+            PhoneNumber = model.PhoneNumber,
+            Position = model.Position is not null
+                ? new PositionDto()
+                {
+                    Id = model.Position.Id,
+                    Name = model.Position.Name
+                }
+                : null!
+        };
+    }
 }
