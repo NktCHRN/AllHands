@@ -393,4 +393,17 @@ public sealed class AccountService(
         
         return globalUser;
     }
+
+    public async Task DeactivateAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users
+                       .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+                   ?? throw new EntityNotFoundException("User was not found");
+
+        user.DeactivatedAt = timeProvider.GetUtcNow();
+        
+        await ticketModifier.ExpireActiveSessionsAsync(dbContext, userId, cancellationToken);
+        
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }

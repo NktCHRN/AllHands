@@ -2,6 +2,7 @@
 using AllHands.Application.Dto;
 using AllHands.Application.Features.Employees.Create;
 using AllHands.Application.Features.Employees.DeleteAvatar;
+using AllHands.Application.Features.Employees.Fire;
 using AllHands.Application.Features.Employees.GetAvatarById;
 using AllHands.Application.Features.Employees.GetById;
 using AllHands.Application.Features.Employees.GetInTimeOff;
@@ -110,6 +111,16 @@ public sealed class EmployeesController(IMediator mediator) : ControllerBase
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Update(Guid id, UpdateEmployeeCommand command, CancellationToken cancellationToken)
+    {
+        command.EmployeeId = id;
+        await mediator.Send(command, cancellationToken);
+        return NoContent();
+    }
+    
+    [Authorize]
+    [HttpPut("{id:guid}/fire")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Fire(Guid id, [FromBody] FireEmployeeCommand command, CancellationToken cancellationToken)
     {
         command.EmployeeId = id;
         await mediator.Send(command, cancellationToken);
