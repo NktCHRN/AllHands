@@ -1,6 +1,7 @@
 ﻿using AllHands.Application.Dto;
 using AllHands.Application.Features.Employees.GetById;
 using AllHands.Application.Features.Employees.GetInTimeOff;
+using AllHands.Application.Features.Employees.Search;
 using AllHands.WebApi.Contracts;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -28,5 +29,14 @@ public sealed class EmployeesController(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(new GetEmployeeByIdQuery(id), cancellationToken);
         return Ok(ApiResponse.FromResult(result));
+    }
+    
+    [Authorize]
+    [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PagedResponse<EmployeeDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Search([FromQuery] SearchEmployeesQuery query, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse.FromResult(PagedResponse.FromDto(result)));
     }
 }
