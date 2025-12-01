@@ -25,8 +25,8 @@ public sealed class PermissionsContainer : IPermissionsContainer
             { Application.Permissions.NewsCreate, 11 },
             { Application.Permissions.NewsEdit, 12 },
             { Application.Permissions.NewsDelete, 13 },
-
-            { Application.Permissions.EmployeeRehire, 14 },
+            
+            // 14 is empty for now.
 
             { Application.Permissions.TimeOffTypeCreate, 15 },
             { Application.Permissions.TimeOffTypeEdit, 16 },
