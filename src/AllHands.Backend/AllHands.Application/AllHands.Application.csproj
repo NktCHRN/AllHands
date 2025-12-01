@@ -22,7 +22,6 @@
       <Folder Include="Features\Employees\Delete\" />
       <Folder Include="Features\Employees\Fire\" />
       <Folder Include="Features\Employees\Rehire\" />
-      <Folder Include="Features\Employees\Update\" />
     </ItemGroup>
 
 </Project>

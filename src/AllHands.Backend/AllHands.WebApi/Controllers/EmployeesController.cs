@@ -7,6 +7,7 @@ using AllHands.Application.Features.Employees.GetById;
 using AllHands.Application.Features.Employees.GetInTimeOff;
 using AllHands.Application.Features.Employees.ResendInvitation;
 using AllHands.Application.Features.Employees.Search;
+using AllHands.Application.Features.Employees.Update;
 using AllHands.Application.Features.Employees.UpdateAvatar;
 using AllHands.WebApi.Auth;
 using AllHands.WebApi.Contracts;
@@ -90,7 +91,7 @@ public sealed class EmployeesController(IMediator mediator) : ControllerBase
     [HasPermission(Permissions.EmployeeCreate)]
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<CreateEmployeeResult>), StatusCodes.Status201Created)]
-    public async Task<IActionResult> CreateEmployee(CreateEmployeeCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create(CreateEmployeeCommand command, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(command, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, ApiResponse.FromResult(result));
@@ -102,6 +103,16 @@ public sealed class EmployeesController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> ResendInvitationAsync(Guid id, CancellationToken cancellationToken)
     {
         await mediator.Send(new ResendInvitationCommand(id), cancellationToken);
+        return NoContent();
+    }
+    
+    [HasPermission(Permissions.EmployeeEdit)]
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Update(Guid id, UpdateEmployeeCommand command, CancellationToken cancellationToken)
+    {
+        command.EmployeeId = id;
+        await mediator.Send(command, cancellationToken);
         return NoContent();
     }
 }

@@ -20,7 +20,7 @@ public sealed class UpdateUserHandler(ICurrentUserService currentUserService, IA
             throw new EntityNotFoundException("User was not found");
         }
         
-        await accountService.Update(request, userId, cancellationToken);
+        await accountService.UpdateAsync(request, userId, cancellationToken);
 
         documentSession.Events.Append(employee.Id, new EmployeeUpdatedBySelfEvent(
             employee.Id,

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using AllHands.Application.Abstractions;
 using AllHands.Application.Dto;
 using AllHands.Application.Features.Employees.Create;
+using AllHands.Application.Features.Employees.Update;
 using AllHands.Application.Features.User.ChangePassword;
 using AllHands.Application.Features.User.Login;
 using AllHands.Application.Features.User.RegisterFromInvitation;
@@ -28,7 +29,8 @@ public sealed class AccountService(
     IPasswordResetTokenProvider passwordResetTokenProvider,
     TimeProvider timeProvider,
     ITicketModifier ticketModifier,
-    Marten.IDocumentStore documentStore) : IAccountService
+    Marten.IDocumentStore documentStore,
+    ISessionsUpdater sessionsUpdater) : IAccountService
 {
     public async Task<LoginResult> LoginAsync(string email, string password, CancellationToken cancellationToken = default)
     {
@@ -237,7 +239,7 @@ public sealed class AccountService(
         return users.Select(u => u.Id).ToList();
     }
 
-    public async Task Update(UpdateUserCommand command, Guid userId, CancellationToken cancellationToken)
+    public async Task UpdateAsync(UpdateUserCommand command, Guid userId, CancellationToken cancellationToken)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
         
@@ -282,19 +284,8 @@ public sealed class AccountService(
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
         var companyId = currentUserService.GetCompanyId();
         var normalizedEmail = StringUtilities.GetNormalizedEmail(command.Email);
-        var globalUser = await dbContext.GlobalUsers.FirstOrDefaultAsync(g => g.NormalizedEmail == normalizedEmail, cancellationToken);
 
-        if (globalUser is null)
-        {
-            globalUser = new AllHandsGlobalUser()
-            {
-                Id = Guid.CreateVersion7(),
-                Email = command.Email,
-                NormalizedEmail = normalizedEmail,
-                DefaultCompanyId = companyId
-            };
-            dbContext.GlobalUsers.Add(globalUser);
-        }
+        var globalUser = await GetOrCreateGlobalUserByEmailAsync(command.Email, companyId, cancellationToken);
         
         var defaultRole = await dbContext.Roles
             .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.IsDefault, cancellationToken)
@@ -337,5 +328,69 @@ public sealed class AccountService(
     public async Task<InvitationCreationResult> RegenerateInvitationAsync(Guid userId, CancellationToken cancellationToken)
     {
         return await invitationService.CreateAsync(userId, currentUserService.GetId(), cancellationToken);
+    }
+
+    public async Task UpdateAsync(UpdateEmployeeCommand command, Guid userId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
+
+        var user = await dbContext.Users
+            .Include(u => u.Roles)
+            .ThenInclude(r => r.Role)
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+            ?? throw new EntityNotFoundException("User was not found");
+        
+        user.FirstName = command.FirstName;
+        user.MiddleName = command.MiddleName;
+        user.LastName = command.LastName;
+        user.PhoneNumber = command.PhoneNumber;
+
+        if (user.Email != command.Email)
+        {
+            var newGlobalUser = await GetOrCreateGlobalUserByEmailAsync(command.Email, user.CompanyId, cancellationToken);
+            user.GlobalUserId = newGlobalUser.Id;
+            
+            user.Email = command.Email;
+            user.NormalizedEmail = StringUtilities.GetNormalizedEmail(command.Email);
+            user.UserName = GetUserName(command.Email, user.CompanyId);
+        }
+
+        if (command.RoleId.HasValue && user.Roles.FirstOrDefault()?.RoleId != command.RoleId)
+        {
+            dbContext.RemoveRange(user.Roles);
+            var role = await dbContext.Roles.FirstOrDefaultAsync(r => r.Id == command.RoleId, cancellationToken)
+                ?? throw new EntityNotFoundException("Role was not found");
+            user.Roles.Add(new AllHandsUserRole()
+            {
+                RoleId = role.Id
+            });
+        }
+        
+        await userManager.UpdateAsync(user);
+
+        await sessionsUpdater.UpdateUser(dbContext, userId, cancellationToken);
+        
+        await transaction.CommitAsync(cancellationToken);
+    }
+
+    private async Task<AllHandsGlobalUser> GetOrCreateGlobalUserByEmailAsync(string email, Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        var normalizedEmail = StringUtilities.GetNormalizedEmail(email);
+        var globalUser = await dbContext.GlobalUsers.FirstOrDefaultAsync(g => g.NormalizedEmail == normalizedEmail, cancellationToken);
+
+        if (globalUser is null)
+        {
+            globalUser = new AllHandsGlobalUser()
+            {
+                Id = Guid.CreateVersion7(),
+                Email = email,
+                NormalizedEmail = normalizedEmail,
+                DefaultCompanyId = companyId
+            };
+            dbContext.GlobalUsers.Add(globalUser);
+        }
+        
+        return globalUser;
     }
 }
