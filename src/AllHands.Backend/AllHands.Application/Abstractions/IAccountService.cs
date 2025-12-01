@@ -21,4 +21,6 @@ public interface IAccountService
 
     Task<CreateEmployeeAccountResult> CreateAsync(CreateEmployeeCommand command,
         CancellationToken cancellationToken);
+
+    Task<InvitationCreationResult> RegenerateInvitationAsync(Guid userId, CancellationToken cancellationToken);
 }

@@ -5,6 +5,7 @@ using AllHands.Application.Features.Employees.DeleteAvatar;
 using AllHands.Application.Features.Employees.GetAvatarById;
 using AllHands.Application.Features.Employees.GetById;
 using AllHands.Application.Features.Employees.GetInTimeOff;
+using AllHands.Application.Features.Employees.ResendInvitation;
 using AllHands.Application.Features.Employees.Search;
 using AllHands.Application.Features.Employees.UpdateAvatar;
 using AllHands.WebApi.Auth;
@@ -93,5 +94,14 @@ public sealed class EmployeesController(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(command, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, ApiResponse.FromResult(result));
+    }
+
+    [HasPermission(Permissions.EmployeeCreate)]
+    [HttpPost("{id:guid}/invitations")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ResendInvitationAsync(Guid id, CancellationToken cancellationToken)
+    {
+        await mediator.Send(new ResendInvitationCommand(id), cancellationToken);
+        return NoContent();
     }
 }

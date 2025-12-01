@@ -333,4 +333,9 @@ public sealed class AccountService(
         
         return new CreateEmployeeAccountResult(user.Id, invitation.Id, invitation.Token);
     }
+
+    public async Task<InvitationCreationResult> RegenerateInvitationAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        return await invitationService.CreateAsync(userId, currentUserService.GetId(), cancellationToken);
+    }
 }
