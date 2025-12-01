@@ -1,6 +1,7 @@
 ﻿using AllHands.Application.Abstractions;
 using AllHands.Domain.Events.Employee;
 using AllHands.Domain.Exceptions;
+using AllHands.Domain.Models;
 using AllHands.Domain.Utilities;
 using Marten;
 using MediatR;
@@ -40,6 +41,14 @@ public sealed class CreateEmployeeRequestHandler(IDocumentSession documentSessio
             throw new EntityNotFoundException("Position was not found.");
         }
 
+        var normalizedEmail = StringUtilities.GetNormalizedEmail(request.Email);
+        var employeeIsFired = await documentSession.Query<Employee>()
+            .AnyAsync(e => e.NormalizedEmail == normalizedEmail && e.Status == EmployeeStatus.Fired, cancellationToken);
+        if (employeeIsFired)
+        {
+            throw new EntityAlreadyExistsException("Employee already worked here, he is listed as a fired employee. Please, find and rehire them instead.");
+        }
+
         var accountCreationResult = await accountService.CreateAsync(request, cancellationToken);
 
         var employeeId = Guid.CreateVersion7();
@@ -51,7 +60,7 @@ public sealed class CreateEmployeeRequestHandler(IDocumentSession documentSessio
             request.PositionId,
             request.ManagerId,
             request.Email,
-            StringUtilities.GetNormalizedEmail(request.Email),
+            normalizedEmail,
             request.FirstName,
             request.MiddleName,
             request.LastName,
