@@ -1,4 +1,5 @@
 ﻿using AllHands.Application;
+using AllHands.Application.Features.Company.DeleteLogo;
 using AllHands.Application.Features.Company.Get;
 using AllHands.Application.Features.Company.GetLogo;
 using AllHands.Application.Features.Company.Update;
@@ -54,6 +55,15 @@ public sealed class CompanyController(IMediator mediator) : ControllerBase
         await using var stream = file.OpenReadStream();
         await mediator.Send(new UpdateLogoCommand(stream, file.FileName, file.ContentType), cancellationToken);
         
+        return NoContent();
+    }
+    
+    [HasPermission(Permissions.CompanyEdit)]
+    [HttpDelete("logo")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteLogo(CancellationToken cancellationToken)
+    {
+        await mediator.Send(new DeleteCompanyLogoCommand(), cancellationToken);
         return NoContent();
     }
 

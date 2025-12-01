@@ -1,5 +1,6 @@
 ﻿using AllHands.Application.Features.Accounts.Get;
 using AllHands.Application.Features.User.ChangePassword;
+using AllHands.Application.Features.User.DeleteAvatar;
 using AllHands.Application.Features.User.Get;
 using AllHands.Application.Features.User.GetAvatar;
 using AllHands.Application.Features.User.GetDetails;
@@ -22,8 +23,6 @@ namespace AllHands.WebApi.Controllers;
 [Route("api/v{version:apiVersion}/[controller]")]
 public sealed class AccountController(IMediator mediator) : ControllerBase
 {
-    private const int MaxAvatarSize = 5 * 1024 * 1024;
-    
     [Authorize]
     [HttpGet("~/api/v{version:apiVersion}/accounts")]
     [ProducesResponseType(typeof(ApiResponse<GetAccountsResult>), StatusCodes.Status200OK)]
@@ -133,13 +132,23 @@ public sealed class AccountController(IMediator mediator) : ControllerBase
             return BadRequest(ApiResponse.FromError(new ErrorResponse("No file uploaded.")));
         }
 
-        if (file.Length > MaxAvatarSize)
+        if (file.Length > Constants.MaxAvatarSize)
         {
             return BadRequest(ApiResponse.FromError(new ErrorResponse("Avatar must be <= 5 MB.")));
         }
 
         await using var stream = file.OpenReadStream();
         await mediator.Send(new UpdateUserAvatarCommand(stream, file.FileName, file.ContentType), cancellationToken);
+        
+        return NoContent();
+    }
+    
+    [Authorize]
+    [HttpDelete("avatar")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteAvatar(CancellationToken cancellationToken)
+    {
+        await mediator.Send(new DeleteUserAvatarCommand(), cancellationToken);
         
         return NoContent();
     }

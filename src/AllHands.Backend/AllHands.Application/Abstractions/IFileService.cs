@@ -8,4 +8,6 @@ public interface IFileService
     Task<AllHandsFile> GetAvatarAsync(string id, CancellationToken cancellationToken);
     Task SaveCompanyLogoAsync(AllHandsFile file, CancellationToken cancellationToken);
     Task<AllHandsFile> GetCompanyLogoAsync(string id, CancellationToken cancellationToken);
+    Task DeleteAvatarAsync(string id, CancellationToken cancellationToken);
+    Task DeleteCompanyLogoAsync(string id, CancellationToken cancellationToken);
 }

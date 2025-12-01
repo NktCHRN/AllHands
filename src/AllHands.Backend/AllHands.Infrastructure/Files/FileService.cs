@@ -52,6 +52,17 @@ public sealed class FileService(IAmazonS3 s3Client, IOptionsMonitor<S3Options> o
         }
     }
 
+    public async Task DeleteAvatarAsync(string id, CancellationToken cancellationToken)
+    {
+        var deleteRequest = new DeleteObjectRequest
+        {
+            BucketName = options.CurrentValue.BucketName,
+            Key = $"{options.CurrentValue.AvatarsPrefix}/{id}"
+        };
+        
+        _ = await s3Client.DeleteObjectAsync(deleteRequest, cancellationToken);
+    }
+
     private async Task<AllHandsFile> GetDefaultAvatarAsync(string id, CancellationToken cancellationToken)
     {
         var getRequest = new GetObjectRequest
@@ -120,5 +131,16 @@ public sealed class FileService(IAmazonS3 s3Client, IOptionsMonitor<S3Options> o
         {
             OriginalFileName = Path.GetFileName(response.Key)
         };
+    }
+    
+    public async Task DeleteCompanyLogoAsync(string id, CancellationToken cancellationToken)
+    {
+        var deleteRequest = new DeleteObjectRequest
+        {
+            BucketName = options.CurrentValue.BucketName,
+            Key = $"{options.CurrentValue.CompanyLogosPrefix}/{id}"
+        };
+        
+        _ = await s3Client.DeleteObjectAsync(deleteRequest, cancellationToken);
     }
 }
