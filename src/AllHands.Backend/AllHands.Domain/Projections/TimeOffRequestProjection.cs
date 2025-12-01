@@ -17,7 +17,8 @@ public sealed class TimeOffRequestProjection : SingleStreamProjection<TimeOffReq
             TypeId = @event.TypeId,
             StartDate = @event.StartDate,
             EndDate = @event.EndDate,
-            WorkingDaysCount = @event.WorkingDaysCount,     // Could be 0.5, 3.5 etc., like last day is 0.5.
+            WorkingDaysCount = @event.WorkingDaysCount,     // Could be 0.5, 3.5 etc., like last day is 0.5. To be implemented in the future.
+            BalanceId = @event.TimeOffBalanceId
         };
     }
 

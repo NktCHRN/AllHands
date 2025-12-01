@@ -1,9 +1,12 @@
 ﻿using AllHands.Application.Abstractions;
 using AllHands.Application.Dto;
 using AllHands.Application.Features.TimeOffRequests;
+using AllHands.Application.Features.TimeOffRequests.Approve;
+using AllHands.Application.Features.TimeOffRequests.Cancel;
 using AllHands.Application.Features.TimeOffRequests.Create;
 using AllHands.Application.Features.TimeOffRequests.Get;
 using AllHands.Application.Features.TimeOffRequests.GetById;
+using AllHands.Application.Features.TimeOffRequests.Reject;
 using AllHands.WebApi.Contracts;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -31,6 +34,34 @@ public sealed class TimeOffRequestsController(IMediator mediator, ICurrentUserSe
     {
         var result = await mediator.Send(new GetTimeOffRequestByIdQuery(id), token);
         return Ok(ApiResponse.FromResult(result));
+    }
+    
+    [Authorize]
+    [HttpPost("{id:guid}/cancel")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> CancelAsync([FromRoute] Guid id, CancellationToken token)
+    {
+        await mediator.Send(new CancelTimeOffRequestCommand(id), token);
+        return NoContent();
+    }
+    
+    [Authorize]
+    [HttpPost("{id:guid}/approve")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ApproveAsync([FromRoute] Guid id, CancellationToken token)
+    {
+        await mediator.Send(new ApproveTimeOffRequestCommand(id), token);
+        return NoContent();
+    }
+    
+    [Authorize]
+    [HttpPost("{id:guid}/reject")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RejectAsync([FromRoute] Guid id, [FromBody] RejectTimeOffRequestCommand command, CancellationToken token)
+    {
+        command.Id = id;
+        await mediator.Send(command, token);
+        return NoContent();
     }
     
     [Authorize]

@@ -5,6 +5,4 @@ namespace AllHands.Domain.Events.TimeOff;
 public sealed record TimeOffRequestApprovedEvent(
     Guid EntityId, 
     Guid PerformedByUserId, 
-    Guid PerformedByEmployeeId,
-    DateOnly StartDate,
-    DateOnly EndDate) : AuditableEvent(EntityId, PerformedByUserId);
+    Guid PerformedByEmployeeId) : AuditableEvent(EntityId, PerformedByUserId);

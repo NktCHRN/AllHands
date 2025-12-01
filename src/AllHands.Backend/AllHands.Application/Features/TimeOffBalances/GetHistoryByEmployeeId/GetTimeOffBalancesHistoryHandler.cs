@@ -65,7 +65,7 @@ public sealed class GetTimeOffBalancesHistoryHandler(IQuerySession querySession)
                 var eventData = (TimeOffBalanceRequestChangeEvent)e.Data;
                 delta = eventData.Delta;
                 timestamp = eventData.OccurredAt;
-                changeType = eventData.Delta <= 0 ? TimeOffBalancesHistoryItemType.TimeOffRequest : TimeOffBalancesHistoryItemType.TimeOffRequestCancellation;
+                changeType = eventData.Delta <= 0 ? TimeOffBalancesHistoryItemType.TimeOffRequest : TimeOffBalancesHistoryItemType.TimeOffRequestCancellationOrRejection;
             }
             
             var balanceId = e.StreamId;

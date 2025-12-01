@@ -6,5 +6,5 @@ public enum TimeOffBalancesHistoryItemType
     ManualAdjustment = 1,
     AutoUpdate = 2,
     TimeOffRequest = 3,
-    TimeOffRequestCancellation = 4
+    TimeOffRequestCancellationOrRejection = 4
 }

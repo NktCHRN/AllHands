@@ -7,6 +7,7 @@ public sealed class TimeOffRequest : IIdentifiable
 {
     public Guid Id { get; set; } 
     public Guid TypeId { get; set; }
+    public Guid BalanceId { get; set; }
     [JsonIgnore]
     public TimeOffType? Type { get; set; }
     public TimeOffRequestStatus Status { get; set; } = TimeOffRequestStatus.Pending;
