@@ -60,7 +60,7 @@ public static class DependencyInjection
 
         if (environment.IsDevelopment())
         {
-            services.AddCors(opt => opt.AddPolicy("CORS", p => p
+            services.AddCors(opt => opt.AddPolicy("DEV_CORS", p => p
                 .AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader()
@@ -68,7 +68,7 @@ public static class DependencyInjection
         }
         else
         {
-            services.AddCors(opt => opt.AddPolicy("DEV_CORS", p => p
+            services.AddCors(opt => opt.AddPolicy("CORS", p => p
                 .WithOrigins(configuration.GetSection("AllowedOrigins").Get<string[]>() ?? [])
                 .AllowAnyMethod()
                 .AllowAnyHeader()
