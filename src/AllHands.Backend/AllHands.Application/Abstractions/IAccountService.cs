@@ -1,4 +1,5 @@
 ﻿using AllHands.Application.Dto;
+using AllHands.Application.Features.Employees.Create;
 using AllHands.Application.Features.User.ChangePassword;
 using AllHands.Application.Features.User.Login;
 using AllHands.Application.Features.User.RegisterFromInvitation;
@@ -17,4 +18,7 @@ public interface IAccountService
     Task<IReadOnlyList<Guid>> GetUserIds(Guid currentUserId);
     Task Update(UpdateUserCommand command, Guid userId, CancellationToken cancellationToken);
     Task<RoleDto?> GetRoleByUserIdAsync(Guid userId, CancellationToken cancellationToken);
+
+    Task<CreateEmployeeAccountResult> CreateAsync(CreateEmployeeCommand command,
+        CancellationToken cancellationToken);
 }

@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using AllHands.Application.Dto;
 using AllHands.Domain.Exceptions;
 using AllHands.Infrastructure.Abstractions;
 using AllHands.Infrastructure.Auth.Entities;
@@ -16,7 +17,7 @@ public sealed class InvitationService(AuthDbContext dbContext, TimeProvider time
     private const string Alphanumeric = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private const int TokenLength = 32;
     
-    public async Task CreateAsync(Guid userId, Guid issuerId, CancellationToken cancellationToken)
+    public async Task<InvitationCreationResult> CreateAsync(Guid userId, Guid issuerId, CancellationToken cancellationToken)
     {
         var currentUtcTime = timeProvider.GetUtcNow();
         
@@ -31,7 +32,6 @@ public sealed class InvitationService(AuthDbContext dbContext, TimeProvider time
         }
         
         var token = RandomNumberGenerator.GetString(Alphanumeric, TokenLength);     
-        // TODO: Return token and send email later.
         
         var invitation = new Invitation()
         {
@@ -45,6 +45,8 @@ public sealed class InvitationService(AuthDbContext dbContext, TimeProvider time
         
         await dbContext.Invitations.AddAsync(invitation, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new InvitationCreationResult(invitation.Id, token);
     }
     
     private static string Hash(string invitationToken)

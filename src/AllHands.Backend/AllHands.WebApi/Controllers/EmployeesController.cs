@@ -1,5 +1,6 @@
 ﻿using AllHands.Application;
 using AllHands.Application.Dto;
+using AllHands.Application.Features.Employees.Create;
 using AllHands.Application.Features.Employees.DeleteAvatar;
 using AllHands.Application.Features.Employees.GetAvatarById;
 using AllHands.Application.Features.Employees.GetById;
@@ -83,5 +84,14 @@ public sealed class EmployeesController(IMediator mediator) : ControllerBase
         await mediator.Send(new DeleteAvatarByIdCommand(id), cancellationToken);
         
         return NoContent();
+    }
+
+    [HasPermission(Permissions.EmployeeCreate)]
+    [HttpPost]
+    [ProducesResponseType(typeof(ApiResponse<CreateEmployeeResult>), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateEmployee(CreateEmployeeCommand command, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(command, cancellationToken);
+        return StatusCode(StatusCodes.Status201Created, ApiResponse.FromResult(result));
     }
 }

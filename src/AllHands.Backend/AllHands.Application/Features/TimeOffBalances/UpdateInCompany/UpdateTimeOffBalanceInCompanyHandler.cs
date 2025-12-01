@@ -26,7 +26,7 @@ public sealed class UpdateTimeOffBalanceInCompanyHandler(IDocumentStore document
         var currentMonthStartDateTime = TimeZoneInfo.ConvertTimeToUtc(currentMonthStart.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified), timeZone);
         var daysInPreviousMonth = DateTime.DaysInMonth(currentInZone.Year, currentInZone.Month - 1);
         var employeesCount = await querySession.Query<Employee>()
-            .Where(x => x.TenantIsOneOf(company.Id.ToString()) && x.WorkStartDate < currentMonthStart)
+            .Where(x => x.TenantIsOneOf(company.Id.ToString()) && x.WorkStartDate < currentMonthStart && x.Status != EmployeeStatus.Fired)
             .CountAsync(cancellationToken);
 
         var batchSize = options.Value.BatchSize;
@@ -34,7 +34,7 @@ public sealed class UpdateTimeOffBalanceInCompanyHandler(IDocumentStore document
         {
             await using var documentSession = documentStore.LightweightSession(company.Id.ToString());
             var employees = await documentSession.Query<Employee>()
-                .Where(x => x.WorkStartDate < currentMonthStart)
+                .Where(x => x.WorkStartDate < currentMonthStart && x.Status != EmployeeStatus.Fired)
                 .OrderBy(x => x.Id)
                 .Skip(skip)
                 .Take(batchSize)

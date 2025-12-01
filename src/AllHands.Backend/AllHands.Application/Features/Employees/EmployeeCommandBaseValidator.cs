@@ -1,21 +1,24 @@
 ﻿using FluentValidation;
 using PhoneNumbers;
 
-namespace AllHands.Application.Features.User.Update;
+namespace AllHands.Application.Features.Employees;
 
-public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCommand>
+public sealed class EmployeeCommandBaseValidator : AbstractValidator<EmployeeCommandBase>
 {
-    public UpdateUserCommandValidator(PhoneNumberUtil phoneNumberUtil)
+    public EmployeeCommandBaseValidator(PhoneNumberUtil phoneNumberUtil)
     {
         RuleFor(x => x.FirstName)
             .NotEmpty()
             .MaximumLength(255);
         RuleFor(x => x.MiddleName)
-            .NotEmpty()
             .MaximumLength(255);
         RuleFor(x => x.LastName)
             .NotEmpty()
             .MaximumLength(255);
+        RuleFor(x => x.Email)
+            .NotEmpty()
+            .MaximumLength(230)     // Technical limitation - we also need to concat it with company id for Identity accounts. 
+            .EmailAddress();
         RuleFor(x => x.PhoneNumber)
             .Must(x =>
             {

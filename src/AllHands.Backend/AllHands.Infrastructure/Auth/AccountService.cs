@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using AllHands.Application.Abstractions;
 using AllHands.Application.Dto;
+using AllHands.Application.Features.Employees.Create;
 using AllHands.Application.Features.User.ChangePassword;
 using AllHands.Application.Features.User.Login;
 using AllHands.Application.Features.User.RegisterFromInvitation;
@@ -273,5 +274,63 @@ public sealed class AccountService(
         }
 
         return new RoleDto(role.Id, role.Name ?? string.Empty, role.IsDefault);
+    }
+
+    public async Task<CreateEmployeeAccountResult> CreateAsync(CreateEmployeeCommand command,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
+        var companyId = currentUserService.GetCompanyId();
+        var normalizedEmail = StringUtilities.GetNormalizedEmail(command.Email);
+        var globalUser = await dbContext.GlobalUsers.FirstOrDefaultAsync(g => g.NormalizedEmail == normalizedEmail, cancellationToken);
+
+        if (globalUser is null)
+        {
+            globalUser = new AllHandsGlobalUser()
+            {
+                Id = Guid.CreateVersion7(),
+                Email = command.Email,
+                NormalizedEmail = normalizedEmail,
+                DefaultCompanyId = companyId
+            };
+            dbContext.GlobalUsers.Add(globalUser);
+        }
+        
+        var defaultRole = await dbContext.Roles
+            .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.IsDefault, cancellationToken)
+            ?? throw new EntityNotFoundException("Default role was not found.");
+
+        var user = new AllHandsIdentityUser()
+        {
+            Id = Guid.CreateVersion7(),
+            FirstName = command.FirstName,
+            MiddleName = command.MiddleName,
+            LastName = command.LastName,
+            PhoneNumber = command.PhoneNumber,
+            Email = command.Email,
+            NormalizedEmail = normalizedEmail,
+            CompanyId = companyId,
+            UserName = GetUserName(command.Email, companyId),
+            GlobalUser = globalUser,
+            Roles = new List<AllHandsUserRole>()
+            {
+                new AllHandsUserRole()
+                {
+                    RoleId = defaultRole.Id
+                }
+            }
+        };
+
+        var result = await userManager.CreateAsync(user);
+        if (!result.Succeeded)
+        {
+            throw new EntityValidationFailedException(IdentityUtilities.IdentityErrorsToString(result.Errors));
+        }
+
+        var invitation = await invitationService.CreateAsync(user.Id, currentUserService.GetId(), cancellationToken);
+        
+        await transaction.CommitAsync(cancellationToken);
+        
+        return new CreateEmployeeAccountResult(user.Id, invitation.Id, invitation.Token);
     }
 }
