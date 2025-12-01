@@ -20,7 +20,6 @@
 
     <ItemGroup>
       <Folder Include="Features\Employees\Delete\" />
-      <Folder Include="Features\Employees\Rehire\" />
     </ItemGroup>
 
 </Project>

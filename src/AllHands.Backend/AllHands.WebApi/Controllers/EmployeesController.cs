@@ -6,6 +6,7 @@ using AllHands.Application.Features.Employees.Fire;
 using AllHands.Application.Features.Employees.GetAvatarById;
 using AllHands.Application.Features.Employees.GetById;
 using AllHands.Application.Features.Employees.GetInTimeOff;
+using AllHands.Application.Features.Employees.Rehire;
 using AllHands.Application.Features.Employees.ResendInvitation;
 using AllHands.Application.Features.Employees.Search;
 using AllHands.Application.Features.Employees.Update;
@@ -42,7 +43,7 @@ public sealed class EmployeesController(IMediator mediator) : ControllerBase
     
     [Authorize]
     [HttpGet]
-    [ProducesResponseType(typeof(ApiResponse<PagedResponse<EmployeeDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PagedResponse<EmployeeSearchDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Search([FromQuery] SearchEmployeesQuery query, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(query, cancellationToken);
@@ -124,6 +125,15 @@ public sealed class EmployeesController(IMediator mediator) : ControllerBase
     {
         command.EmployeeId = id;
         await mediator.Send(command, cancellationToken);
+        return NoContent();
+    }
+    
+    [HasPermission($"{Permissions.EmployeeCreate},{Permissions.EmployeeEdit}")]
+    [HttpPut("{id:guid}/rehire")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Rehire(Guid id, CancellationToken cancellationToken)
+    {
+        await mediator.Send(new RehireEmployeeCommand(id), cancellationToken);
         return NoContent();
     }
 }

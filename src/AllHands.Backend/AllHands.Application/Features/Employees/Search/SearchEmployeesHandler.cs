@@ -5,9 +5,9 @@ using MediatR;
 
 namespace AllHands.Application.Features.Employees.Search;
 
-public sealed class SearchEmployeesHandler(IQuerySession querySession) : IRequestHandler<SearchEmployeesQuery, PagedDto<EmployeeDto>>
+public sealed class SearchEmployeesHandler(IQuerySession querySession) : IRequestHandler<SearchEmployeesQuery, PagedDto<EmployeeSearchDto>>
 {
-    public async Task<PagedDto<EmployeeDto>> Handle(SearchEmployeesQuery request, CancellationToken cancellationToken)
+    public async Task<PagedDto<EmployeeSearchDto>> Handle(SearchEmployeesQuery request, CancellationToken cancellationToken)
     {
         var positions = new Dictionary<Guid, Position>();
         IQueryable<Employee> query = querySession.Query<Employee>();
@@ -22,6 +22,11 @@ public sealed class SearchEmployeesHandler(IQuerySession querySession) : IReques
             query = query.Where(x => x.PlainTextSearch(request.Search));
         }
 
+        if (request.Status != EmployeeStatus.Undefined)
+        {
+            query = query.Where(x => x.Status == request.Status);
+        }
+
         var count = await query.CountAsync(cancellationToken);
         
         var employees = await query
@@ -31,13 +36,27 @@ public sealed class SearchEmployeesHandler(IQuerySession querySession) : IReques
             .Take(request.PerPage)
             .ToListAsync(token: cancellationToken);
 
-        var employeeDtos = new List<EmployeeDto>();
+        var employeeDtos = new List<EmployeeSearchDto>();
         foreach (var employee in employees)
         {
             employee.Position = positions.GetValueOrDefault(employee.PositionId);
-            employeeDtos.Add(EmployeeDto.FromModel(employee));
+            var dto = new EmployeeSearchDto(
+                employee.Id,
+                employee.FirstName,
+                employee.MiddleName,
+                employee.LastName,
+                employee.Email,
+                employee.PhoneNumber,
+                employee.Status,
+                employee.Position is not null 
+                ? new PositionDto()
+                {
+                    Id = employee.Position.Id,
+                    Name = employee.Position.Name
+                } : null);
+            employeeDtos.Add(dto);
         }
         
-        return new PagedDto<EmployeeDto>(employeeDtos, count);
+        return new PagedDto<EmployeeSearchDto>(employeeDtos, count);
     }
 }

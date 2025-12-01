@@ -26,4 +26,5 @@ public interface IAccountService
     Task<InvitationCreationResult> RegenerateInvitationAsync(Guid userId, CancellationToken cancellationToken);
     Task UpdateAsync(UpdateEmployeeCommand command, Guid userId, CancellationToken cancellationToken);
     Task DeactivateAsync(Guid userId, CancellationToken cancellationToken);
+    Task ReactivateAsync(Guid userId, CancellationToken cancellationToken);
 }

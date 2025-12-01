@@ -8,5 +8,8 @@ public sealed class SearchEmployeesQueryValidator : AbstractValidator<SearchEmpl
     public SearchEmployeesQueryValidator(BasePagedSearchQueryValidator baseValidator)
     {
         Include(baseValidator);
+
+        RuleFor(x => x.Status)
+            .IsInEnum();
     }
 }

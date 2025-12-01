@@ -53,6 +53,7 @@ public sealed class EmployeeProjection : SingleStreamProjection<Employee, Guid>
                         PhoneNumber = @event.PhoneNumber,
                         WorkStartDate = @event.WorkStartDate,
                         Status = EmployeeStatus.Unactivated,
+                        StatusBeforeFire = EmployeeStatus.Unactivated,
                         CreatedAt = @event.OccurredAt
                     };
                     break;
@@ -90,12 +91,13 @@ public sealed class EmployeeProjection : SingleStreamProjection<Employee, Guid>
                     if (actionType == ActionType.StoreThenSoftDelete) continue;
                     snapshot.UpdatedAt = @event.OccurredAt;
                     snapshot.Status = EmployeeStatus.Active;
+                    snapshot.StatusBeforeFire = EmployeeStatus.Active;
                     break;
                 
                 case EmployeeRehiredEvent @event when snapshot is { Deleted: false }:
                     if (actionType == ActionType.StoreThenSoftDelete) continue;
                     snapshot.UpdatedAt = @event.OccurredAt;
-                    snapshot.Status = EmployeeStatus.Active;
+                    snapshot.Status = snapshot.StatusBeforeFire;
                     break;
                 
                 case EmployeeAvatarUpdated @event when snapshot is { Deleted: false }:

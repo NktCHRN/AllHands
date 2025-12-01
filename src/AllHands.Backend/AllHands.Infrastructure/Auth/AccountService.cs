@@ -406,4 +406,29 @@ public sealed class AccountService(
         
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+    
+    public async Task ReactivateAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users
+                       .IgnoreQueryFilters()
+                       .Include(u => u.Roles)
+                       .ThenInclude(r => r.Role)
+                       .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+                   ?? throw new EntityNotFoundException("User was not found");
+
+        user.DeactivatedAt = null;
+        if (!user.Roles.Any() || user.Roles.All(r => r.Role?.DeletedAt.HasValue == true))
+        {
+            var companyId = currentUserService.GetCompanyId();
+            var defaultRole = await dbContext.Roles
+                                  .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.IsDefault, cancellationToken)
+                              ?? throw new EntityNotFoundException("Default role was not found.");
+            user.Roles.Add(new AllHandsUserRole()
+            {
+                RoleId = defaultRole.Id
+            });
+        }
+        
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }
