@@ -1,21 +1,60 @@
-"use client";
-
-import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useState } from "react";
 import TopBar from "@/components/TopBar";
 
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 
-export default function CompleteRegistration() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+type Props = {
+  searchParams: {
+    token?: string;
+    invitationId?: string;
+    InvitationId?: string;
+    InvitationToken?: string;
+  };
+};
 
+export default function CompleteRegistrationPage({ searchParams }: Props) {
   const invitationId =
-    searchParams.get("invitationId") ?? searchParams.get("InvitationId");
-  const token =
-    searchParams.get("token") ?? searchParams.get("InvitationToken");
+    searchParams.invitationId ?? searchParams.InvitationId ?? "";
+  const token = searchParams.token ?? searchParams.InvitationToken ?? "";
+
+  return (
+    <div
+      style={{
+        backgroundColor: "#0D081E",
+        minHeight: "100vh",
+      }}
+    >
+      <TopBar />
+      <div className="loginRegisterContainer">
+        <h2
+          style={{
+            fontSize: "clamp(40px, 4vw, 70px)",
+            fontWeight: "bold",
+            margin: 0,
+          }}
+        >
+          Registration
+        </h2>
+
+        <ClientForm invitationId={invitationId} token={token} />
+      </div>
+    </div>
+  );
+}
+
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+function ClientForm({
+  invitationId,
+  token,
+}: {
+  invitationId: string;
+  token: string;
+}) {
+  const router = useRouter();
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -64,14 +103,10 @@ export default function CompleteRegistration() {
         let msg = "Registration failed.";
         try {
           const data = await res.json();
-          if (typeof data === "string") {
-            msg = data;
-          } else if (data?.Error?.ErrorMessage) {
-            msg = data.Error.ErrorMessage;
-          } else if (data?.message) {
-            msg = data.message;
-          }
-        } catch { }
+          if (typeof data === "string") msg = data;
+          else if (data?.Error?.ErrorMessage) msg = data.Error.ErrorMessage;
+          else if (data?.message) msg = data.message;
+        } catch {}
         throw new Error(msg);
       }
 
@@ -84,54 +119,32 @@ export default function CompleteRegistration() {
   };
 
   return (
-    <div
-      style={{
-        backgroundColor: "#0D081E",
-        minHeight: "100vh",
-      }}
-    >
-      <TopBar />
-      <div className="loginRegisterContainer">
-        <h2
-          style={{
-            fontSize: "clamp(40px, 4vw, 70px)",
-            fontWeight: "bold",
-            margin: 0,
-          }}
-        >
-          Registration
-        </h2>
+    <>
+      <input
+        type="password"
+        placeholder="Password"
+        className="inputText"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="inputText"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+      <input
+        type="password"
+        placeholder="Confirm Password"
+        className="inputText"
+        value={confirm}
+        onChange={(e) => setConfirm(e.target.value)}
+      />
 
-        <input
-          type="password"
-          placeholder="Confirm Password"
-          className="inputText"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-        />
+      <button className="button" onClick={handleSubmit} disabled={loading}>
+        {loading ? "Processing..." : "Complete registration"}
+      </button>
 
-        <button
-          className="button"
-          onClick={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? "Processing..." : "Complete registration"}
-        </button>
-
-        {error && (
-          <p className="error" style={{ marginTop: "10px" }}>
-            {error}
-          </p>
-        )}
-      </div>
-    </div>
+      {error && (
+        <p className="error" style={{ marginTop: "10px" }}>
+          {error}
+        </p>
+      )}
+    </>
   );
 }
