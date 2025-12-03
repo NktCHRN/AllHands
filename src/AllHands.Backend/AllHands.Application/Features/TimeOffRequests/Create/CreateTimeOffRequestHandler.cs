@@ -1,4 +1,5 @@
-﻿using AllHands.Application.Abstractions;
+﻿using System.Globalization;
+using AllHands.Application.Abstractions;
 using AllHands.Application.Dto;
 using AllHands.Domain.Abstractions;
 using AllHands.Domain.Events.TimeOff;
@@ -22,7 +23,16 @@ public sealed class CreateTimeOffRequestHandler(IDocumentSession documentSession
         {
             throw new EntityNotFoundException("Time off type was not found.");
         }
-
+        
+        var overlappingRequest = await documentSession.Query<TimeOffRequest>()
+            .FirstOrDefaultAsync(r => r.EmployeeId == employeeId 
+                                      && (r.Status == TimeOffRequestStatus.Pending || r.Status == TimeOffRequestStatus.Approved)
+                && r.StartDate <= request.EndDate && r.EndDate >= request.StartDate, token: cancellationToken);
+        if (overlappingRequest != null)
+        {
+            throw new EntityAlreadyExistsException($"You have an overlapping request from {overlappingRequest.StartDate.ToString("o", CultureInfo.InvariantCulture)} to {overlappingRequest.EndDate.ToString("o", CultureInfo.InvariantCulture)}.");
+        }
+        
         var balance = await documentSession.Query<TimeOffBalance>()
             .FirstOrDefaultAsync(b => b.EmployeeId == employeeId && b.TypeId == request.TypeId,
                 cancellationToken);
