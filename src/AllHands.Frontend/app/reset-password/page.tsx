@@ -1,15 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import TopBar from "@/components/TopBar";
 
-export default function ResetPassword() {
-  const searchParams = useSearchParams();
+type Props = {
+  searchParams: {
+    token?: string;
+  };
+};
+
+export default function ResetPassword({ searchParams }: Props) {
   const router = useRouter();
 
-  const token = searchParams.get("token") || "";
+  const token = searchParams.token ?? "";
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -59,7 +64,7 @@ export default function ResetPassword() {
         try {
           const data = await res.json();
           if (data?.message) message = data.message;
-        } catch {}
+        } catch { }
         throw new Error(message);
       }
 
