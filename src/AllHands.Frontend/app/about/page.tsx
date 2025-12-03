@@ -1,4 +1,4 @@
-import Link from "next/link";
+import TopBar from "@/components/TopBar";
 
 export default function About() {
   return (
@@ -8,28 +8,7 @@ export default function About() {
         minHeight: "100vh",
       }}
     >
-      <div className="topBar">
-        <span
-          style={{
-            color: "black",
-            fontWeight: "bold",
-          }}
-        >
-          AllHands HR
-        </span>
-
-        <div
-          style={{
-            display: "flex",
-            gap: "40px",
-            alignItems: "center",
-          }}
-        >
-          <Link href="/" className="navLink">Home</Link>
-          <Link href="/contact" className="navLink">Contact us</Link>
-          <Link href="/login" className="navLink">Login</Link>
-        </div>
-      </div>
+      <TopBar />
       <div
         style={{
           display: "flex",
