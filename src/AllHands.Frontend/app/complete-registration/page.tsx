@@ -1,4 +1,8 @@
+"use client";
+
 import TopBar from "@/components/TopBar";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
@@ -41,11 +45,6 @@ export default function CompleteRegistrationPage({ searchParams }: Props) {
     </div>
   );
 }
-
-"use client";
-
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 function ClientForm({
   invitationId,
@@ -106,7 +105,7 @@ function ClientForm({
           if (typeof data === "string") msg = data;
           else if (data?.Error?.ErrorMessage) msg = data.Error.ErrorMessage;
           else if (data?.message) msg = data.message;
-        } catch {}
+        } catch { }
         throw new Error(msg);
       }
 
