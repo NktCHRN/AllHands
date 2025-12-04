@@ -9,26 +9,22 @@ const TIME_OFF_TYPES_API = `${API_ROOT}/api/v1/time-off/types`;
 const TIME_OFF_REQUESTS_API = `${API_ROOT}/api/v1/time-off/requests`;
 
 type TimeOffTypeDto = {
-  Id: string;
-  Order: number;
-  Name: string;
-  Emoji: string;
-  DaysPerYear: number;
-};
-
-type ErrorResponse = {
-  ErrorMessage?: string;
+  id: string;
+  order: number;
+  name: string;
+  emoji: string;
+  daysPerYear: number;
 };
 
 type ApiResponse<T> = {
-  Data: T | null;
-  Error: ErrorResponse | null;
+  data: T | null;
+  error: string | null;
+  isSuccessful: boolean;
 };
 
 export default function RequestTimeOff() {
   const router = useRouter();
 
-  const [navOpen, setNavOpen] = useState(false);
   const [types, setTypes] = useState<TimeOffTypeDto[]>([]);
   const [typesLoading, setTypesLoading] = useState(true);
 
@@ -42,6 +38,7 @@ export default function RequestTimeOff() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [createdRequestId, setCreatedRequestId] = useState<string | null>(null);
 
   const isOtherType =
     selectedTypeName.toLowerCase() === "other" ||
@@ -61,14 +58,14 @@ export default function RequestTimeOff() {
         if (!res.ok) throw new Error("Failed to load time-off types.");
 
         const json = (await res.json()) as ApiResponse<TimeOffTypeDto[]>;
-        const list = json.Data ?? [];
+        const list = json.data ?? [];
 
-        list.sort((a, b) => a.Order - b.Order);
+        list.sort((a, b) => a.order - b.order);
         setTypes(list);
 
         if (list.length > 0) {
-          setSelectedTypeId(list[0].Id);
-          setSelectedTypeName(list[0].Name);
+          setSelectedTypeId(list[0].id);
+          setSelectedTypeName(list[0].name);
         }
       } catch (e: any) {
         setError(e?.message || "Unexpected error while loading time-off types.");
@@ -84,6 +81,7 @@ export default function RequestTimeOff() {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    setCreatedRequestId(null);
 
     if (!selectedTypeId) {
       setError("Please select a time-off type.");
@@ -138,11 +136,15 @@ export default function RequestTimeOff() {
 
         try {
           const data = (await res.json()) as ApiResponse<unknown>;
-          if (data.Error?.ErrorMessage) message = data.Error.ErrorMessage;
-        } catch {}
+          if (data.error) message = data.error;
+        } catch { }
 
         throw new Error(message);
       }
+
+      const json = (await res.json()) as ApiResponse<{ id: string }>;
+      const created = json.data;
+      if (created?.id) setCreatedRequestId(created.id);
 
       setSuccess("Your time-off request has been submitted.");
     } catch (e: any) {
@@ -209,8 +211,8 @@ export default function RequestTimeOff() {
                   onChange={(e) => {
                     const id = e.target.value;
                     setSelectedTypeId(id);
-                    const found = types.find((t) => t.Id === id);
-                    setSelectedTypeName(found?.Name ?? "");
+                    const found = types.find((t) => t.id === id);
+                    setSelectedTypeName(found?.name ?? "");
                   }}
                   style={{
                     appearance: "none",
@@ -219,8 +221,8 @@ export default function RequestTimeOff() {
                   }}
                 >
                   {types.map((t) => (
-                    <option key={t.Id} value={t.Id}>
-                      {t.Emoji ? `${t.Emoji} ${t.Name}` : t.Name}
+                    <option key={t.id} value={t.id}>
+                      {t.emoji ? `${t.emoji} ${t.name}` : t.name}
                     </option>
                   ))}
                 </select>
@@ -279,15 +281,28 @@ export default function RequestTimeOff() {
               </div>
 
               {error && (
-                <p style={{ marginTop: "10px", color: "tomato" }}>
-                  {error}
-                </p>
+                <p style={{ marginTop: "10px", color: "tomato" }}>{error}</p>
               )}
 
               {success && (
-                <p style={{ marginTop: "10px", color: "#90ee90" }}>
-                  {success}
-                </p>
+                <div style={{ marginTop: "10px" }}>
+                  <p style={{ color: "#90ee90" }}>{success}</p>
+                  {createdRequestId && (
+                    <a
+                      href={`${TIME_OFF_REQUESTS_API}/${createdRequestId}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: "inline-block",
+                        marginTop: "6px",
+                        textDecoration: "underline",
+                        color: "#fbeab8",
+                      }}
+                    >
+                      Open this request
+                    </a>
+                  )}
+                </div>
               )}
             </form>
           )}
