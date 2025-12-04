@@ -35,9 +35,11 @@ public sealed class GetTimeOffRequestsHandler(IQuerySession querySession) : IReq
         
         var employees = new Dictionary<Guid, Employee>();
         var approvers = new Dictionary<Guid, Employee>();
+        var timeOffTypes = new Dictionary<Guid, TimeOffType>();
         var data = await query
             .Include(employees).On(r => r.EmployeeId)
             .Include(approvers).On(r => r.ApproverId!)
+            .Include(timeOffTypes).On(r => r.TypeId)
             .OrderByDescending(r => r.Id)
             .Skip((request.Page - 1) * request.PerPage)
             .Take(request.PerPage)
@@ -46,6 +48,7 @@ public sealed class GetTimeOffRequestsHandler(IQuerySession querySession) : IReq
         {
             timeOffRequest.Employee = employees.GetValueOrDefault(timeOffRequest.EmployeeId);
             timeOffRequest.Approver = timeOffRequest.ApproverId.HasValue ? approvers.GetValueOrDefault(timeOffRequest.ApproverId.Value) : null;
+            timeOffRequest.Type =  timeOffTypes.GetValueOrDefault(timeOffRequest.TypeId);
         }
 
         return new PagedDto<TimeOffRequestDto>(data
