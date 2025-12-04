@@ -38,7 +38,7 @@ public sealed class CreateEmployeeRequestHandler(IDocumentSession documentSessio
             .AnyAsync(p => p.Id == request.ManagerId, cancellationToken);
         if (!managerExists)
         {
-            throw new EntityNotFoundException("Position was not found.");
+            throw new EntityNotFoundException("Manager was not found.");
         }
 
         var normalizedEmail = StringUtilities.GetNormalizedEmail(request.Email);
