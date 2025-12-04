@@ -41,18 +41,13 @@ type PositionDto = {
 type RolesApiInnerDto = {
   id: string;
   name: string;
-  permissions?: string[];
-};
-
-type RolesApiData = {
-  data: RolesApiInnerDto[];
-  totalCount: number;
+  permissions?: string[] | null;
 };
 
 type RolesApiResponse = {
-  data: RolesApiData | null;
-  error: ErrorResponse | null;
-  isSuccessful: boolean;
+  data?: RolesApiInnerDto[] | null;
+  error?: ErrorResponse | null;
+  isSuccessful?: boolean;
 };
 
 type RoleDto = {
@@ -131,7 +126,7 @@ export default function NewEmployeePage() {
       }
 
       const json = (await res.json()) as RolesApiResponse;
-      const apiItems = json.data?.data ?? [];
+      const apiItems = json.data ?? [];
 
       const mapped: RoleDto[] = apiItems.map((r) => ({
         Id: r.id,
@@ -196,7 +191,7 @@ export default function NewEmployeePage() {
       return;
     }
 
-    if (!firstName || !lastName || !email || !positionId || !workStartDate) {
+    if (!firstName || !lastName || !email || !positionId || !roleId || !workStartDate) {
       setError("Please fill in all required fields.");
       setSuccess(null);
       return;
@@ -216,6 +211,7 @@ export default function NewEmployeePage() {
         LastName: lastName,
         PhoneNumber: phoneNumber || null,
         WorkStartDate: workStartDate,
+        RoleIds: [roleId],
       };
 
       const res = await fetch(EMPLOYEES_API, {
@@ -236,7 +232,7 @@ export default function NewEmployeePage() {
           if (json.error?.errorMessage) {
             message = json.error.errorMessage;
           }
-        } catch {}
+        } catch { }
         setError(message);
         return;
       }

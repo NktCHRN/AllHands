@@ -1,77 +1,89 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import { useCurrentUser } from "@/hooks/currentUser";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function TopBar() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const { isLoggedIn, loading, logout } = useCurrentUser();
-  const [navOpen, setNavOpen] = useState(false);
+const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 
-  const handleLogout = async () => {
-    setNavOpen(false);
-    await logout();
-    router.push("/login");
+type AccountDetails = {
+  Roles?: string[] | null;
+  // інші поля можна додати за потреби
+};
+
+type ErrorResponse = {
+  ErrorMessage?: string;
+};
+
+type ApiResponse<T> = {
+  Data?: T | null;
+  Error?: ErrorResponse | null;
+};
+
+let cachedUser: AccountDetails | null = null;
+
+export function useCurrentUser() {
+  const [user, setUser] = useState<AccountDetails | null>(cachedUser);
+  const [loading, setLoading] = useState(!cachedUser);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        setLoading(true);
+
+        const res = await fetch(`${ACCOUNT_API}/details`, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          if (!cancelled) {
+            cachedUser = null;
+            setUser(null);
+          }
+          return;
+        }
+
+        const json = (await res.json()) as ApiResponse<AccountDetails>;
+        const data = json.Data ?? null;
+
+        if (!cancelled) {
+          cachedUser = data;
+          setUser(data);
+        }
+      } catch {
+        if (!cancelled) {
+          cachedUser = null;
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const logout = async () => {
+    try {
+      await fetch(`${ACCOUNT_API}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch { }
+
+    cachedUser = null;
+    setUser(null);
   };
 
-  const closeMenu = () => setNavOpen(false);
+  const isLoggedIn = !!user;
 
-  return (
-    <div className="topBar">
-      <div className="topBarLeft">
-        <span className="topBarBrand">AllHands HR</span>
-      </div>
-      <div className="topBarRight">
-        {pathname !== "/" && <Link href="/" className="navLink">Home</Link>}
-        {pathname !== "/about" && <Link href="/about" className="navLink">About</Link>}
-        {pathname !== "/contact" && <Link href="/contact" className="navLink">Contact Us</Link>}
-        {!loading &&
-          (!isLoggedIn ? (
-            pathname !== "/login" && <Link href="/login" className="navLink">Login</Link>
-          ) : (
-            <div className="navDropdownWrapper">
-              <button
-                type="button"
-                className="navDropdownToggle"
-                onClick={() => setNavOpen((o) => !o)}
-              >
-                My Pages ▾
-              </button>
-              {navOpen && (
-                <div className="navDropdownMenu">
-                  <Link href="/account" className="navDropdownItem" onClick={closeMenu}>
-                    My Profile
-                  </Link>
-                  <Link href="/management" className="navDropdownItem" onClick={closeMenu}>
-                    Dashboard
-                  </Link>
-                  <Link href="/time-off/request" className="navDropdownItem" onClick={closeMenu}>
-                    Request Time Off
-                  </Link>
-                  <Link href="/time-off/requests" className="navDropdownItem" onClick={closeMenu}>
-                    My Time-Off Requests
-                  </Link>
-                  <Link href="/employees" className="navDropdownItem" onClick={closeMenu}>
-                    Employees
-                  </Link>
-                  <Link href="/employees/new" className="navDropdownItem" onClick={closeMenu}>
-                    Create Employee
-                  </Link>
-                  <button
-                    type="button"
-                    className="navDropdownItem"
-                    onClick={handleLogout}
-                  >
-                    Log out
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-      </div>
-    </div>
-  );
+  return { user, isLoggedIn, loading, logout };
 }
