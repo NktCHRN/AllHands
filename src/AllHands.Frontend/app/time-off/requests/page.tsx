@@ -24,27 +24,6 @@ type TimeOffRequestDto = {
   CreatedAt: string;
 };
 
-type PagedResponse<T> = {
-  Items: T[];
-  Page: number;
-  PerPage: number;
-  TotalItems: number;
-  TotalPages: number;
-};
-
-type ErrorResponse = {
-  ErrorMessage?: string;
-};
-
-type ApiResponse<T> = {
-  Data: T | null;
-  Error: ErrorResponse | null;
-};
-
-type AccountDetails = {
-  Permissions?: string[] | null;
-};
-
 const PER_PAGE = 10;
 const ADMIN_PERMISSION = "timeoffrequest.adminapprove";
 
@@ -67,6 +46,7 @@ export default function TimeOffRequestsPage() {
   const loadAccount = async () => {
     try {
       setAccountLoading(true);
+
       const res = await fetch(`${ACCOUNT_API}/details`, {
         method: "GET",
         credentials: "include",
@@ -76,15 +56,18 @@ export default function TimeOffRequestsPage() {
         throw new Error("Failed to load account details.");
       }
 
-      const json = (await res.json()) as ApiResponse<AccountDetails>;
-      const data = json.Data;
+      const json = (await res.json()) as any;
 
-      if (!data) {
-        const msg = json.Error?.ErrorMessage || "No account data returned.";
-        throw new Error(msg);
-      }
+      const data =
+        json?.data ??
+        json?.Data ??
+        json;
 
-      const permissions = data.Permissions || [];
+      const permissions: string[] =
+        data?.permissions ??
+        data?.Permissions ??
+        []; 
+
       setCanAdminApprove(permissions.includes(ADMIN_PERMISSION));
     } catch {
       setCanAdminApprove(false);
@@ -112,20 +95,43 @@ export default function TimeOffRequestsPage() {
         throw new Error("Failed to load time-off requests.");
       }
 
-      const json =
-        (await res.json()) as ApiResponse<PagedResponse<TimeOffRequestDto>>;
-      const data = json.Data;
+      const json = (await res.json()) as any;
 
-      if (!data) {
-        const msg = json.Error?.ErrorMessage || "No data returned.";
-        throw new Error(msg);
+      const backendError =
+        json?.error?.errorMessage ??
+        json?.Error?.ErrorMessage ??
+        json?.errorMessage ??
+        json?.ErrorMessage ??
+        null;
+
+      if (backendError) {
+        setError(backendError);
       }
 
-      setRequests(data.Items);
-      setPage(data.Page);
-      setTotalPages(data.TotalPages || 1);
+      const payload =
+        json?.data ??
+        json?.Data ??
+        json;
+
+      const items: TimeOffRequestDto[] =
+        payload?.Items ??
+        payload?.items ??
+        (Array.isArray(payload) ? payload : []);
+
+      const currentPage =
+        payload?.Page ?? payload?.page ?? pageNumber ?? 1;
+
+      const pagesTotal =
+        payload?.TotalPages ?? payload?.totalPages ?? 1;
+
+      setRequests(items || []);
+      setPage(currentPage);
+      setTotalPages(pagesTotal || 1);
     } catch (e: any) {
       setError(e?.message || "Unexpected error while loading requests.");
+      setRequests([]);
+      setPage(1);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -157,11 +163,16 @@ export default function TimeOffRequestsPage() {
       if (!res.ok) {
         let message = "Failed to cancel request.";
         try {
-          const data = (await res.json()) as ApiResponse<unknown>;
-          if (data.Error && data.Error.ErrorMessage) {
-            message = data.Error.ErrorMessage;
+          const data = (await res.json()) as any;
+          const backendError =
+            data?.error?.errorMessage ??
+            data?.Error?.ErrorMessage ??
+            data?.errorMessage ??
+            data?.ErrorMessage;
+          if (backendError) {
+            message = backendError;
           }
-        } catch { }
+        } catch {}
         throw new Error(message);
       }
 
@@ -186,11 +197,16 @@ export default function TimeOffRequestsPage() {
       if (!res.ok) {
         let message = "Failed to approve request.";
         try {
-          const data = (await res.json()) as ApiResponse<unknown>;
-          if (data.Error && data.Error.ErrorMessage) {
-            message = data.Error.ErrorMessage;
+          const data = (await res.json()) as any;
+          const backendError =
+            data?.error?.errorMessage ??
+            data?.Error?.ErrorMessage ??
+            data?.errorMessage ??
+            data?.ErrorMessage;
+          if (backendError) {
+            message = backendError;
           }
-        } catch { }
+        } catch {}
         throw new Error(message);
       }
 
@@ -215,11 +231,16 @@ export default function TimeOffRequestsPage() {
       if (!res.ok) {
         let message = "Failed to reject request.";
         try {
-          const data = (await res.json()) as ApiResponse<unknown>;
-          if (data.Error && data.Error.ErrorMessage) {
-            message = data.Error.ErrorMessage;
+          const data = (await res.json()) as any;
+          const backendError =
+            data?.error?.errorMessage ??
+            data?.Error?.ErrorMessage ??
+            data?.errorMessage ??
+            data?.ErrorMessage;
+          if (backendError) {
+            message = backendError;
           }
-        } catch { }
+        } catch {}
         throw new Error(message);
       }
 
