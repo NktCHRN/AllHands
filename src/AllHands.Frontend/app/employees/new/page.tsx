@@ -9,6 +9,7 @@ const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const EMPLOYEES_API = `${API_ROOT}/api/v1/employees`;
 const POSITIONS_API = `${API_ROOT}/api/v1/positions`;
 const ROLES_API = `${API_ROOT}/api/v1/roles`;
+const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 
 const EMPLOYEE_CREATE_PERMISSIONS = ["employee.create", "employee.edit"];
 
@@ -66,6 +67,7 @@ export default function NewEmployeePage() {
 
   const [positions, setPositions] = useState<PositionDto[]>([]);
   const [roles, setRoles] = useState<RoleDto[]>([]);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -143,30 +145,49 @@ export default function NewEmployeePage() {
     }
   };
 
+  const loadPermissions = async () => {
+    try {
+      const res = await fetch(ACCOUNT_API, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        setPermissions([]);
+        return;
+      }
+
+      const json = (await res.json()) as {
+        data?: { permissions?: string[] | null } | null;
+        error?: ErrorResponse | null;
+        isSuccessful?: boolean;
+      };
+
+      setPermissions(json.data?.permissions ?? []);
+    } catch {
+      setPermissions([]);
+    }
+  };
+
   useEffect(() => {
     void loadPositions();
     void loadRoles();
+    void loadPermissions();
   }, []);
 
   useEffect(() => {
-    if (!user || !roles.length) {
+    if (!permissions.length) {
       setCanCreateEmployees(false);
       return;
     }
 
-    const userRoleNames = (user.roles ?? []).map((n) => n.toLowerCase());
-    const allowedPerms = EMPLOYEE_CREATE_PERMISSIONS.map((p) => p.toLowerCase());
+    const userPerms = permissions.map((p) => p.toLowerCase());
+    const needed = EMPLOYEE_CREATE_PERMISSIONS.map((p) => p.toLowerCase());
 
-    const hasPermission = roles.some((role) => {
-      if (!userRoleNames.includes(role.Name.toLowerCase())) {
-        return false;
-      }
-      const rolePerms = role.Permissions.map((p) => p.toLowerCase());
-      return allowedPerms.some((p) => rolePerms.includes(p));
-    });
+    const hasPermission = needed.some((p) => userPerms.includes(p));
 
     setCanCreateEmployees(hasPermission);
-  }, [user, roles]);
+  }, [permissions]);
 
   const handleSubmit = async () => {
     if (!canCreateEmployees) {
@@ -215,7 +236,7 @@ export default function NewEmployeePage() {
           if (json.error?.errorMessage) {
             message = json.error.errorMessage;
           }
-        } catch { }
+        } catch {}
         setError(message);
         return;
       }
