@@ -6,8 +6,8 @@ const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 
 type AccountDetails = {
+  roles?: string[] | null;
   Roles?: string[] | null;
-  // інші поля можна додати за потреби
 };
 
 type ErrorResponse = {
@@ -20,12 +20,15 @@ type ApiResponse<T> = {
 };
 
 let cachedUser: AccountDetails | null = null;
+let cachedLoaded = false;
 
 export function useCurrentUser() {
   const [user, setUser] = useState<AccountDetails | null>(cachedUser);
-  const [loading, setLoading] = useState(!cachedUser);
+  const [loading, setLoading] = useState(!cachedLoaded);
 
   useEffect(() => {
+    if (cachedLoaded) return;
+
     let cancelled = false;
 
     async function load() {
@@ -40,6 +43,7 @@ export function useCurrentUser() {
         if (!res.ok) {
           if (!cancelled) {
             cachedUser = null;
+            cachedLoaded = true;
             setUser(null);
           }
           return;
@@ -48,13 +52,22 @@ export function useCurrentUser() {
         const json = (await res.json()) as ApiResponse<AccountDetails>;
         const data = json.Data ?? null;
 
+        const normalized: AccountDetails | null = data
+          ? {
+              ...data,
+              roles: data.roles ?? data.Roles ?? null,
+            }
+          : null;
+
         if (!cancelled) {
-          cachedUser = data;
-          setUser(data);
+          cachedUser = normalized;
+          cachedLoaded = true;
+          setUser(normalized);
         }
       } catch {
         if (!cancelled) {
           cachedUser = null;
+          cachedLoaded = true;
           setUser(null);
         }
       } finally {
@@ -77,9 +90,10 @@ export function useCurrentUser() {
         method: "POST",
         credentials: "include",
       });
-    } catch { }
+    } catch {}
 
     cachedUser = null;
+    cachedLoaded = false;
     setUser(null);
   };
 
