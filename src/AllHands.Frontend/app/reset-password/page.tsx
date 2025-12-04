@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import TopBar from "@/components/TopBar";
+
+const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 
 type Props = {
   searchParams: {
@@ -50,7 +52,7 @@ export default function ResetPassword({ searchParams }: Props) {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/profile/password-reset/confirm", {
+      const res = await fetch(`${ACCOUNT_API}/reset-password/confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -61,10 +63,21 @@ export default function ResetPassword({ searchParams }: Props) {
 
       if (!res.ok) {
         let message = "Failed to change password.";
+
         try {
-          const data = await res.json();
-          if (data?.message) message = data.message;
+          const ct = res.headers.get("Content-Type") || "";
+          if (ct.includes("application/json")) {
+            const data = await res.json();
+            if (data?.error?.errorMessage) {
+              message = data.error.errorMessage;
+            } else if (data?.message) {
+              message = data.message;
+            }
+          } else {
+            await res.text();
+          }
         } catch { }
+
         throw new Error(message);
       }
 
@@ -98,7 +111,6 @@ export default function ResetPassword({ searchParams }: Props) {
         >
           Reset Password
         </h2>
-
         <input
           type="password"
           placeholder="New password"
@@ -106,7 +118,6 @@ export default function ResetPassword({ searchParams }: Props) {
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
         />
-
         <input
           type="password"
           placeholder="Confirm new password"
@@ -114,7 +125,6 @@ export default function ResetPassword({ searchParams }: Props) {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
         />
-
         <button
           className="button"
           type="button"
@@ -123,8 +133,11 @@ export default function ResetPassword({ searchParams }: Props) {
         >
           {loading ? "Saving..." : "Save New Password"}
         </button>
-
-        {error && <p className="error">{error}</p>}
+        {error && (
+          <p className="error" style={{ marginTop: "10px" }}>
+            {error}
+          </p>
+        )}
         {success && (
           <p
             style={{
