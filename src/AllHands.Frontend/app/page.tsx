@@ -1,38 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
+import TopBar from "@/components/TopBar";
 
 export default function Menu() {
   return (
     <div style={{ 
           backgroundColor: "#0D081E", 
           minHeight: "100vh" }}>
-      <div
-        className="topBar"
-      >
-        <span style={{ 
-                color: "black", 
-                fontWeight: "bold" }}
-        >
-          AllHands HR
-        </span>
-        <div
-          style={{
-            display: "flex",
-            gap: "40px",
-            alignItems: "center",
-          }}
-        >
-          <Link href="/about" className="navLink">
-            About
-          </Link>
-          <Link href="/contact" className="navLink">
-            Contact Us
-          </Link>
-          <Link href="/login" className="navLink">
-            Login
-          </Link>
-        </div>
-      </div>
+      <TopBar />
       <div style={{ 
         minHeight: "calc(100vh - 100px)", 
         display: "flex",    
