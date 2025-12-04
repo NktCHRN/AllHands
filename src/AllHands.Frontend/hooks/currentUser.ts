@@ -6,16 +6,17 @@ const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 
 type AccountDetails = {
-  Roles?: string[] | null;
+  roles?: string[] | null;
 };
 
 type ErrorResponse = {
-  ErrorMessage?: string;
+  errorMessage?: string;
 };
 
 type ApiResponse<T> = {
-  Data?: T | null;
-  Error?: ErrorResponse | null;
+  data?: T | null;
+  error?: ErrorResponse | null;
+  isSuccessful?: boolean;
 };
 
 let cachedUser: AccountDetails | null = null;
@@ -49,7 +50,7 @@ export function useCurrentUser() {
         }
 
         const json = (await res.json()) as ApiResponse<AccountDetails>;
-        const data = json.Data ?? null;
+        const data = json.data ?? null;
 
         if (!cancelled) {
           cachedUser = data;
