@@ -1,21 +1,35 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import TopBar from "@/components/TopBar";
+import { useCurrentUser } from "@/hooks/currentUser";
 
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const EMPLOYEES_API = `${API_ROOT}/api/v1/employees`;
 const POSITIONS_API = `${API_ROOT}/api/v1/positions`;
+const ROLES_API = `${API_ROOT}/api/v1/roles`;
+
+const EMPLOYEE_CREATE_PERMISSIONS = ["employee.create", "employee.edit"];
 
 type ErrorResponse = {
-  ErrorMessage?: string;
+  errorMessage?: string;
 };
 
-type ApiResponse<T> = {
-  Data?: T | null;
-  Error?: ErrorResponse | null;
+type PositionsApiInnerDto = {
+  id: string;
+  name: string;
+};
+
+type PositionsApiData = {
+  data: PositionsApiInnerDto[];
+  totalCount: number;
+};
+
+type PositionsApiResponse = {
+  data: PositionsApiData | null;
+  error: ErrorResponse | null;
+  isSuccessful: boolean;
 };
 
 type PositionDto = {
@@ -23,41 +37,52 @@ type PositionDto = {
   Name: string;
 };
 
-type PositionsPagedResponse = {
-  Data: PositionDto[];
-  TotalCount: number;
+type RolesApiInnerDto = {
+  id: string;
+  name: string;
+  permissions?: string[];
 };
 
-const MOCK_POSITIONS: PositionDto[] = [
-  { Id: "00000000-0000-0000-0000-000000000001", Name: "Software Engineer" },
-  { Id: "00000000-0000-0000-0000-000000000002", Name: "HR Manager" },
-  { Id: "00000000-0000-0000-0000-000000000003", Name: "Product Manager" },
-  { Id: "00000000-0000-0000-0000-000000000004", Name: "QA Engineer" },
-];
+type RolesApiData = {
+  data: RolesApiInnerDto[];
+  totalCount: number;
+};
+
+type RolesApiResponse = {
+  data: RolesApiData | null;
+  error: ErrorResponse | null;
+  isSuccessful: boolean;
+};
+
+type RoleDto = {
+  Id: string;
+  Name: string;
+  Permissions: string[];
+};
 
 export default function NewEmployeePage() {
   const router = useRouter();
+  const { user, loading: userLoading } = useCurrentUser();
 
   const [positions, setPositions] = useState<PositionDto[]>([]);
+  const [roles, setRoles] = useState<RoleDto[]>([]);
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [positionId, setPositionId] = useState("");
+  const [roleId, setRoleId] = useState("");
   const [workStartDate, setWorkStartDate] = useState("");
-  const [managerId, setManagerId] = useState("00000000-0000-0000-0000-000000000000");
+  const [managerId, setManagerId] = useState(
+    "00000000-0000-0000-0000-000000000000",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [navOpen, setNavOpen] = useState(false);
+  const [canCreateEmployees, setCanCreateEmployees] = useState(false);
 
   const loadPositions = async () => {
-    if (!API_ROOT) {
-      setPositions(MOCK_POSITIONS);
-      return;
-    }
-
     try {
       const params = new URLSearchParams();
       params.set("Page", "1");
@@ -69,27 +94,87 @@ export default function NewEmployeePage() {
       });
 
       if (!res.ok) {
-        setPositions(MOCK_POSITIONS);
+        setPositions([]);
         return;
       }
 
-      const json = (await res.json()) as ApiResponse<PositionsPagedResponse>;
+      const json = (await res.json()) as PositionsApiResponse;
+      const apiItems = json.data?.data ?? [];
 
-      if (json.Data && Array.isArray(json.Data.Data) && json.Data.Data.length > 0) {
-        setPositions(json.Data.Data);
-      } else {
-        setPositions(MOCK_POSITIONS);
-      }
+      const mapped: PositionDto[] = apiItems.map((p) => ({
+        Id: p.id,
+        Name: p.name,
+      }));
+
+      setPositions(mapped);
     } catch {
-      setPositions(MOCK_POSITIONS);
+      setPositions([]);
+    }
+  };
+
+  const loadRoles = async () => {
+    try {
+      const params = new URLSearchParams();
+      params.set("Page", "1");
+      params.set("PerPage", "100");
+
+      const res = await fetch(`${ROLES_API}?${params.toString()}`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        setRoles([]);
+        return;
+      }
+
+      const json = (await res.json()) as RolesApiResponse;
+      const apiItems = json.data?.data ?? [];
+
+      const mapped: RoleDto[] = apiItems.map((r) => ({
+        Id: r.id,
+        Name: r.name,
+        Permissions: r.permissions ?? [],
+      }));
+
+      setRoles(mapped);
+    } catch {
+      setRoles([]);
     }
   };
 
   useEffect(() => {
     void loadPositions();
+    void loadRoles();
   }, []);
 
+  useEffect(() => {
+    if (!user || !roles.length) {
+      setCanCreateEmployees(false);
+      return;
+    }
+
+    const userRoleNames = (user.Roles ?? []).map((n) => n.toLowerCase());
+    const allowedPerms = EMPLOYEE_CREATE_PERMISSIONS.map((p) => p.toLowerCase());
+
+    const hasPermission = roles.some((role) => {
+      if (!userRoleNames.includes(role.Name.toLowerCase())) {
+        return false;
+      }
+      const rolePerms = role.Permissions.map((p) => p.toLowerCase());
+      return allowedPerms.some((p) => rolePerms.includes(p));
+    });
+
+    setCanCreateEmployees(hasPermission);
+  }, [user, roles]);
+
   const handleSubmit = async () => {
+    if (!canCreateEmployees) {
+      setError("You do not have permission to create employees.");
+      setSuccess(null);
+      return;
+    }
+
     if (!firstName || !lastName || !email || !positionId || !workStartDate) {
       setError("Please fill in all required fields.");
       setSuccess(null);
@@ -124,11 +209,13 @@ export default function NewEmployeePage() {
       if (!res.ok) {
         let message = "Failed to create employee.";
         try {
-          const json = (await res.json()) as ApiResponse<any>;
-          if (json.Error?.ErrorMessage) {
-            message = json.Error.ErrorMessage;
+          const json = (await res.json()) as {
+            error?: ErrorResponse | null;
+          };
+          if (json.error?.errorMessage) {
+            message = json.error.errorMessage;
           }
-        } catch {}
+        } catch { }
         setError(message);
         return;
       }
@@ -140,6 +227,7 @@ export default function NewEmployeePage() {
       setEmail("");
       setPhoneNumber("");
       setPositionId("");
+      setRoleId("");
       setWorkStartDate("");
     } catch {
       setError("Network error. Please try again.");
@@ -148,9 +236,30 @@ export default function NewEmployeePage() {
     }
   };
 
-  const handleLogout = () => {
-    setNavOpen(false);
-    router.push("/");
+  const renderNoPermission = () => {
+    if (userLoading) {
+      return null;
+    }
+
+    if (canCreateEmployees) {
+      return null;
+    }
+
+    return (
+      <div
+        style={{
+          marginBottom: "20px",
+          padding: "12px 16px",
+          borderRadius: "12px",
+          background: "rgba(255, 122, 122, 0.12)",
+          color: "#ff7a7a",
+          fontSize: "14px",
+        }}
+      >
+        You do not have permission to create employees. Please contact your
+        administrator.
+      </div>
+    );
   };
 
   return (
@@ -187,12 +296,14 @@ export default function NewEmployeePage() {
           >
             Add employee
           </h1>
-
+          {renderNoPermission()}
           <div
             style={{
               display: "flex",
               flexDirection: "column",
               gap: "16px",
+              opacity: canCreateEmployees ? 1 : 0.6,
+              pointerEvents: canCreateEmployees ? "auto" : "none",
             }}
           >
             <div className="accRow">
@@ -203,7 +314,6 @@ export default function NewEmployeePage() {
                 onChange={(e) => setFirstName(e.target.value)}
               />
             </div>
-
             <div className="accRow">
               <span className="accLable">Middle name</span>
               <input
@@ -212,7 +322,6 @@ export default function NewEmployeePage() {
                 onChange={(e) => setMiddleName(e.target.value)}
               />
             </div>
-
             <div className="accRow">
               <span className="accLable">Last name</span>
               <input
@@ -221,7 +330,6 @@ export default function NewEmployeePage() {
                 onChange={(e) => setLastName(e.target.value)}
               />
             </div>
-
             <div className="accRow">
               <span className="accLable">Email</span>
               <input
@@ -230,7 +338,6 @@ export default function NewEmployeePage() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-
             <div className="accRow">
               <span className="accLable">Phone</span>
               <input
@@ -239,7 +346,6 @@ export default function NewEmployeePage() {
                 onChange={(e) => setPhoneNumber(e.target.value)}
               />
             </div>
-
             <div className="accRow">
               <span className="accLable">Position</span>
               <select
@@ -255,7 +361,21 @@ export default function NewEmployeePage() {
                 ))}
               </select>
             </div>
-
+            <div className="accRow">
+              <span className="accLable">Role</span>
+              <select
+                className="accInput"
+                value={roleId}
+                onChange={(e) => setRoleId(e.target.value)}
+              >
+                <option value="">Select role</option>
+                {roles.map((r) => (
+                  <option key={r.Id} value={r.Id}>
+                    {r.Name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="accRow">
               <span className="accLable">Start date</span>
               <input
@@ -266,7 +386,6 @@ export default function NewEmployeePage() {
               />
             </div>
           </div>
-
           {error && (
             <div
               style={{
@@ -277,7 +396,6 @@ export default function NewEmployeePage() {
               {error}
             </div>
           )}
-
           {success && (
             <div
               style={{
@@ -288,7 +406,6 @@ export default function NewEmployeePage() {
               {success}
             </div>
           )}
-
           <div
             style={{
               marginTop: "26px",
@@ -299,8 +416,8 @@ export default function NewEmployeePage() {
             <button
               className="profileButtonPrimary"
               onClick={handleSubmit}
-              disabled={loading}
-              style={{ opacity: loading ? 0.7 : 1 }}
+              disabled={loading || !canCreateEmployees}
+              style={{ opacity: loading || !canCreateEmployees ? 0.7 : 1 }}
             >
               {loading ? "Creating..." : "Create employee"}
             </button>
