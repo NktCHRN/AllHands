@@ -33,6 +33,7 @@ export function useCurrentUser() {
     async function load() {
       try {
         setLoading(true);
+
         const res = await fetch(`${ACCOUNT_API}/details`, {
           method: "GET",
           credentials: "include",
@@ -62,9 +63,7 @@ export function useCurrentUser() {
           setUser(null);
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 
@@ -82,8 +81,9 @@ export function useCurrentUser() {
         credentials: "include",
       });
     } catch {}
+
     cachedUser = null;
-    cachedLoaded = true;
+    cachedLoaded = false;
     setUser(null);
   };
 
