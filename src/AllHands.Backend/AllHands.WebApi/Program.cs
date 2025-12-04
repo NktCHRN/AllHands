@@ -24,6 +24,8 @@ builder.Services
 
 var app = builder.Build();
 
+app.UseCors("CORS");
+
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())      // TODO: uncomment. Temporarily available for all environments.
 //{
