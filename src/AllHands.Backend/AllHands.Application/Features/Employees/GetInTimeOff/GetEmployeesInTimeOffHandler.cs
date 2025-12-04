@@ -12,7 +12,8 @@ public sealed class GetEmployeesInTimeOffHandler(IQuerySession querySession) : I
         var employees = new Dictionary<Guid, Employee>();
         var timeOffRequests = await querySession.Query<TimeOffRequest>()
             .Include(employees).On(r => r.EmployeeId)
-            .Where(r => r.StartDate <= request.End && r.EndDate >= request.Start)
+            .Where(r => r.StartDate <= request.End && r.EndDate >= request.Start
+                && (r.Status == TimeOffRequestStatus.Pending || r.Status == TimeOffRequestStatus.Approved))
             .ToListAsync(cancellationToken);
 
         var resultItems = new List<GetEmployeesInTimeOffResultItem>();
