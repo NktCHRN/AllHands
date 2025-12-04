@@ -437,7 +437,7 @@ export default function NewEmployeePage() {
             style={{
               marginTop: "26px",
               display: "flex",
-              gap: "12px",
+              gap: "24px",
             }}
           >
             <button

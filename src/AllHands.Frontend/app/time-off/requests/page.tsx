@@ -7,7 +7,6 @@ import TopBar from "@/components/TopBar";
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const TIME_OFF_REQUESTS_API = `${API_ROOT}/api/v1/time-off/requests`;
 const TIME_OFF_EMPLOYEE_REQUESTS_API = `${API_ROOT}/api/v1/time-off/employees/requests`;
-const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 
 type TimeOffStatus = "Pending" | "Approved" | "Rejected" | "Cancelled";
 
@@ -25,7 +24,6 @@ type TimeOffRequestDto = {
 };
 
 const PER_PAGE = 10;
-const ADMIN_PERMISSION = "timeoffrequest.adminapprove";
 
 export default function TimeOffRequestsPage() {
   const router = useRouter();
@@ -35,51 +33,148 @@ export default function TimeOffRequestsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [accountLoading, setAccountLoading] = useState(true);
-  const [canAdminApprove, setCanAdminApprove] = useState(false);
-
   const [cancelingId, setCancelingId] = useState<string | null>(null);
-  const [approvingId, setApprovingId] = useState<string | null>(null);
-  const [rejectingId, setRejectingId] = useState<string | null>(null);
 
-  const loadAccount = async () => {
-    try {
-      setAccountLoading(true);
+  const normalizeRequestItem = (raw: any): TimeOffRequestDto => {
+    const type = raw.type ?? raw.Type ?? {};
+    const approvedBy = raw.approvedBy ?? raw.ApprovedBy ?? {};
 
-      const res = await fetch(`${ACCOUNT_API}/details`, {
-        method: "GET",
-        credentials: "include",
-      });
+    const id = raw.id ?? raw.Id ?? "";
+    const startDate = raw.startDate ?? raw.StartDate ?? "";
+    const endDate = raw.endDate ?? raw.EndDate ?? "";
+    const createdAt = raw.createdAt ?? raw.CreatedAt ?? "";
 
-      if (!res.ok) {
-        throw new Error("Failed to load account details.");
-      }
+    const status: TimeOffStatus =
+      raw.status ?? raw.Status ?? "Pending";
 
-      const json = (await res.json()) as any;
-      const data = json?.data ?? json?.Data ?? json;
+    const typeName =
+      raw.typeName ??
+      raw.TypeName ??
+      type.name ??
+      type.Name ??
+      "";
 
-      const permissions: string[] =
-        data?.permissions ?? data?.Permissions ?? [];
+    const typeEmoji =
+      raw.typeEmoji ??
+      raw.TypeEmoji ??
+      type.emoji ??
+      type.Emoji ??
+      null;
 
-      setCanAdminApprove(permissions.includes(ADMIN_PERMISSION));
-    } catch {
-      setCanAdminApprove(false);
-    } finally {
-      setAccountLoading(false);
-    }
+    const workingDays =
+      raw.workingDays ??
+      raw.WorkingDays ??
+      raw.workingDaysCount ??
+      raw.WorkingDaysCount ??
+      0;
+
+    const approvedByName =
+      raw.approvedByName ??
+      raw.ApprovedByName ??
+      approvedBy.fullName ??
+      approvedBy.FullName ??
+      approvedBy.name ??
+      approvedBy.Name ??
+      null;
+
+    const rejectionReason =
+      raw.rejectionReason ??
+      raw.RejectionReason ??
+      null;
+
+    return {
+      id,
+      startDate,
+      endDate,
+      createdAt,
+      status,
+      typeName,
+      typeEmoji,
+      workingDays,
+      approvedByName,
+      rejectionReason,
+    };
   };
 
-  const loadRequests = async (pageNumber: number, adminScope: boolean) => {
+  const normalizeRequestsPayload = (json: any): {
+    items: TimeOffRequestDto[];
+    page: number;
+    totalPages: number;
+  } => {
+    const backendError =
+      json?.error?.errorMessage ??
+      json?.Error?.ErrorMessage ??
+      json?.errorMessage ??
+      json?.ErrorMessage ??
+      null;
+
+    if (backendError) {
+      setError(backendError);
+    }
+
+    const root = json?.data ?? json?.Data ?? json;
+    const payload = root?.data ?? root?.Data ?? root;
+
+    const rawItems: any[] =
+      payload?.Items ??
+      payload?.items ??
+      (Array.isArray(payload) ? payload : []);
+
+    const items = rawItems.map(normalizeRequestItem);
+
+    const currentPage =
+      payload?.Page ?? payload?.page ?? 1;
+
+    const pagesTotal =
+      payload?.TotalPages ?? payload?.totalPages ?? 1;
+
+    return {
+      items,
+      page: currentPage,
+      totalPages: pagesTotal,
+    };
+  };
+
+  const formatDateRange = (start: string, end: string) => {
+    const s = new Date(start);
+    const e = new Date(end);
+    const opts: Intl.DateTimeFormatOptions = {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    };
+    const sText = Number.isNaN(s.getTime())
+      ? start
+      : s.toLocaleDateString(undefined, opts);
+    const eText = Number.isNaN(e.getTime())
+      ? end
+      : e.toLocaleDateString(undefined, opts);
+    if (sText === eText) return sText;
+    return `${sText} – ${eText}`;
+  };
+
+  const formatStatus = (status: TimeOffStatus) => {
+    if (status === "Pending") return "Pending";
+    if (status === "Approved") return "Approved";
+    if (status === "Rejected") return "Rejected";
+    if (status === "Cancelled") return "Cancelled";
+    return status;
+  };
+
+  const statusColor = (status: TimeOffStatus) => {
+    if (status === "Approved") return "#7CFC9A";
+    if (status === "Rejected") return "#ff6b6b";
+    if (status === "Cancelled") return "#cccccc";
+    return "#ffd27f";
+  };
+
+  const loadRequests = async (pageNumber: number) => {
     try {
       setLoading(true);
       setError(null);
 
-      const baseUrl = adminScope
-        ? TIME_OFF_REQUESTS_API
-        : TIME_OFF_EMPLOYEE_REQUESTS_API;
+      const url = `${TIME_OFF_EMPLOYEE_REQUESTS_API}?PerPage=${PER_PAGE}&Page=${pageNumber}`;
 
-      const url = `${baseUrl}?PerPage=${PER_PAGE}&Page=${pageNumber}`;
       const res = await fetch(url, {
         method: "GET",
         credentials: "include",
@@ -90,35 +185,12 @@ export default function TimeOffRequestsPage() {
       }
 
       const json = (await res.json()) as any;
-
-      const backendError =
-        json?.error?.errorMessage ??
-        json?.Error?.ErrorMessage ??
-        json?.errorMessage ??
-        json?.ErrorMessage ??
-        null;
-
-      if (backendError) {
-        setError(backendError);
-      }
-
-      const root = json?.data ?? json?.Data ?? json;
-      const payload = root?.data ?? root?.Data ?? root;
-
-      const items: TimeOffRequestDto[] =
-        payload?.Items ??
-        payload?.items ??
-        (Array.isArray(payload) ? payload : []);
-
-      const currentPage =
-        payload?.Page ?? payload?.page ?? pageNumber ?? 1;
-
-      const pagesTotal =
-        payload?.TotalPages ?? payload?.totalPages ?? 1;
+      const { items, page: currentPage, totalPages } =
+        normalizeRequestsPayload(json);
 
       setRequests(items || []);
       setPage(currentPage);
-      setTotalPages(pagesTotal || 1);
+      setTotalPages(totalPages || 1);
     } catch (e: any) {
       setError(e?.message || "Unexpected error while loading requests.");
       setRequests([]);
@@ -130,16 +202,11 @@ export default function TimeOffRequestsPage() {
   };
 
   useEffect(() => {
-    void loadAccount();
+    void loadRequests(1);
   }, []);
 
-  useEffect(() => {
-    if (accountLoading) return;
-    void loadRequests(1, canAdminApprove);
-  }, [accountLoading, canAdminApprove]);
-
   const reloadCurrentPage = async () => {
-    await loadRequests(page, canAdminApprove);
+    await loadRequests(page);
   };
 
   const handleCancel = async (id: string) => {
@@ -176,124 +243,22 @@ export default function TimeOffRequestsPage() {
     }
   };
 
-  const handleApprove = async (id: string) => {
-    try {
-      setApprovingId(id);
-      setError(null);
-
-      const res = await fetch(`${TIME_OFF_REQUESTS_API}/${id}/approve`, {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        let message = "Failed to approve request.";
-        try {
-          const data = (await res.json()) as any;
-          const backendError =
-            data?.error?.errorMessage ??
-            data?.Error?.ErrorMessage ??
-            data?.errorMessage ??
-            data?.ErrorMessage;
-          if (backendError) {
-            message = backendError;
-          }
-        } catch { }
-        throw new Error(message);
-      }
-
-      await reloadCurrentPage();
-    } catch (e: any) {
-      setError(e?.message || "Unexpected error while approving request.");
-    } finally {
-      setApprovingId(null);
-    }
-  };
-
-  const handleReject = async (id: string) => {
-    try {
-      setRejectingId(id);
-      setError(null);
-
-      const res = await fetch(`${TIME_OFF_REQUESTS_API}/${id}/reject`, {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        let message = "Failed to reject request.";
-        try {
-          const data = (await res.json()) as any;
-          const backendError =
-            data?.error?.errorMessage ??
-            data?.Error?.ErrorMessage ??
-            data?.errorMessage ??
-            data?.ErrorMessage;
-          if (backendError) {
-            message = backendError;
-          }
-        } catch { }
-        throw new Error(message);
-      }
-
-      await reloadCurrentPage();
-    } catch (e: any) {
-      setError(e?.message || "Unexpected error while rejecting request.");
-    } finally {
-      setRejectingId(null);
-    }
-  };
-
-  const formatDateRange = (start: string, end: string) => {
-    const s = new Date(start);
-    const e = new Date(end);
-    const opts: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    };
-    const sText = Number.isNaN(s.getTime())
-      ? start
-      : s.toLocaleDateString(undefined, opts);
-    const eText = Number.isNaN(e.getTime())
-      ? end
-      : e.toLocaleDateString(undefined, opts);
-    if (sText === eText) return sText;
-    return `${sText} – ${eText}`;
-  };
-
-  const formatStatus = (status: TimeOffStatus) => {
-    if (status === "Pending") return "Pending";
-    if (status === "Approved") return "Approved";
-    if (status === "Rejected") return "Rejected";
-    if (status === "Cancelled") return "Cancelled";
-    return status;
-  };
-
-  const statusColor = (status: TimeOffStatus) => {
-    if (status === "Approved") return "#7CFC9A";
-    if (status === "Rejected") return "#ff6b6b";
-    if (status === "Cancelled") return "#cccccc";
-    return "#ffd27f";
-  };
-
   const hasPrev = page > 1;
   const hasNext = page < totalPages;
 
   const handlePrevPage = () => {
     if (!hasPrev || loading) return;
-    void loadRequests(page - 1, canAdminApprove);
+    void loadRequests(page - 1);
   };
 
   const handleNextPage = () => {
     if (!hasNext || loading) return;
-    void loadRequests(page + 1, canAdminApprove);
+    void loadRequests(page + 1);
   };
 
-  const title = canAdminApprove ? "All Time-Off Requests" : "My Time-Off Requests";
-  const subtitle = canAdminApprove
-    ? "View and manage all time-off requests in the company."
-    : "View the history of your time-off requests and manage pending ones.";
+  const title = "My Time-Off Requests";
+  const subtitle =
+    "View the history of your time-off requests and manage pending ones.";
 
   return (
     <div className="appBackground">
@@ -307,7 +272,7 @@ export default function TimeOffRequestsPage() {
             </div>
           </div>
 
-          {accountLoading || loading ? (
+          {loading ? (
             <p>Loading requests...</p>
           ) : requests.length === 0 ? (
             <p>No time-off requests yet.</p>
@@ -353,61 +318,18 @@ export default function TimeOffRequestsPage() {
                       </td>
                       <td className="timeOffTd timeOffTd--actions">
                         {r.status === "Pending" ? (
-                          canAdminApprove ? (
-                            <>
-                              <button
-                                className="profileButtonPrimary"
-                                style={{
-                                  fontSize: "12px",
-                                  padding: "6px 14px",
-                                  opacity:
-                                    approvingId === r.id || loading ? 0.7 : 1,
-                                }}
-                                disabled={
-                                  approvingId === r.id ||
-                                  rejectingId === r.id ||
-                                  loading
-                                }
-                                onClick={() => handleApprove(r.id)}
-                              >
-                                {approvingId === r.id
-                                  ? "Approving..."
-                                  : "Approve"}
-                              </button>
-                              <button
-                                className="profileButtonSecondary"
-                                style={{
-                                  fontSize: "12px",
-                                  padding: "6px 14px",
-                                  opacity:
-                                    rejectingId === r.id || loading ? 0.7 : 1,
-                                }}
-                                disabled={
-                                  rejectingId === r.id ||
-                                  approvingId === r.id ||
-                                  loading
-                                }
-                                onClick={() => handleReject(r.id)}
-                              >
-                                {rejectingId === r.id
-                                  ? "Rejecting..."
-                                  : "Reject"}
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              className="profileButtonSecondary"
-                              style={{
-                                fontSize: "12px",
-                                padding: "6px 14px",
-                                opacity: cancelingId === r.id ? 0.7 : 1,
-                              }}
-                              disabled={cancelingId === r.id || loading}
-                              onClick={() => handleCancel(r.id)}
-                            >
-                              {cancelingId === r.id ? "Cancelling..." : "Cancel"}
-                            </button>
-                          )
+                          <button
+                            className="profileButtonSecondary"
+                            style={{
+                              fontSize: "12px",
+                              padding: "6px 14px",
+                              opacity: cancelingId === r.id ? 0.7 : 1,
+                            }}
+                            disabled={cancelingId === r.id || loading}
+                            onClick={() => handleCancel(r.id)}
+                          >
+                            {cancelingId === r.id ? "Cancelling..." : "Cancel"}
+                          </button>
                         ) : (
                           <span style={{ opacity: 0.6 }}>—</span>
                         )}

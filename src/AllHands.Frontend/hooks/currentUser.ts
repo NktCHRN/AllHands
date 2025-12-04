@@ -5,33 +5,48 @@ import { useEffect, useState } from "react";
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 
-type AccountDetails = {
+export type AccountDetails = {
+  employeeId: string;
+  firstName: string;
+  middleName?: string | null;
+  lastName: string;
+  email: string;
+  phoneNumber?: string | null;
+  status: string;
+  workStartDate?: string | null;
+  manager?: {
+    id: string;
+    firstName: string;
+    middleName?: string | null;
+    lastName: string;
+    email: string;
+    phoneNumber?: string | null;
+    position?: { id: string; name: string } | null;
+  } | null;
+
+  position?: { id: string; name: string } | null;
+  company?: { id: string; name?: string | null } | null;
+
   roles?: string[] | null;
-};
-
-type ErrorResponse = {
-  errorMessage?: string;
-};
-
-type ApiResponse<T> = {
-  data?: T | null;
-  error?: ErrorResponse | null;
-  isSuccessful?: boolean;
+  permissions?: string[] | null;
 };
 
 let cachedUser: AccountDetails | null = null;
-let cachedLoaded = false;
 
 export function useCurrentUser() {
   const [user, setUser] = useState<AccountDetails | null>(cachedUser);
-  const [loading, setLoading] = useState(!cachedLoaded);
+  const [loading, setLoading] = useState(!cachedUser);
 
   useEffect(() => {
-    if (cachedLoaded) return;
-
     let cancelled = false;
 
-    async function load() {
+    async function fetchUser() {
+      if (cachedUser) {
+        setUser(cachedUser);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
 
@@ -43,37 +58,39 @@ export function useCurrentUser() {
         if (!res.ok) {
           if (!cancelled) {
             cachedUser = null;
-            cachedLoaded = true;
             setUser(null);
           }
           return;
         }
 
-        const json = (await res.json()) as ApiResponse<AccountDetails>;
-        const data = json.data ?? null;
+        const json = await res.json();
+
+        const data: AccountDetails | null =
+          json.data ?? json.Data ?? null;
 
         if (!cancelled) {
           cachedUser = data;
-          cachedLoaded = true;
           setUser(data);
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
           cachedUser = null;
-          cachedLoaded = true;
           setUser(null);
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
-    void load();
+    fetchUser();
 
     return () => {
       cancelled = true;
     };
   }, []);
+
 
   const logout = async () => {
     try {
@@ -84,7 +101,6 @@ export function useCurrentUser() {
     } catch {}
 
     cachedUser = null;
-    cachedLoaded = false;
     setUser(null);
   };
 
