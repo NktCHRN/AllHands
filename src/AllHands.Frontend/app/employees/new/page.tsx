@@ -154,7 +154,7 @@ export default function NewEmployeePage() {
       return;
     }
 
-    const userRoleNames = (user.Roles ?? []).map((n) => n.toLowerCase());
+    const userRoleNames = (user.roles ?? []).map((n) => n.toLowerCase());
     const allowedPerms = EMPLOYEE_CREATE_PERMISSIONS.map((p) => p.toLowerCase());
 
     const hasPermission = roles.some((role) => {
