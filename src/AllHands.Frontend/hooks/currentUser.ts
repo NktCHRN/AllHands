@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
@@ -7,22 +8,23 @@ const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 
 type AccountDetails = {
   roles?: string[] | null;
+  Roles?: string[] | null;
 };
 
 type ErrorResponse = {
-  errorMessage?: string;
+  ErrorMessage?: string;
 };
 
 type ApiResponse<T> = {
-  data?: T | null;
-  error?: ErrorResponse | null;
-  isSuccessful?: boolean;
+  Data?: T | null;
+  Error?: ErrorResponse | null;
 };
 
 let cachedUser: AccountDetails | null = null;
 let cachedLoaded = false;
 
 export function useCurrentUser() {
+  const router = useRouter();
   const [user, setUser] = useState<AccountDetails | null>(cachedUser);
   const [loading, setLoading] = useState(!cachedLoaded);
 
@@ -50,12 +52,19 @@ export function useCurrentUser() {
         }
 
         const json = (await res.json()) as ApiResponse<AccountDetails>;
-        const data = json.data ?? null;
+        const data = json.Data ?? null;
+
+        const normalized: AccountDetails | null = data
+          ? {
+              ...data,
+              roles: data.roles ?? data.Roles ?? null,
+            }
+          : null;
 
         if (!cancelled) {
-          cachedUser = data;
+          cachedUser = normalized;
           cachedLoaded = true;
-          setUser(data);
+          setUser(normalized);
         }
       } catch {
         if (!cancelled) {
@@ -64,7 +73,9 @@ export function useCurrentUser() {
           setUser(null);
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
@@ -86,6 +97,7 @@ export function useCurrentUser() {
     cachedUser = null;
     cachedLoaded = false;
     setUser(null);
+    router.push("/login");
   };
 
   const isLoggedIn = !!user;

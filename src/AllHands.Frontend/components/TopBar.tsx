@@ -1,106 +1,46 @@
 "use client";
 
-import router from "next/router";
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useCurrentUser } from "@/hooks/currentUser";
 
-const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
+export default function TopBar() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { isLoggedIn, loading, logout } = useCurrentUser();
 
-type AccountDetails = {
-  roles?: string[] | null;
-  Roles?: string[] | null;
-};
-
-type ErrorResponse = {
-  ErrorMessage?: string;
-};
-
-type ApiResponse<T> = {
-  Data?: T | null;
-  Error?: ErrorResponse | null;
-};
-
-let cachedUser: AccountDetails | null = null;
-let cachedLoaded = false;
-
-export function useCurrentUser() {
-  const [user, setUser] = useState<AccountDetails | null>(cachedUser);
-  const [loading, setLoading] = useState(!cachedLoaded);
-
-  useEffect(() => {
-    if (cachedLoaded) return;
-
-    let cancelled = false;
-
-    async function load() {
-      try {
-        setLoading(true);
-
-        const res = await fetch(`${ACCOUNT_API}/details`, {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (!res.ok) {
-          if (!cancelled) {
-            cachedUser = null;
-            cachedLoaded = true;
-            setUser(null);
-          }
-          return;
-        }
-
-        const json = (await res.json()) as ApiResponse<AccountDetails>;
-        const data = json.Data ?? null;
-
-        const normalized: AccountDetails | null = data
-          ? {
-              ...data,
-              roles: data.roles ?? data.Roles ?? null,
-            }
-          : null;
-
-        if (!cancelled) {
-          cachedUser = normalized;
-          cachedLoaded = true;
-          setUser(normalized);
-        }
-      } catch {
-        if (!cancelled) {
-          cachedUser = null;
-          cachedLoaded = true;
-          setUser(null);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const logout = async () => {
-    try {
-      await fetch(`${ACCOUNT_API}/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch {}
-
-    cachedUser = null;
-    cachedLoaded = false;
-    setUser(null);
-
-    router.push("/");
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
   };
 
-  const isLoggedIn = !!user;
-
-  return { user, isLoggedIn, loading, logout };
+  return (
+    <div className="topBar">
+      <div className="topBarLeft">
+        <span className="topBarBrand">AllHands HR</span>
+      </div>
+      <div className="topBarRight">
+        {pathname !== "/" && (
+          <Link href="/" className="navLink">
+            Home
+          </Link>
+        )}
+        {pathname !== "/about" && (
+          <Link href="/about" className="navLink">
+            About
+          </Link>
+        )}
+        {!loading && isLoggedIn && (
+          <button type="button" className="navLink" onClick={handleLogout}>
+            Logout
+          </button>
+        )}
+        {!loading && !isLoggedIn && pathname !== "/login" && (
+          <Link href="/login" className="navLink">
+            Login
+          </Link>
+        )}
+      </div>
+    </div>
+  );
 }
