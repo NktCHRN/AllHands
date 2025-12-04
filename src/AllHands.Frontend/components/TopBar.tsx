@@ -41,13 +41,11 @@ export default function TopBar() {
 
         {!loading &&
           (!isLoggedIn ? (
-            <>
-              {pathname !== "/login" && (
-                <Link href="/login" className="navLink">
-                  Login
-                </Link>
-              )}
-            </>
+            pathname !== "/login" && (
+              <Link href="/login" className="navLink">
+                Login
+              </Link>
+            )
           ) : (
             <>
               {pathname !== "/account" && (
@@ -59,11 +57,7 @@ export default function TopBar() {
                 type="button"
                 onClick={handleLogout}
                 className="navLink"
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  padding: 0,
-                }}
+                style={{ background: "transparent", border: "none", padding: 0 }}
               >
                 Logout
               </button>
