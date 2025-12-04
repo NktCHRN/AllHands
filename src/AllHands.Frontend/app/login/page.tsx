@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 import TopBar from "@/components/TopBar";
 
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
@@ -26,23 +27,16 @@ export default function LoginPage() {
 
       const res = await fetch(`${ACCOUNT_API}/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+        body: JSON.stringify({ email, password }),
       });
 
       if (!res.ok) {
         let message = "Invalid login or password";
         try {
-          const data = (await res.json()) as any;
-          if (data?.error?.errorMessage) {
-            message = data.error.errorMessage;
-          }
+          const data = await res.json();
+          if (data?.error?.errorMessage) message = data.error.errorMessage;
         } catch {}
         setError(message);
         setLoading(false);
@@ -61,31 +55,16 @@ export default function LoginPage() {
     <div className="appBackground">
       <TopBar />
       <div className="loginRegisterContainer">
-        <h1
-          style={{
-            marginBottom: "5px",
-            fontSize: "42px",
-            fontWeight: "bold",
-          }}
-        >
+        <h1 style={{ marginBottom: "5px", fontSize: "42px", fontWeight: "bold" }}>
           Log in
         </h1>
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-          }}
-        >
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <input
             type="email"
             placeholder="login"
             className="inputText"
-            style={{
-              width: "360px",
-              fontSize: "20px",
-            }}
+            style={{ width: "360px", fontSize: "20px" }}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -94,10 +73,7 @@ export default function LoginPage() {
             type="password"
             placeholder="password"
             className="inputText"
-            style={{
-              width: "360px",
-              fontSize: "20px",
-            }}
+            style={{ width: "360px", fontSize: "20px" }}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -105,14 +81,25 @@ export default function LoginPage() {
 
         <button
           className="button"
-          style={{
-            marginTop: "5px",
-          }}
+          style={{ marginTop: "5px" }}
           onClick={handleSubmit}
           disabled={loading}
         >
           {loading ? "Logging..." : "Login"}
         </button>
+
+        <Link
+          href="/forgot-password"
+          style={{
+            marginTop: "10px",
+            fontSize: "16px",
+            color: "#cfaaff",
+            textDecoration: "underline",
+            cursor: "pointer",
+          }}
+        >
+          Forgot password?
+        </Link>
 
         {error && <div className="error">{error}</div>}
       </div>
