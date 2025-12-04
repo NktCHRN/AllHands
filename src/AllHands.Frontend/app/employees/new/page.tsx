@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import TopBar from "@/components/TopBar";
@@ -10,22 +9,28 @@ const EMPLOYEES_API = `${API_ROOT}/api/v1/employees`;
 const POSITIONS_API = `${API_ROOT}/api/v1/positions`;
 
 type ErrorResponse = {
-  ErrorMessage?: string;
+  errorMessage?: string;
 };
 
-type ApiResponse<T> = {
-  Data?: T | null;
-  Error?: ErrorResponse | null;
+type PositionsApiInnerDto = {
+  id: string;
+  name: string;
+};
+
+type PositionsApiData = {
+  data: PositionsApiInnerDto[];
+  totalCount: number;
+};
+
+type PositionsApiResponse = {
+  data: PositionsApiData | null;
+  error: ErrorResponse | null;
+  isSuccessful: boolean;
 };
 
 type PositionDto = {
   Id: string;
   Name: string;
-};
-
-type PositionsPagedResponse = {
-  Data: PositionDto[];
-  TotalCount: number;
 };
 
 const MOCK_POSITIONS: PositionDto[] = [
@@ -46,11 +51,12 @@ export default function NewEmployeePage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [positionId, setPositionId] = useState("");
   const [workStartDate, setWorkStartDate] = useState("");
-  const [managerId, setManagerId] = useState("00000000-0000-0000-0000-000000000000");
+  const [managerId, setManagerId] = useState(
+    "00000000-0000-0000-0000-000000000000",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [navOpen, setNavOpen] = useState(false);
 
   const loadPositions = async () => {
     if (!API_ROOT) {
@@ -73,10 +79,16 @@ export default function NewEmployeePage() {
         return;
       }
 
-      const json = (await res.json()) as ApiResponse<PositionsPagedResponse>;
+      const json = (await res.json()) as PositionsApiResponse;
 
-      if (json.Data && Array.isArray(json.Data.Data) && json.Data.Data.length > 0) {
-        setPositions(json.Data.Data);
+      const apiItems = json.data?.data ?? [];
+
+      if (apiItems.length > 0) {
+        const mapped: PositionDto[] = apiItems.map((p) => ({
+          Id: p.id,
+          Name: p.name,
+        }));
+        setPositions(mapped);
       } else {
         setPositions(MOCK_POSITIONS);
       }
@@ -124,11 +136,13 @@ export default function NewEmployeePage() {
       if (!res.ok) {
         let message = "Failed to create employee.";
         try {
-          const json = (await res.json()) as ApiResponse<any>;
-          if (json.Error?.ErrorMessage) {
-            message = json.Error.ErrorMessage;
+          const json = (await res.json()) as {
+            error?: ErrorResponse | null;
+          };
+          if (json.error?.errorMessage) {
+            message = json.error.errorMessage;
           }
-        } catch {}
+        } catch { }
         setError(message);
         return;
       }
@@ -146,11 +160,6 @@ export default function NewEmployeePage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleLogout = () => {
-    setNavOpen(false);
-    router.push("/");
   };
 
   return (
