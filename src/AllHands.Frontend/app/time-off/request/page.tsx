@@ -185,7 +185,7 @@ export default function RequestTimeOff() {
               letterSpacing: "0.6px",
             }}
           >
-            Request Time Off
+            Request Time-Off
           </h1>
 
           <p style={{ marginBottom: "40px", opacity: 0.85, fontSize: "17px" }}>
@@ -278,21 +278,11 @@ export default function RequestTimeOff() {
                 >
                   {submitting ? "Submitting..." : "Submit request"}
                 </button>
-
-              </div>
-              <div style={{ display: "flex", gap: "12px" }}>
-                <button
-                  className="profileButtonPrimary"
-                  onClick={handleSubmit}
-                >
-                  Підтвердити
-                </button>
-
-                <button
+                   <button
                   className="profileButtonSecondary"
                   onClick={() => router.push("/time-off/requests")}
                 >
-                  Відмінити
+                  Cancel
                 </button>
               </div>
 
