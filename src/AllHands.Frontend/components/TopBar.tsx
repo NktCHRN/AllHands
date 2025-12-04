@@ -1,5 +1,6 @@
 "use client";
 
+import router from "next/router";
 import { useEffect, useState } from "react";
 
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
@@ -95,6 +96,8 @@ export function useCurrentUser() {
     cachedUser = null;
     cachedLoaded = false;
     setUser(null);
+
+    router.push("/");
   };
 
   const isLoggedIn = !!user;

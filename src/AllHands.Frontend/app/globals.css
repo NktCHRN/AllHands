@@ -90,6 +90,115 @@ body {
   font-weight: bold;
 }
 
+.pageWrapper {
+  width: 100%;
+  min-height: calc(100vh - 100px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 50px 20px 70px;
+  box-sizing: border-box;
+}
+
+.pageCard {
+  width: 100%;
+  max-width: 1100px;
+  background: rgba(15, 10, 40, 0.9);
+  border-radius: 34px;
+  padding: 60px 70px;
+  color: #fbeab8;
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.7);
+}
+
+.employeesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 26px;
+}
+
+.employeesTitle {
+  font-size: 46px;
+  font-weight: 900;
+  margin-bottom: 6px;
+  letter-spacing: 0.4px;
+}
+
+.employeesSubtitle {
+  margin: 0;
+  opacity: 0.8;
+  font-size: 16px;
+}
+
+.employeesFilters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.employeesTotal {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-left: auto;
+}
+
+.employeesTableWrapper {
+  overflow-x: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.employeesTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tableHead {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tableRow {}
+
+.tableCell {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.statusBadge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: rgba(0, 0, 0, 0.35);
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.smallButton {
+  padding: 6px 16px;
+  font-size: 12px;
+}
+
+.emptyTable {
+  padding: 16px 12px;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.errorMessage {
+  margin-bottom: 16px;
+  color: #ff7a7a;
+  font-size: 16px;
+}
+
 .navDropdownWrapper {
   position: relative;
 }
