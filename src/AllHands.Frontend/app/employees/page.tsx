@@ -26,25 +26,40 @@ type EmployeeSearchDto = {
   Position?: PositionDto | null;
 };
 
-type PagedResponse<T> = {
-  Items: T[];
-  Page: number;
-  PerPage: number;
-  TotalItems: number;
-  TotalPages: number;
-};
-
 type ErrorResponse = {
+  errorMessage?: string;
   ErrorMessage?: string;
 };
 
-type ApiResponse<T> = {
-  Data?: T | null;
+type EmployeesApiEmployee = {
+  id: string;
+  firstName: string;
+  middleName?: string | null;
+  lastName: string;
+  email: string;
+  phoneNumber?: string | null;
+  status: EmployeeStatus;
+  position?: {
+    id: string;
+    name: string;
+  } | null;
+};
+
+type EmployeesApiData = {
+  data: EmployeesApiEmployee[];
+  totalCount: number;
+};
+
+type EmployeesApiResponse = {
+  data?: EmployeesApiData | null;
+  Data?: EmployeesApiData | null;
+  error?: ErrorResponse | null;
   Error?: ErrorResponse | null;
 };
 
 export default function EmployeesPage() {
   const router = useRouter();
+
   const [employees, setEmployees] = useState<EmployeeSearchDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,14 +84,43 @@ export default function EmployeesPage() {
         credentials: "include",
       });
 
-      if (!res.ok) throw new Error("Failed to load employees");
+      if (!res.ok) {
+        throw new Error("Failed to load employees");
+      }
 
-      const json = (await res.json()) as ApiResponse<PagedResponse<EmployeeSearchDto>>;
-      if (!json.Data) throw new Error(json.Error?.ErrorMessage || "No data returned");
+      const raw = (await res.json()) as EmployeesApiResponse;
 
-      setEmployees(json.Data.Items);
+      const payload = raw.data ?? raw.Data ?? null;
+      if (!payload) {
+        const msg =
+          raw.error?.errorMessage ||
+          raw.error?.ErrorMessage ||
+          raw.Error?.errorMessage ||
+          raw.Error?.ErrorMessage ||
+          "No data returned";
+        throw new Error(msg);
+      }
+
+      const mapped: EmployeeSearchDto[] = (payload.data ?? []).map((e) => ({
+        Id: e.id,
+        FirstName: e.firstName,
+        MiddleName: e.middleName ?? null,
+        LastName: e.lastName,
+        Email: e.email,
+        PhoneNumber: e.phoneNumber ?? null,
+        Status: e.status,
+        Position: e.position
+          ? {
+              Id: e.position.id,
+              Name: e.position.name,
+            }
+          : null,
+      }));
+
+      setEmployees(mapped);
     } catch (e: any) {
       setError(e?.message || "Unexpected error while loading employees");
+      setEmployees([]);
     } finally {
       setLoading(false);
     }
@@ -99,6 +143,7 @@ export default function EmployeesPage() {
       : "#cccccc";
 
   const formatStatus = (s: EmployeeStatus) => s;
+
   const formatName = (e: EmployeeSearchDto) =>
     [e.FirstName, e.MiddleName, e.LastName].filter(Boolean).join(" ");
 
@@ -108,11 +153,12 @@ export default function EmployeesPage() {
 
       <div className="pageWrapper">
         <div className="pageCard">
-
           <div className="employeesHeader">
             <div>
               <h1 className="employeesTitle">Employees</h1>
-              <p className="employeesSubtitle">View all employees, search and filter them.</p>
+              <p className="employeesSubtitle">
+                View all employees, search and filter them.
+              </p>
             </div>
 
             <button className="profileButtonPrimary" onClick={handleAddEmployee}>
@@ -132,7 +178,9 @@ export default function EmployeesPage() {
             <select
               className="accInput"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as "All" | EmployeeStatus)
+              }
             >
               <option value="All">All statuses</option>
               <option value="Active">Active</option>
@@ -166,7 +214,6 @@ export default function EmployeesPage() {
                   <th className="tableHead">Actions</th>
                 </tr>
               </thead>
-
               <tbody>
                 {employees.length === 0 && !loading && (
                   <tr>
@@ -206,7 +253,6 @@ export default function EmployeesPage() {
               </tbody>
             </table>
           </div>
-
         </div>
       </div>
     </div>

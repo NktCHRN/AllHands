@@ -8,7 +8,6 @@ import { useCurrentUser } from "@/hooks/currentUser";
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const EMPLOYEES_API = `${API_ROOT}/api/v1/employees`;
 const POSITIONS_API = `${API_ROOT}/api/v1/positions`;
-const ROLES_API = `${API_ROOT}/api/v1/roles`;
 const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 
 const EMPLOYEE_CREATE_PERMISSIONS = ["employee.create", "employee.edit"];
@@ -38,42 +37,47 @@ type PositionDto = {
   Name: string;
 };
 
-type RolesApiInnerDto = {
+type EmployeesApiInnerDto = {
   id: string;
-  name: string;
-  permissions?: string[] | null;
+  firstName: string;
+  lastName: string;
+  status?: string | null;
 };
 
-type RolesApiResponse = {
-  data?: RolesApiInnerDto[] | null;
-  error?: ErrorResponse | null;
-  isSuccessful?: boolean;
+type EmployeesApiData = {
+  data: EmployeesApiInnerDto[];
+  totalCount: number;
 };
 
-type RoleDto = {
+type EmployeesApiResponse = {
+  data: EmployeesApiData | null;
+  error: ErrorResponse | null;
+  isSuccessful: boolean;
+};
+
+type ManagerOption = {
   Id: string;
   Name: string;
-  Permissions: string[];
+  Status: string;
 };
 
 export default function NewEmployeePage() {
   const router = useRouter();
-  const { user, loading: userLoading } = useCurrentUser();
+  const { loading: userLoading } = useCurrentUser();
 
   const [positions, setPositions] = useState<PositionDto[]>([]);
-  const [roles, setRoles] = useState<RoleDto[]>([]);
+  const [managers, setManagers] = useState<ManagerOption[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
+
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [positionId, setPositionId] = useState("");
-  const [roleId, setRoleId] = useState("");
+  const [managerId, setManagerId] = useState("");
   const [workStartDate, setWorkStartDate] = useState("");
-  const [managerId, setManagerId] = useState(
-    "00000000-0000-0000-0000-000000000000",
-  );
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -109,34 +113,36 @@ export default function NewEmployeePage() {
     }
   };
 
-  const loadRoles = async () => {
+  const loadManagers = async () => {
     try {
       const params = new URLSearchParams();
       params.set("Page", "1");
-      params.set("PerPage", "100");
+      params.set("PerPage", "200");
 
-      const res = await fetch(`${ROLES_API}?${params.toString()}`, {
+      const res = await fetch(`${EMPLOYEES_API}?${params.toString()}`, {
         method: "GET",
         credentials: "include",
       });
 
       if (!res.ok) {
-        setRoles([]);
+        setManagers([]);
         return;
       }
 
-      const json = (await res.json()) as RolesApiResponse;
-      const apiItems = json.data ?? [];
+      const json = (await res.json()) as EmployeesApiResponse;
+      const apiItems = json.data?.data ?? [];
 
-      const mapped: RoleDto[] = apiItems.map((r) => ({
-        Id: r.id,
-        Name: r.name,
-        Permissions: r.permissions ?? [],
-      }));
+      const mapped: ManagerOption[] = apiItems
+        .filter((e) => (e.status ?? "").toLowerCase() === "active")
+        .map((e) => ({
+          Id: e.id,
+          Name: `${e.firstName} ${e.lastName}`.trim(),
+          Status: e.status ?? "",
+        }));
 
-      setRoles(mapped);
+      setManagers(mapped);
     } catch {
-      setRoles([]);
+      setManagers([]);
     }
   };
 
@@ -166,7 +172,7 @@ export default function NewEmployeePage() {
 
   useEffect(() => {
     void loadPositions();
-    void loadRoles();
+    void loadManagers();
     void loadPermissions();
   }, []);
 
@@ -178,9 +184,7 @@ export default function NewEmployeePage() {
 
     const userPerms = permissions.map((p) => p.toLowerCase());
     const needed = EMPLOYEE_CREATE_PERMISSIONS.map((p) => p.toLowerCase());
-
     const hasPermission = needed.some((p) => userPerms.includes(p));
-
     setCanCreateEmployees(hasPermission);
   }, [permissions]);
 
@@ -191,7 +195,14 @@ export default function NewEmployeePage() {
       return;
     }
 
-    if (!firstName || !lastName || !email || !positionId || !roleId || !workStartDate) {
+    if (
+      !firstName ||
+      !lastName ||
+      !email ||
+      !positionId ||
+      !managerId ||
+      !workStartDate
+    ) {
       setError("Please fill in all required fields.");
       setSuccess(null);
       return;
@@ -203,15 +214,14 @@ export default function NewEmployeePage() {
       setSuccess(null);
 
       const body = {
-        PositionId: positionId,
-        ManagerId: managerId || "00000000-0000-0000-0000-000000000000",
-        Email: email,
-        FirstName: firstName,
-        MiddleName: middleName || null,
-        LastName: lastName,
-        PhoneNumber: phoneNumber || null,
-        WorkStartDate: workStartDate,
-        RoleIds: [roleId],
+        positionId,
+        managerId,
+        email,
+        firstName,
+        middleName: middleName || null,
+        lastName,
+        phoneNumber: phoneNumber || null,
+        workStartDate,
       };
 
       const res = await fetch(EMPLOYEES_API, {
@@ -244,7 +254,7 @@ export default function NewEmployeePage() {
       setEmail("");
       setPhoneNumber("");
       setPositionId("");
-      setRoleId("");
+      setManagerId("");
       setWorkStartDate("");
     } catch {
       setError("Network error. Please try again.");
@@ -379,16 +389,16 @@ export default function NewEmployeePage() {
               </select>
             </div>
             <div className="accRow">
-              <span className="accLable">Role</span>
+              <span className="accLable">Manager</span>
               <select
                 className="accInput"
-                value={roleId}
-                onChange={(e) => setRoleId(e.target.value)}
+                value={managerId}
+                onChange={(e) => setManagerId(e.target.value)}
               >
-                <option value="">Select role</option>
-                {roles.map((r) => (
-                  <option key={r.Id} value={r.Id}>
-                    {r.Name}
+                <option value="">Select manager</option>
+                {managers.map((m) => (
+                  <option key={m.Id} value={m.Id}>
+                    {m.Name}
                   </option>
                 ))}
               </select>
