@@ -49,6 +49,9 @@ export default function TopBar() {
                 <Link href="/account" className="navDropdownItem" onClick={closeMenu}>
                   My Profile
                 </Link>
+                <Link href="/company" className="navDropdownItem" onClick={closeMenu}>
+                  Company
+                </Link>
                 <Link href="/management" className="navDropdownItem" onClick={closeMenu}>
                   Dashboard
                 </Link>

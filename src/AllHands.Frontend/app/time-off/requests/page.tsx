@@ -58,15 +58,10 @@ export default function TimeOffRequestsPage() {
 
       const json = (await res.json()) as any;
 
-      const data =
-        json?.data ??
-        json?.Data ??
-        json;
+      const data = json?.data ?? json?.Data ?? json;
 
       const permissions: string[] =
-        data?.permissions ??
-        data?.Permissions ??
-        []; 
+        data?.permissions ?? data?.Permissions ?? [];
 
       setCanAdminApprove(permissions.includes(ADMIN_PERMISSION));
     } catch {
@@ -108,10 +103,8 @@ export default function TimeOffRequestsPage() {
         setError(backendError);
       }
 
-      const payload =
-        json?.data ??
-        json?.Data ??
-        json;
+      const root = json?.data ?? json?.Data ?? json;
+      const payload = root?.data ?? root?.Data ?? root;
 
       const items: TimeOffRequestDto[] =
         payload?.Items ??
