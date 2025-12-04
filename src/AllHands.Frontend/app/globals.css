@@ -501,3 +501,107 @@ body {
   opacity: 0.7;
   align-self: flex-start;
 }
+
+.timeOffPageWrapper {
+  padding: 50px 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 90px);
+}
+
+.timeOffCard {
+  width: 100%;
+  max-width: 1100px;
+  background: rgba(15, 10, 40, 0.9);
+  border-radius: 34px;
+  padding: 60px 70px;
+  color: #fbeab8;
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.7);
+}
+
+.timeOffHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 26px;
+}
+
+.timeOffHeaderTitle {
+  font-size: 46px;
+  font-weight: 900;
+  margin-bottom: 6px;
+  letter-spacing: 0.4px;
+}
+
+.timeOffHeaderSubtitle {
+  opacity: 0.85;
+  font-size: 15px;
+}
+
+.timeOffTableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+
+.timeOffTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.timeOffTh {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.timeOffTd {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.timeOffTd--narrow {
+  max-width: 260px;
+}
+
+.timeOffTd--actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.timeOffStatusPill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #ffd27f;
+  color: #ffd27f;
+}
+
+.timeOffPagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  align-items: center;
+}
+
+.timeOffPaginationInfo {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.timeOffFooter {
+  margin-top: 26px;
+  display: flex;
+  justify-content: flex-start;
+}

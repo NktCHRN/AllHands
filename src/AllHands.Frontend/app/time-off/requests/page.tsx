@@ -12,16 +12,16 @@ const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 type TimeOffStatus = "Pending" | "Approved" | "Rejected" | "Cancelled";
 
 type TimeOffRequestDto = {
-  Id: string;
-  TypeName: string;
-  TypeEmoji?: string | null;
-  StartDate: string;
-  EndDate: string;
-  WorkingDays: number;
-  Status: TimeOffStatus;
-  ApprovedByName?: string | null;
-  RejectionReason?: string | null;
-  CreatedAt: string;
+  id: string;
+  typeName: string;
+  typeEmoji?: string | null;
+  startDate: string;
+  endDate: string;
+  workingDays: number;
+  status: TimeOffStatus;
+  approvedByName?: string | null;
+  rejectionReason?: string | null;
+  createdAt: string;
 };
 
 const PER_PAGE = 10;
@@ -57,7 +57,6 @@ export default function TimeOffRequestsPage() {
       }
 
       const json = (await res.json()) as any;
-
       const data = json?.data ?? json?.Data ?? json;
 
       const permissions: string[] =
@@ -165,7 +164,7 @@ export default function TimeOffRequestsPage() {
           if (backendError) {
             message = backendError;
           }
-        } catch {}
+        } catch { }
         throw new Error(message);
       }
 
@@ -199,7 +198,7 @@ export default function TimeOffRequestsPage() {
           if (backendError) {
             message = backendError;
           }
-        } catch {}
+        } catch { }
         throw new Error(message);
       }
 
@@ -233,7 +232,7 @@ export default function TimeOffRequestsPage() {
           if (backendError) {
             message = backendError;
           }
-        } catch {}
+        } catch { }
         throw new Error(message);
       }
 
@@ -299,54 +298,12 @@ export default function TimeOffRequestsPage() {
   return (
     <div className="appBackground">
       <TopBar />
-      <div
-        style={{
-          padding: "50px 30px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "calc(100vh - 90px)",
-        }}
-      >
-        <div
-          style={{
-            width: "100%",
-            maxWidth: "1100px",
-            background: "rgba(15, 10, 40, 0.9)",
-            borderRadius: "34px",
-            padding: "60px 70px",
-            color: "#fbeab8",
-            boxShadow: "0 40px 90px rgba(0,0,0,0.7)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "20px",
-              marginBottom: "26px",
-            }}
-          >
+      <div className="timeOffPageWrapper">
+        <div className="timeOffCard">
+          <div className="timeOffHeader">
             <div>
-              <h1
-                style={{
-                  fontSize: "46px",
-                  fontWeight: 900,
-                  marginBottom: "6px",
-                  letterSpacing: "0.4px",
-                }}
-              >
-                {title}
-              </h1>
-              <p
-                style={{
-                  opacity: 0.85,
-                  fontSize: "15px",
-                }}
-              >
-                {subtitle}
-              </p>
+              <h1 className="timeOffHeaderTitle">{title}</h1>
+              <p className="timeOffHeaderSubtitle">{subtitle}</p>
             </div>
           </div>
 
@@ -355,171 +312,47 @@ export default function TimeOffRequestsPage() {
           ) : requests.length === 0 ? (
             <p>No time-off requests yet.</p>
           ) : (
-            <div
-              style={{
-                width: "100%",
-                overflowX: "auto",
-                marginBottom: "24px",
-              }}
-            >
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: "14px",
-                }}
-              >
+            <div className="timeOffTableWrapper">
+              <table className="timeOffTable">
                 <thead>
                   <tr>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px 12px",
-                        borderBottom: "1px solid rgba(255,255,255,0.08)",
-                        fontWeight: 600,
-                        fontSize: "13px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                      }}
-                    >
-                      Type
-                    </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px 12px",
-                        borderBottom: "1px solid rgba(255,255,255,0.08)",
-                        fontWeight: 600,
-                        fontSize: "13px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                      }}
-                    >
-                      Dates
-                    </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px 12px",
-                        borderBottom: "1px solid rgba(255,255,255,0.08)",
-                        fontWeight: 600,
-                        fontSize: "13px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                      }}
-                    >
-                      Working days
-                    </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px 12px",
-                        borderBottom: "1px solid rgba(255,255,255,0.08)",
-                        fontWeight: 600,
-                        fontSize: "13px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                      }}
-                    >
-                      Status
-                    </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px 12px",
-                        borderBottom: "1px solid rgba(255,255,255,0.08)",
-                        fontWeight: 600,
-                        fontSize: "13px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                      }}
-                    >
-                      Approved by / reason
-                    </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px 12px",
-                        borderBottom: "1px solid rgba(255,255,255,0.08)",
-                        fontWeight: 600,
-                        fontSize: "13px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                      }}
-                    >
-                      Actions
-                    </th>
+                    <th className="timeOffTh">Type</th>
+                    <th className="timeOffTh">Dates</th>
+                    <th className="timeOffTh">Working days</th>
+                    <th className="timeOffTh">Status</th>
+                    <th className="timeOffTh">Approved by / reason</th>
+                    <th className="timeOffTh">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {requests.map((r) => (
-                    <tr key={r.Id}>
-                      <td
-                        style={{
-                          padding: "10px 12px",
-                          borderBottom: "1px solid rgba(255,255,255,0.04)",
-                        }}
-                      >
-                        {r.TypeEmoji ? `${r.TypeEmoji} ` : ""}
-                        {r.TypeName}
+                    <tr key={r.id}>
+                      <td className="timeOffTd">
+                        {r.typeEmoji ? `${r.typeEmoji} ` : ""}
+                        {r.typeName}
                       </td>
-                      <td
-                        style={{
-                          padding: "10px 12px",
-                          borderBottom: "1px solid rgba(255,255,255,0.04)",
-                        }}
-                      >
-                        {formatDateRange(r.StartDate, r.EndDate)}
+                      <td className="timeOffTd">
+                        {formatDateRange(r.startDate, r.endDate)}
                       </td>
-                      <td
-                        style={{
-                          padding: "10px 12px",
-                          borderBottom: "1px solid rgba(255,255,255,0.04)",
-                        }}
-                      >
-                        {r.WorkingDays}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 12px",
-                          borderBottom: "1px solid rgba(255,255,255,0.04)",
-                        }}
-                      >
+                      <td className="timeOffTd">{r.workingDays}</td>
+                      <td className="timeOffTd">
                         <span
+                          className="timeOffStatusPill"
                           style={{
-                            padding: "4px 10px",
-                            borderRadius: "999px",
-                            backgroundColor: "rgba(0,0,0,0.35)",
-                            border: `1px solid ${statusColor(r.Status)}`,
-                            color: statusColor(r.Status),
-                            fontSize: "12px",
-                            fontWeight: 600,
+                            borderColor: statusColor(r.status),
+                            color: statusColor(r.status),
                           }}
                         >
-                          {formatStatus(r.Status)}
+                          {formatStatus(r.status)}
                         </span>
                       </td>
-                      <td
-                        style={{
-                          padding: "10px 12px",
-                          borderBottom: "1px solid rgba(255,255,255,0.04)",
-                          maxWidth: "260px",
-                        }}
-                      >
-                        {r.Status === "Rejected" && r.RejectionReason
-                          ? r.RejectionReason
-                          : r.ApprovedByName || "—"}
+                      <td className="timeOffTd timeOffTd--narrow">
+                        {r.status === "Rejected" && r.rejectionReason
+                          ? r.rejectionReason
+                          : r.approvedByName || "—"}
                       </td>
-                      <td
-                        style={{
-                          padding: "10px 12px",
-                          borderBottom: "1px solid rgba(255,255,255,0.04)",
-                          display: "flex",
-                          gap: "8px",
-                          alignItems: "center",
-                        }}
-                      >
-                        {r.Status === "Pending" ? (
+                      <td className="timeOffTd timeOffTd--actions">
+                        {r.status === "Pending" ? (
                           canAdminApprove ? (
                             <>
                               <button
@@ -528,16 +361,16 @@ export default function TimeOffRequestsPage() {
                                   fontSize: "12px",
                                   padding: "6px 14px",
                                   opacity:
-                                    approvingId === r.Id || loading ? 0.7 : 1,
+                                    approvingId === r.id || loading ? 0.7 : 1,
                                 }}
                                 disabled={
-                                  approvingId === r.Id ||
-                                  rejectingId === r.Id ||
+                                  approvingId === r.id ||
+                                  rejectingId === r.id ||
                                   loading
                                 }
-                                onClick={() => handleApprove(r.Id)}
+                                onClick={() => handleApprove(r.id)}
                               >
-                                {approvingId === r.Id
+                                {approvingId === r.id
                                   ? "Approving..."
                                   : "Approve"}
                               </button>
@@ -547,16 +380,16 @@ export default function TimeOffRequestsPage() {
                                   fontSize: "12px",
                                   padding: "6px 14px",
                                   opacity:
-                                    rejectingId === r.Id || loading ? 0.7 : 1,
+                                    rejectingId === r.id || loading ? 0.7 : 1,
                                 }}
                                 disabled={
-                                  rejectingId === r.Id ||
-                                  approvingId === r.Id ||
+                                  rejectingId === r.id ||
+                                  approvingId === r.id ||
                                   loading
                                 }
-                                onClick={() => handleReject(r.Id)}
+                                onClick={() => handleReject(r.id)}
                               >
-                                {rejectingId === r.Id
+                                {rejectingId === r.id
                                   ? "Rejecting..."
                                   : "Reject"}
                               </button>
@@ -567,12 +400,12 @@ export default function TimeOffRequestsPage() {
                               style={{
                                 fontSize: "12px",
                                 padding: "6px 14px",
-                                opacity: cancelingId === r.Id ? 0.7 : 1,
+                                opacity: cancelingId === r.id ? 0.7 : 1,
                               }}
-                              disabled={cancelingId === r.Id || loading}
-                              onClick={() => handleCancel(r.Id)}
+                              disabled={cancelingId === r.id || loading}
+                              onClick={() => handleCancel(r.id)}
                             >
-                              {cancelingId === r.Id ? "Cancelling..." : "Cancel"}
+                              {cancelingId === r.id ? "Cancelling..." : "Cancel"}
                             </button>
                           )
                         ) : (
@@ -598,15 +431,7 @@ export default function TimeOffRequestsPage() {
           )}
 
           {totalPages > 1 && (
-            <div
-              style={{
-                marginTop: "20px",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "12px",
-                alignItems: "center",
-              }}
-            >
+            <div className="timeOffPagination">
               <button
                 className="profileButtonSecondary"
                 onClick={handlePrevPage}
@@ -615,12 +440,7 @@ export default function TimeOffRequestsPage() {
               >
                 Previous
               </button>
-              <span
-                style={{
-                  fontSize: "13px",
-                  opacity: 0.8,
-                }}
-              >
+              <span className="timeOffPaginationInfo">
                 Page {page} of {totalPages}
               </span>
               <button
@@ -634,13 +454,7 @@ export default function TimeOffRequestsPage() {
             </div>
           )}
 
-          <div
-            style={{
-              marginTop: "26px",
-              display: "flex",
-              justifyContent: "flex-start",
-            }}
-          >
+          <div className="timeOffFooter">
             <button
               className="profileButtonPrimary"
               onClick={() => router.push("/time-off/request")}
