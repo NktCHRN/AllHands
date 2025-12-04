@@ -3,10 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import TopBar from "@/components/TopBar";
+import { useCurrentUser } from "@/hooks/currentUser";
 
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const EMPLOYEES_API = `${API_ROOT}/api/v1/employees`;
 const PER_PAGE_ALL = 1000;
+
+const EMPLOYEE_EDIT_PERMISSION = "employee.edit";
+const EMPLOYEE_DELETE_PERMISSION = "employee.delete";
 
 type EmployeeStatus = "Undefined" | "Unactivated" | "Active" | "Fired";
 
@@ -59,23 +63,39 @@ type EmployeesApiResponse = {
 
 export default function EmployeesPage() {
   const router = useRouter();
+  const { user } = useCurrentUser();
 
   const [employees, setEmployees] = useState<EmployeeSearchDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | EmployeeStatus>("All");
+
+  const rawPerms =
+    ((user as any)?.permissions as string[] | undefined) ??
+    ((user as any)?.Permissions as string[] | undefined) ??
+    [];
+  const perms = Array.isArray(rawPerms)
+    ? rawPerms.map((p) => p.toLowerCase())
+    : [];
+  const canFireEmployees = perms.includes(EMPLOYEE_EDIT_PERMISSION.toLowerCase());
+  const canDeleteEmployees = perms.includes(
+    EMPLOYEE_DELETE_PERMISSION.toLowerCase(),
+  );
 
   const loadEmployees = async () => {
     try {
       setLoading(true);
       setError(null);
+      setActionError(null);
 
       const params = new URLSearchParams();
       params.set("Page", "1");
       params.set("PerPage", String(PER_PAGE_ALL));
 
       const trimmed = search.trim();
+      const trimmedLower = trimmed.toLowerCase();
       if (trimmed) params.set("Search", trimmed);
       if (statusFilter !== "All") params.set("Status", statusFilter);
 
@@ -117,7 +137,24 @@ export default function EmployeesPage() {
           : null,
       }));
 
-      setEmployees(mapped);
+      let result = mapped;
+
+      if (statusFilter !== "All") {
+        result = result.filter((e) => e.Status === statusFilter);
+      }
+
+      if (trimmedLower) {
+        result = result.filter((e) => {
+          const name = [e.FirstName, e.MiddleName, e.LastName]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          const email = e.Email.toLowerCase();
+          return name.includes(trimmedLower) || email.includes(trimmedLower);
+        });
+      }
+
+      setEmployees(result);
     } catch (e: any) {
       setError(e?.message || "Unexpected error while loading employees");
       setEmployees([]);
@@ -132,6 +169,64 @@ export default function EmployeesPage() {
 
   const handleAddEmployee = () => router.push("/employees/new");
   const handleApplyFilters = () => void loadEmployees();
+
+  const handleFireEmployee = async (id: string, currentStatus: EmployeeStatus) => {
+    if (!canFireEmployees || currentStatus === "Fired") return;
+    const confirmed = window.confirm(
+      "Mark this employee as Fired? They will no longer be active.",
+    );
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      setActionError(null);
+
+      const res = await fetch(`${EMPLOYEES_API}/${id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Fired" }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to set status to Fired");
+      }
+
+      await loadEmployees();
+    } catch (e: any) {
+      setActionError(e?.message || "Failed to change employee status");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteEmployee = async (id: string) => {
+    if (!canDeleteEmployees) return;
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this employee?",
+    );
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      setActionError(null);
+
+      const res = await fetch(`${EMPLOYEES_API}/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete employee");
+      }
+
+      await loadEmployees();
+    } catch (e: any) {
+      setActionError(e?.message || "Failed to delete employee");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const statusColor = (s: EmployeeStatus) =>
     s === "Active"
@@ -201,6 +296,7 @@ export default function EmployeesPage() {
           </div>
 
           {error && <div className="errorMessage">{error}</div>}
+          {actionError && <div className="errorMessage">{actionError}</div>}
 
           <div className="employeesTableWrapper">
             <table className="employeesTable">
@@ -241,12 +337,46 @@ export default function EmployeesPage() {
                       </span>
                     </td>
                     <td className="tableCell">
-                      <button
-                        className="profileButtonSecondary smallButton"
-                        onClick={() => router.push(`/employees/${e.Id}`)}
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          flexWrap: "wrap",
+                        }}
                       >
-                        View
-                      </button>
+                        <button
+                          className="profileButtonSecondary smallButton"
+                          onClick={() => router.push(`/employees/${e.Id}`)}
+                        >
+                          View
+                        </button>
+
+                        {canFireEmployees && (
+                          <button
+                            className="profileButtonSecondary smallButton"
+                            disabled={e.Status === "Fired" || loading}
+                            style={{
+                              opacity:
+                                e.Status === "Fired" || loading ? 0.6 : 1,
+                            }}
+                            onClick={() =>
+                              handleFireEmployee(e.Id, e.Status)
+                            }
+                          >
+                            {e.Status === "Fired" ? "Fired" : "Fire"}
+                          </button>
+                        )}
+
+                        {canDeleteEmployees && (
+                          <button
+                            className="dangerButton smallButton"
+                            disabled={loading}
+                            onClick={() => handleDeleteEmployee(e.Id)}
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
