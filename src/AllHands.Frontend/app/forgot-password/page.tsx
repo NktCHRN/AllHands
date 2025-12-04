@@ -30,27 +30,25 @@ export default function ForgotPassword() {
                 credentials: "include",
                 body: JSON.stringify({ email }),
             });
-
+            if (res.status === 404) {
+                setError("This email is not registered.");
+                return;
+            }
             if (!res.ok) {
-                let message = "Failed to send reset link";
-
+                let message = "Failed to send reset link.";
                 try {
-                    const contentType = res.headers.get("Content-Type") || "";
-                    if (contentType.includes("application/json")) {
+                    const ct = res.headers.get("Content-Type") || "";
+                    if (ct.includes("application/json")) {
                         const data = await res.json();
                         if (data?.error?.errorMessage) {
                             message = data.error.errorMessage;
                         }
-                    } else {
-                        const text = await res.text();
-                        console.error("Non-JSON error response:", text);
                     }
                 } catch { }
 
                 throw new Error(message);
             }
-
-            setInfo("If this email exists, a reset link has been sent.");
+            setInfo("Reset link has been sent.");
         } catch (e: any) {
             setError(e.message || "Failed to send reset link.");
         } finally {
@@ -75,7 +73,6 @@ export default function ForgotPassword() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                 />
-
                 <button
                     className="button"
                     style={{ marginTop: "10px" }}
@@ -84,14 +81,30 @@ export default function ForgotPassword() {
                 >
                     {loading ? "Sending..." : "Send Reset Link"}
                 </button>
-
                 {info && (
-                    <div style={{ color: "#7CFC00", marginTop: "10px", fontWeight: "bold" }}>
+                    <div
+                        style={{
+                            color: "#7CFC00",
+                            marginTop: "14px",
+                            fontSize: "18px",
+                            textAlign: "center",
+                        }}
+                    >
                         {info}
                     </div>
                 )}
-
-                {error && <p className="error">{error}</p>}
+                {error && (
+                    <div
+                        style={{
+                            color: "#ff4d4d",
+                            marginTop: "14px",
+                            fontSize: "18px",
+                            textAlign: "center",
+                        }}
+                    >
+                        {error}
+                    </div>
+                )}
             </div>
         </div>
     );
