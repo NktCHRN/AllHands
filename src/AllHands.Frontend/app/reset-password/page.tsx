@@ -10,6 +10,7 @@ const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 type Props = {
   searchParams: {
     token?: string;
+    email?: string;
   };
 };
 
@@ -17,6 +18,7 @@ export default function ResetPassword({ searchParams }: Props) {
   const router = useRouter();
 
   const token = searchParams.token ?? "";
+  const email = searchParams.email ?? "";
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -29,8 +31,8 @@ export default function ResetPassword({ searchParams }: Props) {
     setError("");
     setSuccess("");
 
-    if (!token) {
-      setError("Invalid or missing token.");
+    if (!token || !email) {
+      setError("Invalid or missing reset link.");
       return;
     }
 
@@ -52,10 +54,11 @@ export default function ResetPassword({ searchParams }: Props) {
     setLoading(true);
 
     try {
-      const res = await fetch(`${ACCOUNT_API}/reset-password/confirm`, {
-        method: "POST",
+      const res = await fetch(`${ACCOUNT_API}/password`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          email,
           token,
           newPassword,
         }),
