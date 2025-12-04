@@ -287,21 +287,6 @@ export default function RequestTimeOff() {
               {success && (
                 <div style={{ marginTop: "10px" }}>
                   <p style={{ color: "#90ee90" }}>{success}</p>
-                  {createdRequestId && (
-                    <a
-                      href={`${TIME_OFF_REQUESTS_API}/${createdRequestId}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        display: "inline-block",
-                        marginTop: "6px",
-                        textDecoration: "underline",
-                        color: "#fbeab8",
-                      }}
-                    >
-                      Open this request
-                    </a>
-                  )}
                 </div>
               )}
             </form>
