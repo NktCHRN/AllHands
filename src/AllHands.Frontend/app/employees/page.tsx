@@ -229,13 +229,10 @@ export default function EmployeesPage() {
   };
 
   const statusColor = (s: EmployeeStatus) =>
-    s === "Active"
-      ? "#7CFC9A"
-      : s === "Unactivated"
-      ? "#ffd27f"
-      : s === "Fired"
-      ? "#ff6b6b"
-      : "#cccccc";
+    s === "Active" ? "#7CFC9A"
+    : s === "Unactivated" ? "#ffd27f"
+    : s === "Fired" ? "#ff6b6b"
+    : "#cccccc";
 
   const formatStatus = (s: EmployeeStatus) => s;
 
@@ -350,7 +347,6 @@ export default function EmployeesPage() {
                         >
                           View
                         </button>
-
                         {canFireEmployees && (
                           <button
                             className="profileButtonSecondary smallButton"
@@ -366,7 +362,6 @@ export default function EmployeesPage() {
                             {e.Status === "Fired" ? "Fired" : "Fire"}
                           </button>
                         )}
-
                         {canDeleteEmployees && (
                           <button
                             className="dangerButton smallButton"

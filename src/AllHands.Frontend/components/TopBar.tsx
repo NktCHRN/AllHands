@@ -26,10 +26,18 @@ export default function TopBar() {
       </div>
 
       <div className="topBarRight">
-        {pathname !== "/" && <Link href="/" className="navLink">Home</Link>}
-        {pathname !== "/about" && <Link href="/about" className="navLink">About</Link>}
-        {pathname !== "/contact" && <Link href="/contact" className="navLink">Contact Us</Link>}
-
+        {pathname !== "/" && 
+        <Link href="/" className="navLink">
+          Home
+          </Link>}
+        {pathname !== "/about" && 
+        <Link href="/about" className="navLink">
+          About
+          </Link>}
+        {pathname !== "/contact" && 
+        <Link href="/contact" className="navLink">
+          Contact Us
+          </Link>}
         {!loading && !isLoggedIn && pathname !== "/login" && (
           <Link href="/login" className="navLink">Login</Link>
         )}
@@ -55,19 +63,13 @@ export default function TopBar() {
                 <Link href="/management" className="navDropdownItem" onClick={closeMenu}>
                   Dashboard
                 </Link>
-                <Link href="/time-off/request" className="navDropdownItem" onClick={closeMenu}>
-                  Request Time Off
-                </Link>
                 <Link href="/time-off/requests" className="navDropdownItem" onClick={closeMenu}>
                   My Time-Off Requests
                 </Link>
                 <Link href="/employees" className="navDropdownItem" onClick={closeMenu}>
                   Employees
                 </Link>
-                <Link href="/employees/new" className="navDropdownItem" onClick={closeMenu}>
-                  Create Employee
-                </Link>
-
+                
                 <button
                   type="button"
                   className="navDropdownItem"
