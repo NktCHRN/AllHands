@@ -105,13 +105,11 @@ type SaveErrorPayload = {
 export default function EmployeeById() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useCurrentUser();
-
+  const { user, loading: userLoading } = useCurrentUser();
   const [employee, setEmployee] = useState<EmployeeDetailsDto | null>(null);
   const [positions, setPositions] = useState<PositionOption[]>([]);
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [managers, setManagers] = useState<ManagerOption[]>([]);
-
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -122,7 +120,6 @@ export default function EmployeeById() {
   const [positionId, setPositionId] = useState("");
   const [roleId, setRoleId] = useState("");
   const [status, setStatus] = useState<EmployeeStatus>("Undefined");
-
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -133,10 +130,16 @@ export default function EmployeeById() {
     ((user as any)?.permissions as string[] | null) ??
     ((user as any)?.Permissions as string[] | null) ??
     [];
-  const userPerms = Array.isArray(rawPerms)
-    ? rawPerms.map((p) => p.toLowerCase())
-    : [];
-  const canEditEmployee = userPerms.includes("employee.edit");
+  const userPerms = Array.isArray(rawPerms) ? rawPerms.map((p) => p.toLowerCase()) : [];
+  const rawRoles =
+    ((user as any)?.roles as string[] | null) ??
+    ((user as any)?.Roles as string[] | null) ??
+    [];
+  const rolesLower = Array.isArray(rawRoles) ? rawRoles.map((r) => r.toLowerCase()) : [];
+  const canEditEmployee =
+    userPerms.includes("employee.edit") ||
+    userPerms.includes("employee.create") ||
+    rolesLower.includes("admin");
 
   const resolveEmployeeId = () => {
     const p = params as any;
@@ -150,8 +153,7 @@ export default function EmployeeById() {
     return "";
   };
 
-  const formatFullName = (m: ManagerOption) =>
-    [m.firstName, m.middleName, m.lastName].filter(Boolean).join(" ");
+  const formatFullName = (m: ManagerOption) => [m.firstName, m.middleName, m.lastName].filter(Boolean).join(" ");
 
   const loadEmployee = async (employeeId: string) => {
     if (!employeeId) {
@@ -215,10 +217,7 @@ export default function EmployeeById() {
       const raw = (await res.json()) as PositionsApiResponse;
       const payload = raw.data ?? raw.Data ?? null;
       if (!payload) return;
-      const mapped: PositionOption[] = (payload.data ?? []).map((p) => ({
-        id: p.id,
-        name: p.name,
-      }));
+      const mapped: PositionOption[] = (payload.data ?? []).map((p) => ({ id: p.id, name: p.name }));
       setPositions(mapped);
     } catch {}
   };
@@ -230,10 +229,7 @@ export default function EmployeeById() {
       const raw = (await res.json()) as RolesApiResponse;
       const arr = raw.data ?? raw.Data ?? null;
       if (!arr) return;
-      const mapped: RoleOption[] = (arr ?? []).map((r) => ({
-        id: r.id,
-        name: r.name,
-      }));
+      const mapped: RoleOption[] = (arr ?? []).map((r) => ({ id: r.id, name: r.name }));
       setRoles(mapped);
     } catch {}
   };
@@ -292,7 +288,7 @@ export default function EmployeeById() {
         roleId: roleId || null,
         status,
       };
-      const res = await fetch(`${EMPLOYEES_API}/${employee.id}`, {
+      const res = await fetch(EMPLOYEES_API, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -328,7 +324,7 @@ export default function EmployeeById() {
     }
   };
 
-  const disabled = !canEditEmployee || loading || saving;
+  const disabled = userLoading || !canEditEmployee || loading || saving;
   const disabledStatus = disabled || status === "Unactivated";
 
   return (

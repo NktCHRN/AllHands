@@ -63,10 +63,8 @@ type ManagerOption = {
 export default function NewEmployeePage() {
   const router = useRouter();
   const { user, loading: userLoading } = useCurrentUser();
-
   const [positions, setPositions] = useState<PositionDto[]>([]);
   const [managers, setManagers] = useState<ManagerOption[]>([]);
-
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -75,7 +73,6 @@ export default function NewEmployeePage() {
   const [positionId, setPositionId] = useState("");
   const [managerId, setManagerId] = useState("");
   const [workStartDate, setWorkStartDate] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -84,10 +81,7 @@ export default function NewEmployeePage() {
     ((user as any)?.permissions as string[] | null) ??
     ((user as any)?.Permissions as string[] | null) ??
     [];
-  const userPerms = Array.isArray(rawPerms)
-    ? rawPerms.map((p) => p.toLowerCase())
-    : [];
-
+  const userPerms = Array.isArray(rawPerms) ? rawPerms.map((p) => p.toLowerCase()) : [];
   const neededPerms = EMPLOYEE_CREATE_PERMISSIONS.map((p) => p.toLowerCase());
   const canCreateEmployees = neededPerms.some((p) => userPerms.includes(p));
 
@@ -96,20 +90,14 @@ export default function NewEmployeePage() {
       const params = new URLSearchParams();
       params.set("Page", "1");
       params.set("PerPage", "100");
-      const res = await fetch(`${POSITIONS_API}?${params.toString()}`, {
-        method: "GET",
-        credentials: "include",
-      });
+      const res = await fetch(`${POSITIONS_API}?${params.toString()}`, { method: "GET", credentials: "include" });
       if (!res.ok) {
         setPositions([]);
         return;
       }
       const json = (await res.json()) as PositionsApiResponse;
       const apiItems = json.data?.data ?? [];
-      const mapped: PositionDto[] = apiItems.map((p) => ({
-        Id: p.id,
-        Name: p.name,
-      }));
+      const mapped: PositionDto[] = apiItems.map((p) => ({ Id: p.id, Name: p.name }));
       setPositions(mapped);
     } catch {
       setPositions([]);
@@ -121,10 +109,7 @@ export default function NewEmployeePage() {
       const params = new URLSearchParams();
       params.set("Page", "1");
       params.set("PerPage", "200");
-      const res = await fetch(`${EMPLOYEES_API}?${params.toString()}`, {
-        method: "GET",
-        credentials: "include",
-      });
+      const res = await fetch(`${EMPLOYEES_API}?${params.toString()}`, { method: "GET", credentials: "include" });
       if (!res.ok) {
         setManagers([]);
         return;
@@ -133,11 +118,7 @@ export default function NewEmployeePage() {
       const apiItems = json.data?.data ?? [];
       const mapped: ManagerOption[] = apiItems
         .filter((e) => (e.status ?? "").toLowerCase() === "active")
-        .map((e) => ({
-          Id: e.id,
-          Name: `${e.firstName} ${e.lastName}`.trim(),
-          Status: e.status ?? "",
-        }));
+        .map((e) => ({ Id: e.id, Name: `${e.firstName} ${e.lastName}`.trim(), Status: e.status ?? "" }));
       setManagers(mapped);
     } catch {
       setManagers([]);
@@ -185,7 +166,7 @@ export default function NewEmployeePage() {
         try {
           const json = (await res.json()) as { error?: ErrorResponse | null };
           if (json.error?.errorMessage) message = json.error.errorMessage;
-        } catch { }
+        } catch {}
         setError(message);
         return;
       }
@@ -219,11 +200,12 @@ export default function NewEmployeePage() {
           fontSize: "14px",
         }}
       >
-        You do not have permission to create employees. Please contact your
-        administrator.
+        You do not have permission to create employees. Please contact your administrator.
       </div>
     );
   };
+
+  const disabledForm = userLoading || !canCreateEmployees;
 
   return (
     <div className="appBackground">
@@ -265,8 +247,8 @@ export default function NewEmployeePage() {
               display: "flex",
               flexDirection: "column",
               gap: "16px",
-              opacity: canCreateEmployees ? 1 : 0.6,
-              pointerEvents: canCreateEmployees ? "auto" : "none",
+              opacity: disabledForm ? 0.6 : 1,
+              pointerEvents: disabledForm ? "none" : "auto",
             }}
           >
             <div className="accRow">
@@ -313,12 +295,7 @@ export default function NewEmployeePage() {
             </div>
             <div className="accRow">
               <span className="accLable">Start date</span>
-              <input
-                type="date"
-                className="accInput"
-                value={workStartDate}
-                onChange={(e) => setWorkStartDate(e.target.value)}
-              />
+              <input type="date" className="accInput" value={workStartDate} onChange={(e) => setWorkStartDate(e.target.value)} />
             </div>
           </div>
           {error && (
@@ -351,8 +328,8 @@ export default function NewEmployeePage() {
             <button
               className="profileButtonPrimary"
               onClick={handleSubmit}
-              disabled={loading || !canCreateEmployees}
-              style={{ opacity: loading || !canCreateEmployees ? 0.7 : 1 }}
+              disabled={loading || disabledForm}
+              style={{ opacity: loading || disabledForm ? 0.7 : 1 }}
             >
               {loading ? "Creating..." : "Create employee"}
             </button>
