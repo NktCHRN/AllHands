@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import TopBar from "@/components/TopBar";
@@ -140,6 +139,8 @@ export default function EmployeeById() {
     userPerms.includes("employee.edit") ||
     userPerms.includes("employee.create") ||
     rolesLower.includes("admin");
+  const canDeleteEmployee =
+    userPerms.includes("employee.delete") || rolesLower.includes("admin");
 
   const resolveEmployeeId = () => {
     const p = params as any;
@@ -153,7 +154,8 @@ export default function EmployeeById() {
     return "";
   };
 
-  const formatFullName = (m: ManagerOption) => [m.firstName, m.middleName, m.lastName].filter(Boolean).join(" ");
+  const formatFullName = (m: ManagerOption) =>
+    [m.firstName, m.middleName, m.lastName].filter(Boolean).join(" ");
 
   const loadEmployee = async (employeeId: string) => {
     if (!employeeId) {
@@ -164,7 +166,10 @@ export default function EmployeeById() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${EMPLOYEES_API}/${employeeId}`, { method: "GET", credentials: "include" });
+      const res = await fetch(`${EMPLOYEES_API}/${employeeId}`, {
+        method: "GET",
+        credentials: "include",
+      });
       if (!res.ok) throw new Error("Failed to load employee");
       const raw = (await res.json()) as EmployeeByIdApiResponse;
       const rawDto = raw.data ?? raw.Data ?? null;
@@ -196,7 +201,9 @@ export default function EmployeeById() {
       setLastName(normalized.lastName);
       setEmail(normalized.email);
       setPhoneNumber(normalized.phoneNumber ?? "");
-      setWorkStartDate(normalized.workStartDate ? normalized.workStartDate.substring(0, 10) : "");
+      setWorkStartDate(
+        normalized.workStartDate ? normalized.workStartDate.substring(0, 10) : ""
+      );
       setManagerId(normalized.managerId ?? "");
       setPositionId(normalized.positionId ?? "");
       setRoleId(normalized.roleId ?? "");
@@ -217,19 +224,28 @@ export default function EmployeeById() {
       const raw = (await res.json()) as PositionsApiResponse;
       const payload = raw.data ?? raw.Data ?? null;
       if (!payload) return;
-      const mapped: PositionOption[] = (payload.data ?? []).map((p) => ({ id: p.id, name: p.name }));
+      const mapped: PositionOption[] = (payload.data ?? []).map((p) => ({
+        id: p.id,
+        name: p.name,
+      }));
       setPositions(mapped);
     } catch {}
   };
 
   const loadRoles = async () => {
     try {
-      const res = await fetch(ROLES_API, { method: "GET", credentials: "include" });
+      const res = await fetch(ROLES_API, {
+        method: "GET",
+        credentials: "include",
+      });
       if (!res.ok) return;
       const raw = (await res.json()) as RolesApiResponse;
       const arr = raw.data ?? raw.Data ?? null;
       if (!arr) return;
-      const mapped: RoleOption[] = (arr ?? []).map((r) => ({ id: r.id, name: r.name }));
+      const mapped: RoleOption[] = (arr ?? []).map((r) => ({
+        id: r.id,
+        name: r.name,
+      }));
       setRoles(mapped);
     } catch {}
   };
@@ -276,19 +292,18 @@ export default function EmployeeById() {
       setSaveError(null);
       setSaveSuccess(null);
       const body = {
-        id: employee.id,
+        positionId,
+        managerId: managerId || null,
+        email,
         firstName,
         middleName: middleName || null,
         lastName,
-        email,
         phoneNumber: phoneNumber || null,
         workStartDate: workStartDate || null,
-        managerId: managerId || null,
-        positionId: positionId || null,
         roleId: roleId || null,
-        status,
+        employeeId: employee.id,
       };
-      const res = await fetch(EMPLOYEES_API, {
+      const res = await fetch(`${EMPLOYEES_API}/${employee.id}`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -315,6 +330,34 @@ export default function EmployeeById() {
         } catch {}
         throw new Error(message);
       }
+      if (employee.status !== status && employee.status !== "Unactivated") {
+        if (status === "Fired") {
+          const fireBody = { reason: "", employeeId: employee.id };
+          const fireRes = await fetch(
+            `${EMPLOYEES_API}/${employee.id}/fire`,
+            {
+              method: "PUT",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(fireBody),
+            }
+          );
+          if (!fireRes.ok) {
+            throw new Error(`Failed to change status (status ${fireRes.status})`);
+          }
+        } else if (status === "Active") {
+          const rehRes = await fetch(
+            `${EMPLOYEES_API}/${employee.id}/rehire`,
+            {
+              method: "PUT",
+              credentials: "include",
+            }
+          );
+          if (!rehRes.ok) {
+            throw new Error(`Failed to change status (status ${rehRes.status})`);
+          }
+        }
+      }
       setSaveSuccess("Changes saved");
       await loadEmployee(employee.id);
     } catch (e: any) {
@@ -324,87 +367,196 @@ export default function EmployeeById() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!canDeleteEmployee || !employee) return;
+    const confirmed = window.confirm(
+      "Are you sure you want to permanently delete this employee?"
+    );
+    if (!confirmed) return;
+    try {
+      setSaving(true);
+      setSaveError(null);
+      setSaveSuccess(null);
+      const res = await fetch(`${EMPLOYEES_API}/${employee.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to delete employee (status ${res.status})`);
+      }
+      router.push("/employees");
+    } catch (e: any) {
+      setSaveError(e?.message || "Failed to delete employee");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const disabled = userLoading || !canEditEmployee || loading || saving;
-  const disabledStatus = disabled || status === "Unactivated";
+  const statusDisabled = disabled || status === "Unactivated";
 
   return (
     <div className="appBackground">
       <TopBar />
       <div className="pageWrapper">
         <div className="pageCard">
-          <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h1 className="profileTitle">{employee ? `${employee.firstName} ${employee.lastName}` : "Employee info"}</h1>
-            <button className="profileButtonSecondary" onClick={handleBack}>Back to list</button>
+          <div style={{marginBottom:24,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <h1 className="profileTitle">
+              {employee ? `${employee.firstName} ${employee.lastName}` : "Employee info"}
+            </h1>
+            <button className="profileButtonSecondary" onClick={handleBack}>
+              Back to list
+            </button>
           </div>
           {error && <div className="errorMessage">{error}</div>}
           {saveError && <div className="errorMessage">{saveError}</div>}
-          {saveSuccess && <div style={{ marginBottom: 16, color: "#90ee90", fontSize: 16 }}>{saveSuccess}</div>}
-          {loading && <div style={{ opacity: 0.8, marginTop: 10, marginBottom: 10 }}>Loading...</div>}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {saveSuccess && (
+            <div style={{marginBottom:16,color:"#90ee90",fontSize:16}}>
+              {saveSuccess}
+            </div>
+          )}
+          {loading && (
+            <div style={{opacity:0.8,marginTop:10,marginBottom:10}}>
+              Loading...
+            </div>
+          )}
+          <div style={{display:"flex",flexDirection:"column",gap:16}}>
             <div className="accRow">
               <label className="accLable">First name</label>
-              <input className="accInput" value={firstName} onChange={(e) => setFirstName(e.target.value)} disabled={disabled} />
+              <input
+                className="accInput"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                disabled={disabled}
+              />
             </div>
             <div className="accRow">
               <label className="accLable">Middle name</label>
-              <input className="accInput" value={middleName} onChange={(e) => setMiddleName(e.target.value)} disabled={disabled} />
+              <input
+                className="accInput"
+                value={middleName}
+                onChange={(e) => setMiddleName(e.target.value)}
+                disabled={disabled}
+              />
             </div>
             <div className="accRow">
               <label className="accLable">Last name</label>
-              <input className="accInput" value={lastName} onChange={(e) => setLastName(e.target.value)} disabled={disabled} />
+              <input
+                className="accInput"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                disabled={disabled}
+              />
             </div>
             <div className="accRow">
               <label className="accLable">Email</label>
-              <input className="accInput" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={disabled} />
+              <input
+                className="accInput"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={disabled}
+              />
             </div>
             <div className="accRow">
               <label className="accLable">Phone</label>
-              <input className="accInput" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} disabled={disabled} />
+              <input
+                className="accInput"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                disabled={disabled}
+              />
             </div>
             <div className="accRow">
               <label className="accLable">Start date</label>
-              <input className="accInput" type="date" value={workStartDate} onChange={(e) => setWorkStartDate(e.target.value)} disabled={disabled} />
+              <input
+                className="accInput"
+                type="date"
+                value={workStartDate}
+                onChange={(e) => setWorkStartDate(e.target.value)}
+                disabled={disabled}
+              />
             </div>
             <div className="accRow">
               <label className="accLable">Manager</label>
-              <select className="accInput" value={managerId} onChange={(e) => setManagerId(e.target.value)} disabled={disabled}>
+              <select
+                className="accInput"
+                value={managerId}
+                onChange={(e) => setManagerId(e.target.value)}
+                disabled={disabled}
+              >
                 <option value="">Not set</option>
                 {managers.map((m) => (
-                  <option key={m.id} value={m.id}>{formatFullName(m)}</option>
+                  <option key={m.id} value={m.id}>
+                    {formatFullName(m)}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="accRow">
               <label className="accLable">Position</label>
-              <select className="accInput" value={positionId} onChange={(e) => setPositionId(e.target.value)} disabled={disabled}>
+              <select
+                className="accInput"
+                value={positionId}
+                onChange={(e) => setPositionId(e.target.value)}
+                disabled={disabled}
+              >
                 <option value="">Not set</option>
                 {positions.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="accRow">
               <label className="accLable">Role</label>
-              <select className="accInput" value={roleId} onChange={(e) => setRoleId(e.target.value)} disabled={disabled}>
+              <select
+                className="accInput"
+                value={roleId}
+                onChange={(e) => setRoleId(e.target.value)}
+                disabled={disabled}
+              >
                 <option value="">Not set</option>
                 {roles.map((r) => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="accRow">
               <label className="accLable">Status</label>
-              <select className="accInput" value={status} onChange={(e) => setStatus(e.target.value as EmployeeStatus)} disabled={disabledStatus}>
+              <select
+                className="accInput"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as EmployeeStatus)}
+                disabled={statusDisabled}
+              >
                 <option value="Undefined">Undefined</option>
                 <option value="Unactivated">Unactivated</option>
                 <option value="Active">Active</option>
                 <option value="Fired">Fired</option>
               </select>
             </div>
-            <div className="profileButtons" style={{ marginTop: 24 }}>
+            <div className="profileButtons" style={{marginTop:24,display:"flex",gap:16}}>
               {canEditEmployee && (
-                <button className="profileButtonPrimary" onClick={handleSave} disabled={disabled || !employee}>
+                <button
+                  className="profileButtonPrimary"
+                  onClick={handleSave}
+                  disabled={disabled || !employee}
+                >
                   {saving ? "Saving..." : "Save changes"}
+                </button>
+              )}
+              {canDeleteEmployee && (
+                <button
+                  className="profileButtonSecondary"
+                  onClick={handleDelete}
+                  disabled={saving || loading || !employee}
+                  style={{borderColor:"#ff7a7a",color:"#ff7a7a"}}
+                >
+                  {saving ? "Processing..." : "Delete employee"}
                 </button>
               )}
             </div>
