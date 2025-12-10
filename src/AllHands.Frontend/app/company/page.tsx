@@ -57,9 +57,16 @@ export default function CompanyPage() {
       const companyRes = await fetch(COMPANY_API, opts);
       const newsRes = await fetch(NEWS_API, opts);
       const balancesRes = await fetch(TIME_OFF_BALANCES_API, opts);
-      const requestsRes = await fetch(EMPLOYEE_TIME_OFF_REQUESTS_API, opts);
 
-      if (!companyRes.ok || !newsRes.ok || !balancesRes.ok || !requestsRes.ok) {
+      const reqParams = new URLSearchParams();
+      reqParams.set("Page", "1");
+      reqParams.set("PerPage", "1000");
+      const requestsRes = await fetch(
+        `${EMPLOYEE_TIME_OFF_REQUESTS_API}?${reqParams.toString()}`,
+        opts
+      );
+
+      if (!companyRes.ok || !newsRes.ok || !balancesRes.ok) {
         setError("Помилка завантаження даних");
         return;
       }
@@ -67,13 +74,21 @@ export default function CompanyPage() {
       const companyJson: any = await companyRes.json();
       const newsJson: any = await newsRes.json();
       const balancesJson: any = await balancesRes.json();
-      const requestsJson: any = await requestsRes.json();
 
       setCompany(companyJson.data ?? null);
       setNews(newsJson.data?.data ?? []);
       setBalances(balancesJson.data ?? []);
 
-      const allRequests: TimeOffRequestDto[] = requestsJson.data ?? [];
+      let allRequests: TimeOffRequestDto[] = [];
+      if (requestsRes.ok) {
+        const requestsJson: any = await requestsRes.json();
+        const raw = requestsJson.data ?? requestsJson.Data ?? null;
+        const items =
+          Array.isArray(raw?.items) ? raw.items : Array.isArray(raw) ? raw : [];
+        allRequests = items;
+      } else {
+        allRequests = [];
+      }
 
       const today = new Date();
       const from = new Date(today);
@@ -82,7 +97,7 @@ export default function CompanyPage() {
       to.setDate(to.getDate() + 5);
 
       const filtered = allRequests.filter((r) => {
-        if (r.status !== "Approved") return false;
+        if (r.status && r.status !== "Approved") return false;
         const start = new Date(r.startDate);
         const end = new Date(r.endDate);
         return end >= from && start <= to;
@@ -120,13 +135,17 @@ export default function CompanyPage() {
                       </div>
                       <div>
                         <h1 className="companyName">{company?.name ?? "Компанія"}</h1>
-                        {company?.legalName && <p className="companyLegalName">{company.legalName}</p>}
+                        {company?.legalName && (
+                          <p className="companyLegalName">{company.legalName}</p>
+                        )}
                       </div>
                     </div>
                   </div>
                   <div className="companyCard">
                     <h2 className="companySectionTitle">Баланс відпусток</h2>
-                    {balances.length === 0 && <p className="companyTextMuted">Немає даних</p>}
+                    {balances.length === 0 && (
+                      <p className="companyTextMuted">Немає даних</p>
+                    )}
                     <ul className="companyList">
                       {balances.map((b) => (
                         <li key={b.typeId ?? b.typeName} className="companyListItem">
@@ -137,10 +156,14 @@ export default function CompanyPage() {
                                 {b.typeName ?? "Тип відпустки"}
                               </p>
                               {b.usedDays !== undefined && (
-                                <p className="companyPillMeta">Використано: {b.usedDays}</p>
+                                <p className="companyPillMeta">
+                                  Використано: {b.usedDays}
+                                </p>
                               )}
                             </div>
-                            <div className="companyPillMeta">Залишок: {b.remainingDays ?? 0} днів</div>
+                            <div className="companyPillMeta">
+                              Залишок: {b.remainingDays ?? 0} днів
+                            </div>
                           </div>
                         </li>
                       ))}
@@ -151,18 +174,23 @@ export default function CompanyPage() {
                   <div className="companyCard">
                     <h2 className="companySectionTitle">Хто у відпустці (±5 днів)</h2>
                     {upcomingRequests.length === 0 && (
-                      <p className="companyTextMuted">Немає відпусток у цьому періоді</p>
+                      <p className="companyTextMuted">
+                        Немає відпусток у цьому періоді
+                      </p>
                     )}
                     <ul className="companyList">
                       {upcomingRequests.map((r) => (
                         <li key={r.id} className="companyListItem">
-                          <p className="companyPillTitle">{r.employeeName ?? "Співробітник"}</p>
+                          <p className="companyPillTitle">
+                            {r.employeeName ?? "Співробітник"}
+                          </p>
                           <p className="companyPillMeta">
                             {r.typeEmoji && <span>{r.typeEmoji} </span>}
                             {r.typeName ?? "Відпустка"}
                           </p>
                           <p className="companyDateRange">
-                            {new Date(r.startDate).toLocaleDateString()} – {new Date(r.endDate).toLocaleDateString()}
+                            {new Date(r.startDate).toLocaleDateString()} –{" "}
+                            {new Date(r.endDate).toLocaleDateString()}
                           </p>
                         </li>
                       ))}
@@ -173,12 +201,16 @@ export default function CompanyPage() {
               <div className="companyRow">
                 <div className="companyCard">
                   <h2 className="companySectionTitle">Новини</h2>
-                  {news.length === 0 && <p className="companyTextMuted">Поки що немає новин</p>}
+                  {news.length === 0 && (
+                    <p className="companyTextMuted">Поки що немає новин</p>
+                  )}
                   <ul className="companyList">
                     {news.map((item) => (
                       <li key={item.id} className="companyListItem">
                         <div className="companyNewsHeader">
-                          <p className="companyNewsTitle">{item.text || "Новина"}</p>
+                          <p className="companyNewsTitle">
+                            {item.text || "Новина"}
+                          </p>
                           {item.createdAt && (
                             <span className="companyNewsDate">
                               {new Date(item.createdAt).toLocaleDateString()}
