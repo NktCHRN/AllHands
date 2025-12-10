@@ -605,3 +605,160 @@ body {
   display: flex;
   justify-content: flex-start;
 }
+
+.companyPageWrapper {
+  width: 100%;
+  min-height: calc(100vh - 100px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px 60px;
+  box-sizing: border-box;
+}
+
+.companyPageCard {
+  width: 100%;
+  max-width: 1100px;
+  background: rgba(15, 10, 40, 0.9);
+  border-radius: 34px;
+  padding: 40px 40px 50px;
+  color: #fbeab8;
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.7);
+}
+
+.companyRow {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.companyRowSplit {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+@media (min-width: 900px) {
+  .companyRowSplit {
+    flex-direction: row;
+  }
+}
+
+.companyCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.companyCard {
+  background-color: #150d2f;
+  border-radius: 18px;
+  padding: 18px 22px;
+  box-sizing: border-box;
+}
+
+.companyHeader {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.companyLogo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #2b1c50;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.companyLogo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.companyName {
+  font-size: 28px;
+  font-weight: 900;
+  margin: 0 0 4px;
+}
+
+.companyLegalName {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.companySectionTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.companyTextMuted {
+  font-size: 14px;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.companyList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.companyListItem {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 8px 10px;
+  box-sizing: border-box;
+}
+
+.companyListItemRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.companyPillTitle {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.companyPillMeta {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.companyDateRange {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-top: 4px;
+}
+
+.companyNewsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.companyNewsTitle {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.companyNewsDate {
+  font-size: 11px;
+  opacity: 0.7;
+}
