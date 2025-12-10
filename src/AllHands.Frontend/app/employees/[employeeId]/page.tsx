@@ -131,33 +131,39 @@ export default function EmployeeById() {
   const perms = Array.isArray(rawPerms) ? rawPerms.map((p) => p.toLowerCase()) : [];
   const canEditEmployee = perms.includes(EMPLOYEE_EDIT_PERMISSION.toLowerCase());
 
-  const id = typeof params?.id === "string" ? params.id : "";
+  const resolveEmployeeId = () => {
+    const p = params as any;
+    if (typeof p?.id === "string") return p.id;
+    if (typeof p?.employeeId === "string") return p.employeeId;
+    if (typeof window !== "undefined") {
+      const parts = window.location.pathname.split("/");
+      const last = parts[parts.length - 1];
+      if (last) return last;
+    }
+    return "";
+  };
 
   const formatFullName = (m: ManagerOption) =>
     [m.firstName, m.middleName, m.lastName].filter(Boolean).join(" ");
 
-  const loadEmployee = async () => {
-    if (!id) {
+  const loadEmployee = async (employeeId: string) => {
+    if (!employeeId) {
       setError("Invalid employee id");
+      setEmployee(null);
       return;
     }
-
     try {
       setLoading(true);
       setError(null);
-
-      const res = await fetch(`${EMPLOYEES_API}/${id}`, {
+      const res = await fetch(`${EMPLOYEES_API}/${employeeId}`, {
         method: "GET",
         credentials: "include",
       });
-
       if (!res.ok) {
         throw new Error("Failed to load employee");
       }
-
       const raw = (await res.json()) as EmployeeByIdApiResponse;
       const dto = raw.data ?? raw.Data ?? null;
-
       if (!dto) {
         const msg =
           raw.error?.errorMessage ||
@@ -167,7 +173,6 @@ export default function EmployeeById() {
           "No employee data returned";
         throw new Error(msg);
       }
-
       setEmployee(dto);
       setFirstName(dto.firstName ?? "");
       setMiddleName(dto.middleName ?? "");
@@ -179,6 +184,7 @@ export default function EmployeeById() {
       setPositionId(dto.positionId ?? "");
       setRoleId(dto.roleId ?? "");
     } catch (e: any) {
+      setEmployee(null);
       setError(e?.message || "Unexpected error while loading employee");
     } finally {
       setLoading(false);
@@ -238,12 +244,17 @@ export default function EmployeeById() {
   };
 
   useEffect(() => {
-    if (!id) return;
-    void loadEmployee();
+    const employeeId = resolveEmployeeId();
+    if (!employeeId) {
+      setError("Invalid employee id");
+      setEmployee(null);
+      return;
+    }
+    void loadEmployee(employeeId);
     void loadPositions();
     void loadRoles();
     void loadManagers();
-  }, [id]);
+  }, [params]);
 
   const handleBack = () => {
     router.push("/employees");
@@ -251,12 +262,10 @@ export default function EmployeeById() {
 
   const handleSave = async () => {
     if (!canEditEmployee || !employee) return;
-
     try {
       setSaving(true);
       setSaveError(null);
       setSaveSuccess(null);
-
       const body = {
         firstName,
         middleName: middleName || null,
@@ -268,21 +277,18 @@ export default function EmployeeById() {
         positionId: positionId || null,
         roleId: roleId || null,
       };
-
       const res = await fetch(`${EMPLOYEES_API}/${employee.id}`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
       if (!res.ok) {
         const text = await res.text();
         throw new Error(text || "Failed to save employee");
       }
-
       setSaveSuccess("Changes saved");
-      await loadEmployee();
+      await loadEmployee(employee.id);
     } catch (e: any) {
       setSaveError(e?.message || "Failed to save employee");
     } finally {
@@ -295,7 +301,6 @@ export default function EmployeeById() {
   return (
     <div className="appBackground">
       <TopBar />
-
       <div className="pageWrapper">
         <div className="pageCard">
           <div
@@ -313,7 +318,6 @@ export default function EmployeeById() {
               Back to list
             </button>
           </div>
-
           {error && <div className="errorMessage">{error}</div>}
           {saveError && <div className="errorMessage">{saveError}</div>}
           {saveSuccess && (
@@ -321,147 +325,135 @@ export default function EmployeeById() {
               {saveSuccess}
             </div>
           )}
-
-          {loading && !employee && (
-            <div style={{ opacity: 0.8, marginTop: 10 }}>Loading...</div>
-          )}
-
-          {employee && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div className="accRow">
-                <label className="accLable">First name</label>
-                <input
-                  className="accInput"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  disabled={disabled}
-                />
-              </div>
-
-              <div className="accRow">
-                <label className="accLable">Middle name</label>
-                <input
-                  className="accInput"
-                  value={middleName}
-                  onChange={(e) => setMiddleName(e.target.value)}
-                  disabled={disabled}
-                />
-              </div>
-
-              <div className="accRow">
-                <label className="accLable">Last name</label>
-                <input
-                  className="accInput"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  disabled={disabled}
-                />
-              </div>
-
-              <div className="accRow">
-                <label className="accLable">Email</label>
-                <input
-                  className="accInput"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={disabled}
-                />
-              </div>
-
-              <div className="accRow">
-                <label className="accLable">Phone</label>
-                <input
-                  className="accInput"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  disabled={disabled}
-                />
-              </div>
-
-              <div className="accRow">
-                <label className="accLable">Start date</label>
-                <input
-                  className="accInput"
-                  type="date"
-                  value={workStartDate}
-                  onChange={(e) => setWorkStartDate(e.target.value)}
-                  disabled={disabled}
-                />
-              </div>
-
-              <div className="accRow">
-                <label className="accLable">Manager</label>
-                <select
-                  className="accInput"
-                  value={managerId}
-                  onChange={(e) => setManagerId(e.target.value)}
-                  disabled={disabled}
-                >
-                  <option value="">Not set</option>
-                  {managers.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {formatFullName(m)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="accRow">
-                <label className="accLable">Position</label>
-                <select
-                  className="accInput"
-                  value={positionId}
-                  onChange={(e) => setPositionId(e.target.value)}
-                  disabled={disabled}
-                >
-                  <option value="">Not set</option>
-                  {positions.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="accRow">
-                <label className="accLable">Role</label>
-                <select
-                  className="accInput"
-                  value={roleId}
-                  onChange={(e) => setRoleId(e.target.value)}
-                  disabled={disabled}
-                >
-                  <option value="">Not set</option>
-                  {roles.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="accRow">
-                <label className="accLable">Status</label>
-                <input className="accInput" value={employee.status} disabled />
-              </div>
-
-              <div className="profileButtons" style={{ marginTop: 24 }}>
-                {canEditEmployee && (
-                  <button
-                    className="profileButtonPrimary"
-                    onClick={handleSave}
-                    disabled={disabled}
-                  >
-                    {saving ? "Saving..." : "Save changes"}
-                  </button>
-                )}
-                <button className="profileButtonSecondary" onClick={handleBack}>
-                  Cancel
-                </button>
-              </div>
+          {loading && (
+            <div style={{ opacity: 0.8, marginTop: 10, marginBottom: 10 }}>
+              Loading...
             </div>
           )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div className="accRow">
+              <label className="accLable">First name</label>
+              <input
+                className="accInput"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                disabled={disabled}
+              />
+            </div>
+            <div className="accRow">
+              <label className="accLable">Middle name</label>
+              <input
+                className="accInput"
+                value={middleName}
+                onChange={(e) => setMiddleName(e.target.value)}
+                disabled={disabled}
+              />
+            </div>
+            <div className="accRow">
+              <label className="accLable">Last name</label>
+              <input
+                className="accInput"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                disabled={disabled}
+              />
+            </div>
+            <div className="accRow">
+              <label className="accLable">Email</label>
+              <input
+                className="accInput"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={disabled}
+              />
+            </div>
+            <div className="accRow">
+              <label className="accLable">Phone</label>
+              <input
+                className="accInput"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                disabled={disabled}
+              />
+            </div>
+            <div className="accRow">
+              <label className="accLable">Start date</label>
+              <input
+                className="accInput"
+                type="date"
+                value={workStartDate}
+                onChange={(e) => setWorkStartDate(e.target.value)}
+                disabled={disabled}
+              />
+            </div>
+            <div className="accRow">
+              <label className="accLable">Manager</label>
+              <select
+                className="accInput"
+                value={managerId}
+                onChange={(e) => setManagerId(e.target.value)}
+                disabled={disabled}
+              >
+                <option value="">Not set</option>
+                {managers.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {formatFullName(m)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="accRow">
+              <label className="accLable">Position</label>
+              <select
+                className="accInput"
+                value={positionId}
+                onChange={(e) => setPositionId(e.target.value)}
+                disabled={disabled}
+              >
+                <option value="">Not set</option>
+                {positions.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="accRow">
+              <label className="accLable">Role</label>
+              <select
+                className="accInput"
+                value={roleId}
+                onChange={(e) => setRoleId(e.target.value)}
+                disabled={disabled}
+              >
+                <option value="">Not set</option>
+                {roles.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="accRow">
+              <label className="accLable">Status</label>
+              <input className="accInput" value={employee?.status ?? ""} disabled />
+            </div>
+            <div className="profileButtons" style={{ marginTop: 24 }}>
+              {canEditEmployee && (
+                <button
+                  className="profileButtonPrimary"
+                  onClick={handleSave}
+                  disabled={disabled || !employee}
+                >
+                  {saving ? "Saving..." : "Save changes"}
+                </button>
+              )}
+              <button className="profileButtonSecondary" onClick={handleBack}>
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
