@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import TopBar from "@/components/TopBar";
 
@@ -16,8 +17,7 @@ type CompanyDto = {
 
 type NewsItemDto = {
   id: string;
-  title?: string;
-  body?: string;
+  text: string;
   createdAt?: string;
 };
 
@@ -39,60 +39,65 @@ type TimeOffRequestDto = {
   status?: string;
 };
 
-export default function Company() {
+export default function CompanyPage() {
   const [company, setCompany] = useState<CompanyDto | null>(null);
   const [news, setNews] = useState<NewsItemDto[]>([]);
   const [balances, setBalances] = useState<TimeOffBalanceDto[]>([]);
   const [upcomingRequests, setUpcomingRequests] = useState<TimeOffRequestDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const opts: RequestInit = { method: "GET", credentials: "include" };
+
+      const companyRes = await fetch(COMPANY_API, opts);
+      const newsRes = await fetch(NEWS_API, opts);
+      const balancesRes = await fetch(TIME_OFF_BALANCES_API, opts);
+      const requestsRes = await fetch(EMPLOYEE_TIME_OFF_REQUESTS_API, opts);
+
+      if (!companyRes.ok || !newsRes.ok || !balancesRes.ok || !requestsRes.ok) {
+        setError("Помилка завантаження даних");
+        return;
+      }
+
+      const companyJson: any = await companyRes.json();
+      const newsJson: any = await newsRes.json();
+      const balancesJson: any = await balancesRes.json();
+      const requestsJson: any = await requestsRes.json();
+
+      setCompany(companyJson.data ?? null);
+      setNews(newsJson.data?.data ?? []);
+      setBalances(balancesJson.data ?? []);
+
+      const allRequests: TimeOffRequestDto[] = requestsJson.data ?? [];
+
+      const today = new Date();
+      const from = new Date(today);
+      const to = new Date(today);
+      from.setDate(from.getDate() - 5);
+      to.setDate(to.getDate() + 5);
+
+      const filtered = allRequests.filter((r) => {
+        if (r.status !== "Approved") return false;
+        const start = new Date(r.startDate);
+        const end = new Date(r.endDate);
+        return end >= from && start <= to;
+      });
+
+      setUpcomingRequests(filtered);
+    } catch (e: any) {
+      setError(e?.message || "Сталася помилка");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function load() {
-      try {
-        const companyRes = await fetch(COMPANY_API);
-        const newsRes = await fetch(NEWS_API);
-        const balancesRes = await fetch(TIME_OFF_BALANCES_API);
-        const requestsRes = await fetch(EMPLOYEE_TIME_OFF_REQUESTS_API);
-
-        if (!companyRes.ok || !newsRes.ok || !balancesRes.ok || !requestsRes.ok) {
-          setError("Помилка завантаження даних");
-          return;
-        }
-
-        const companyJson: any = await companyRes.json();
-        const newsJson: any = await newsRes.json();
-        const balancesJson: any = await balancesRes.json();
-        const requestsJson: any = await requestsRes.json();
-
-        setCompany(companyJson.data ?? null);
-        setNews(newsJson.data ?? []);
-        setBalances(balancesJson.data ?? []);
-
-        const allRequests: TimeOffRequestDto[] = requestsJson.data ?? [];
-
-        const today = new Date();
-        const from = new Date(today);
-        const to = new Date(today);
-        from.setDate(from.getDate() - 5);
-        to.setDate(to.getDate() + 5);
-
-        const filtered = allRequests.filter((r) => {
-          if (r.status !== "Approved") return false;
-          const start = new Date(r.startDate);
-          const end = new Date(r.endDate);
-          return end >= from && start <= to;
-        });
-
-        setUpcomingRequests(filtered);
-      } catch {
-        setError("Сталася помилка");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
+    void loadData();
   }, []);
 
   const logoUrl = COMPANY_LOGO_API;
@@ -115,18 +120,13 @@ export default function Company() {
                       </div>
                       <div>
                         <h1 className="companyName">{company?.name ?? "Компанія"}</h1>
-                        {company?.legalName && (
-                          <p className="companyLegalName">{company.legalName}</p>
-                        )}
+                        {company?.legalName && <p className="companyLegalName">{company.legalName}</p>}
                       </div>
                     </div>
                   </div>
-
                   <div className="companyCard">
                     <h2 className="companySectionTitle">Баланс відпусток</h2>
-                    {balances.length === 0 && (
-                      <p className="companyTextMuted">Немає даних</p>
-                    )}
+                    {balances.length === 0 && <p className="companyTextMuted">Немає даних</p>}
                     <ul className="companyList">
                       {balances.map((b) => (
                         <li key={b.typeId ?? b.typeName} className="companyListItem">
@@ -137,42 +137,32 @@ export default function Company() {
                                 {b.typeName ?? "Тип відпустки"}
                               </p>
                               {b.usedDays !== undefined && (
-                                <p className="companyPillMeta">
-                                  Використано: {b.usedDays}
-                                </p>
+                                <p className="companyPillMeta">Використано: {b.usedDays}</p>
                               )}
                             </div>
-                            <div className="companyPillMeta">
-                              Залишок: {b.remainingDays ?? 0} днів
-                            </div>
+                            <div className="companyPillMeta">Залишок: {b.remainingDays ?? 0} днів</div>
                           </div>
                         </li>
                       ))}
                     </ul>
                   </div>
                 </div>
-
                 <div className="companyCol">
                   <div className="companyCard">
                     <h2 className="companySectionTitle">Хто у відпустці (±5 днів)</h2>
                     {upcomingRequests.length === 0 && (
-                      <p className="companyTextMuted">
-                        Немає відпусток у цьому періоді
-                      </p>
+                      <p className="companyTextMuted">Немає відпусток у цьому періоді</p>
                     )}
                     <ul className="companyList">
                       {upcomingRequests.map((r) => (
                         <li key={r.id} className="companyListItem">
-                          <p className="companyPillTitle">
-                            {r.employeeName ?? "Співробітник"}
-                          </p>
+                          <p className="companyPillTitle">{r.employeeName ?? "Співробітник"}</p>
                           <p className="companyPillMeta">
                             {r.typeEmoji && <span>{r.typeEmoji} </span>}
                             {r.typeName ?? "Відпустка"}
                           </p>
                           <p className="companyDateRange">
-                            {new Date(r.startDate).toLocaleDateString()} –{" "}
-                            {new Date(r.endDate).toLocaleDateString()}
+                            {new Date(r.startDate).toLocaleDateString()} – {new Date(r.endDate).toLocaleDateString()}
                           </p>
                         </li>
                       ))}
@@ -180,29 +170,21 @@ export default function Company() {
                   </div>
                 </div>
               </div>
-
               <div className="companyRow">
                 <div className="companyCard">
                   <h2 className="companySectionTitle">Новини</h2>
-                  {news.length === 0 && (
-                    <p className="companyTextMuted">Поки що немає новин</p>
-                  )}
+                  {news.length === 0 && <p className="companyTextMuted">Поки що немає новин</p>}
                   <ul className="companyList">
                     {news.map((item) => (
                       <li key={item.id} className="companyListItem">
                         <div className="companyNewsHeader">
-                          <p className="companyNewsTitle">
-                            {item.title ?? "Новина"}
-                          </p>
+                          <p className="companyNewsTitle">{item.text || "Новина"}</p>
                           {item.createdAt && (
                             <span className="companyNewsDate">
                               {new Date(item.createdAt).toLocaleDateString()}
                             </span>
                           )}
                         </div>
-                        {item.body && (
-                          <p className="companyPillMeta">{item.body}</p>
-                        )}
                       </li>
                     ))}
                   </ul>
