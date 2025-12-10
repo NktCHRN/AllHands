@@ -13,20 +13,6 @@ export type AccountDetails = {
   email: string;
   phoneNumber?: string | null;
   status: string;
-  workStartDate?: string | null;
-  manager?: {
-    id: string;
-    firstName: string;
-    middleName?: string | null;
-    lastName: string;
-    email: string;
-    phoneNumber?: string | null;
-    position?: { id: string; name: string } | null;
-  } | null;
-
-  position?: { id: string; name: string } | null;
-  company?: { id: string; name?: string | null } | null;
-
   roles?: string[] | null;
   permissions?: string[] | null;
 };
@@ -41,16 +27,10 @@ export function useCurrentUser() {
     let cancelled = false;
 
     async function fetchUser() {
-      if (cachedUser) {
-        setUser(cachedUser);
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
 
-        const res = await fetch(`${ACCOUNT_API}/details`, {
+        const res = await fetch(`${ACCOUNT_API}`, {
           method: "GET",
           credentials: "include",
         });
@@ -64,9 +44,7 @@ export function useCurrentUser() {
         }
 
         const json = await res.json();
-
-        const data: AccountDetails | null =
-          json.data ?? json.Data ?? null;
+        const data: AccountDetails | null = json.data ?? json.Data ?? json ?? null;
 
         if (!cancelled) {
           cachedUser = data;
@@ -90,7 +68,6 @@ export function useCurrentUser() {
       cancelled = true;
     };
   }, []);
-
 
   const logout = async () => {
     try {
