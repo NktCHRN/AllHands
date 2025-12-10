@@ -60,9 +60,6 @@ export default function TopBar() {
                 <Link href="/company" className="navDropdownItem" onClick={closeMenu}>
                   Company
                 </Link>
-                <Link href="/management" className="navDropdownItem" onClick={closeMenu}>
-                  Dashboard
-                </Link>
                 <Link href="/time-off/requests" className="navDropdownItem" onClick={closeMenu}>
                   My Time-Off Requests
                 </Link>

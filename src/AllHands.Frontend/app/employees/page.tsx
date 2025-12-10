@@ -76,13 +76,9 @@ export default function EmployeesPage() {
     ((user as any)?.permissions as string[] | undefined) ??
     ((user as any)?.Permissions as string[] | undefined) ??
     [];
-  const perms = Array.isArray(rawPerms)
-    ? rawPerms.map((p) => p.toLowerCase())
-    : [];
+  const perms = Array.isArray(rawPerms) ? rawPerms.map((p) => p.toLowerCase()) : [];
   const canFireEmployees = perms.includes(EMPLOYEE_EDIT_PERMISSION.toLowerCase());
-  const canDeleteEmployees = perms.includes(
-    EMPLOYEE_DELETE_PERMISSION.toLowerCase(),
-  );
+  const canDeleteEmployees = perms.includes(EMPLOYEE_DELETE_PERMISSION.toLowerCase());
 
   const loadEmployees = async () => {
     try {
@@ -93,11 +89,9 @@ export default function EmployeesPage() {
       const params = new URLSearchParams();
       params.set("Page", "1");
       params.set("PerPage", String(PER_PAGE_ALL));
-
-      const trimmed = search.trim();
-      const trimmedLower = trimmed.toLowerCase();
-      if (trimmed) params.set("Search", trimmed);
-      if (statusFilter !== "All") params.set("Status", statusFilter);
+      if (statusFilter !== "All") {
+        params.set("Status", statusFilter);
+      }
 
       const res = await fetch(`${EMPLOYEES_API}?${params.toString()}`, {
         method: "GET",
@@ -109,8 +103,8 @@ export default function EmployeesPage() {
       }
 
       const raw = (await res.json()) as EmployeesApiResponse;
-
       const payload = raw.data ?? raw.Data ?? null;
+
       if (!payload) {
         const msg =
           raw.error?.errorMessage ||
@@ -131,9 +125,9 @@ export default function EmployeesPage() {
         Status: e.status,
         Position: e.position
           ? {
-              Id: e.position.id,
-              Name: e.position.name,
-            }
+            Id: e.position.id,
+            Name: e.position.name,
+          }
           : null,
       }));
 
@@ -143,6 +137,7 @@ export default function EmployeesPage() {
         result = result.filter((e) => e.Status === statusFilter);
       }
 
+      const trimmedLower = search.trim().toLowerCase();
       if (trimmedLower) {
         result = result.filter((e) => {
           const name = [e.FirstName, e.MiddleName, e.LastName]
@@ -229,10 +224,13 @@ export default function EmployeesPage() {
   };
 
   const statusColor = (s: EmployeeStatus) =>
-    s === "Active" ? "#7CFC9A"
-    : s === "Unactivated" ? "#ffd27f"
-    : s === "Fired" ? "#ff6b6b"
-    : "#cccccc";
+    s === "Active"
+      ? "#7CFC9A"
+      : s === "Unactivated"
+        ? "#ffd27f"
+        : s === "Fired"
+          ? "#ff6b6b"
+          : "#cccccc";
 
   const formatStatus = (s: EmployeeStatus) => s;
 
@@ -355,9 +353,7 @@ export default function EmployeesPage() {
                               opacity:
                                 e.Status === "Fired" || loading ? 0.6 : 1,
                             }}
-                            onClick={() =>
-                              handleFireEmployee(e.Id, e.Status)
-                            }
+                            onClick={() => handleFireEmployee(e.Id, e.Status)}
                           >
                             {e.Status === "Fired" ? "Fired" : "Fire"}
                           </button>

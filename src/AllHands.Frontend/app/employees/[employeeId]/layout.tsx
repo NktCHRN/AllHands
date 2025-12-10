@@ -24,7 +24,6 @@ export default function RootLayout({
 }>) {
   return (
     <div>
-      <h1>Employee by Id Page</h1>
         {children}
     </div>
   );
