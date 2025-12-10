@@ -204,13 +204,15 @@ export default function EmployeeById() {
         name: p.name,
       }));
       setPositions(mapped);
-    } catch {
-    }
+    } catch {}
   };
 
   const loadRoles = async () => {
     try {
-      const res = await fetch(ROLES_API, { method: "GET", credentials: "include" });
+      const res = await fetch(ROLES_API, {
+        method: "GET",
+        credentials: "include",
+      });
       if (!res.ok) return;
       const raw = (await res.json()) as RolesApiResponse;
       const arr = raw.data ?? raw.Data ?? null;
@@ -220,8 +222,7 @@ export default function EmployeeById() {
         name: r.name,
       }));
       setRoles(mapped);
-    } catch {
-    }
+    } catch {}
   };
 
   const loadManagers = async () => {
@@ -239,8 +240,7 @@ export default function EmployeeById() {
         lastName: e.lastName,
       }));
       setManagers(mapped);
-    } catch {
-    }
+    } catch {}
   };
 
   useEffect(() => {
@@ -303,135 +303,63 @@ export default function EmployeeById() {
       <TopBar />
       <div className="pageWrapper">
         <div className="pageCard">
-          <div
-            style={{
-              marginBottom: 24,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <h1 className="profileTitle">
-              {employee ? `${employee.firstName} ${employee.lastName}` : "Employee info"}
-            </h1>
-            <button className="profileButtonSecondary" onClick={handleBack}>
-              Back to list
-            </button>
+          <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h1 className="profileTitle">{employee ? `${employee.firstName} ${employee.lastName}` : "Employee info"}</h1>
+            <button className="profileButtonSecondary" onClick={handleBack}>Back to list</button>
           </div>
           {error && <div className="errorMessage">{error}</div>}
           {saveError && <div className="errorMessage">{saveError}</div>}
-          {saveSuccess && (
-            <div style={{ marginBottom: 16, color: "#90ee90", fontSize: 16 }}>
-              {saveSuccess}
-            </div>
-          )}
-          {loading && (
-            <div style={{ opacity: 0.8, marginTop: 10, marginBottom: 10 }}>
-              Loading...
-            </div>
-          )}
+          {saveSuccess && <div style={{ marginBottom: 16, color: "#90ee90", fontSize: 16 }}>{saveSuccess}</div>}
+          {loading && <div style={{ opacity: 0.8, marginTop: 10, marginBottom: 10 }}>Loading...</div>}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div className="accRow">
               <label className="accLable">First name</label>
-              <input
-                className="accInput"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                disabled={disabled}
-              />
+              <input className="accInput" value={firstName} onChange={(e) => setFirstName(e.target.value)} disabled={disabled} />
             </div>
             <div className="accRow">
               <label className="accLable">Middle name</label>
-              <input
-                className="accInput"
-                value={middleName}
-                onChange={(e) => setMiddleName(e.target.value)}
-                disabled={disabled}
-              />
+              <input className="accInput" value={middleName} onChange={(e) => setMiddleName(e.target.value)} disabled={disabled} />
             </div>
             <div className="accRow">
               <label className="accLable">Last name</label>
-              <input
-                className="accInput"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                disabled={disabled}
-              />
+              <input className="accInput" value={lastName} onChange={(e) => setLastName(e.target.value)} disabled={disabled} />
             </div>
             <div className="accRow">
               <label className="accLable">Email</label>
-              <input
-                className="accInput"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={disabled}
-              />
+              <input className="accInput" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={disabled} />
             </div>
             <div className="accRow">
               <label className="accLable">Phone</label>
-              <input
-                className="accInput"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                disabled={disabled}
-              />
+              <input className="accInput" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} disabled={disabled} />
             </div>
             <div className="accRow">
               <label className="accLable">Start date</label>
-              <input
-                className="accInput"
-                type="date"
-                value={workStartDate}
-                onChange={(e) => setWorkStartDate(e.target.value)}
-                disabled={disabled}
-              />
+              <input className="accInput" type="date" value={workStartDate} onChange={(e) => setWorkStartDate(e.target.value)} disabled={disabled} />
             </div>
             <div className="accRow">
               <label className="accLable">Manager</label>
-              <select
-                className="accInput"
-                value={managerId}
-                onChange={(e) => setManagerId(e.target.value)}
-                disabled={disabled}
-              >
+              <select className="accInput" value={managerId} onChange={(e) => setManagerId(e.target.value)} disabled={disabled}>
                 <option value="">Not set</option>
                 {managers.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {formatFullName(m)}
-                  </option>
+                  <option key={m.id} value={m.id}>{formatFullName(m)}</option>
                 ))}
               </select>
             </div>
             <div className="accRow">
               <label className="accLable">Position</label>
-              <select
-                className="accInput"
-                value={positionId}
-                onChange={(e) => setPositionId(e.target.value)}
-                disabled={disabled}
-              >
+              <select className="accInput" value={positionId} onChange={(e) => setPositionId(e.target.value)} disabled={disabled}>
                 <option value="">Not set</option>
                 {positions.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
+                  <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
             </div>
             <div className="accRow">
               <label className="accLable">Role</label>
-              <select
-                className="accInput"
-                value={roleId}
-                onChange={(e) => setRoleId(e.target.value)}
-                disabled={disabled}
-              >
+              <select className="accInput" value={roleId} onChange={(e) => setRoleId(e.target.value)} disabled={disabled}>
                 <option value="">Not set</option>
                 {roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
+                  <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
               </select>
             </div>
@@ -441,17 +369,11 @@ export default function EmployeeById() {
             </div>
             <div className="profileButtons" style={{ marginTop: 24 }}>
               {canEditEmployee && (
-                <button
-                  className="profileButtonPrimary"
-                  onClick={handleSave}
-                  disabled={disabled || !employee}
-                >
+                <button className="profileButtonPrimary" onClick={handleSave} disabled={disabled || !employee}>
                   {saving ? "Saving..." : "Save changes"}
                 </button>
               )}
-              <button className="profileButtonSecondary" onClick={handleBack}>
-                Cancel
-              </button>
+              <button className="profileButtonSecondary" onClick={handleBack}>Cancel</button>
             </div>
           </div>
         </div>
