@@ -80,10 +80,15 @@ export default function NewEmployeePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const rawPerms =
+    ((user as any)?.permissions as string[] | null) ??
+    ((user as any)?.Permissions as string[] | null) ??
+    [];
+  const userPerms = Array.isArray(rawPerms)
+    ? rawPerms.map((p) => p.toLowerCase())
+    : [];
+
   const neededPerms = EMPLOYEE_CREATE_PERMISSIONS.map((p) => p.toLowerCase());
-  const userPerms = ((user?.permissions as string[] | null) ?? []).map((p) =>
-    p.toLowerCase()
-  );
   const canCreateEmployees = neededPerms.some((p) => userPerms.includes(p));
 
   const loadPositions = async () => {
@@ -91,25 +96,20 @@ export default function NewEmployeePage() {
       const params = new URLSearchParams();
       params.set("Page", "1");
       params.set("PerPage", "100");
-
       const res = await fetch(`${POSITIONS_API}?${params.toString()}`, {
         method: "GET",
         credentials: "include",
       });
-
       if (!res.ok) {
         setPositions([]);
         return;
       }
-
       const json = (await res.json()) as PositionsApiResponse;
       const apiItems = json.data?.data ?? [];
-
       const mapped: PositionDto[] = apiItems.map((p) => ({
         Id: p.id,
         Name: p.name,
       }));
-
       setPositions(mapped);
     } catch {
       setPositions([]);
@@ -121,20 +121,16 @@ export default function NewEmployeePage() {
       const params = new URLSearchParams();
       params.set("Page", "1");
       params.set("PerPage", "200");
-
       const res = await fetch(`${EMPLOYEES_API}?${params.toString()}`, {
         method: "GET",
         credentials: "include",
       });
-
       if (!res.ok) {
         setManagers([]);
         return;
       }
-
       const json = (await res.json()) as EmployeesApiResponse;
       const apiItems = json.data?.data ?? [];
-
       const mapped: ManagerOption[] = apiItems
         .filter((e) => (e.status ?? "").toLowerCase() === "active")
         .map((e) => ({
@@ -142,7 +138,6 @@ export default function NewEmployeePage() {
           Name: `${e.firstName} ${e.lastName}`.trim(),
           Status: e.status ?? "",
         }));
-
       setManagers(mapped);
     } catch {
       setManagers([]);
@@ -160,25 +155,15 @@ export default function NewEmployeePage() {
       setSuccess(null);
       return;
     }
-
-    if (
-      !firstName ||
-      !lastName ||
-      !email ||
-      !positionId ||
-      !managerId ||
-      !workStartDate
-    ) {
+    if (!firstName || !lastName || !email || !positionId || !managerId || !workStartDate) {
       setError("Please fill in all required fields.");
       setSuccess(null);
       return;
     }
-
     try {
       setLoading(true);
       setError(null);
       setSuccess(null);
-
       const body = {
         positionId,
         managerId,
@@ -189,30 +174,21 @@ export default function NewEmployeePage() {
         phoneNumber: phoneNumber || null,
         workStartDate,
       };
-
       const res = await fetch(EMPLOYEES_API, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(body),
       });
-
       if (!res.ok) {
         let message = "Failed to create employee.";
         try {
-          const json = (await res.json()) as {
-            error?: ErrorResponse | null;
-          };
-          if (json.error?.errorMessage) {
-            message = json.error.errorMessage;
-          }
-        } catch {}
+          const json = (await res.json()) as { error?: ErrorResponse | null };
+          if (json.error?.errorMessage) message = json.error.errorMessage;
+        } catch { }
         setError(message);
         return;
       }
-
       setSuccess("Employee created successfully.");
       setFirstName("");
       setMiddleName("");
@@ -232,7 +208,6 @@ export default function NewEmployeePage() {
   const renderNoPermission = () => {
     if (userLoading) return null;
     if (canCreateEmployees) return null;
-
     return (
       <div
         style={{
@@ -296,51 +271,27 @@ export default function NewEmployeePage() {
           >
             <div className="accRow">
               <span className="accLable">First name</span>
-              <input
-                className="accInput"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-              />
+              <input className="accInput" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
             </div>
             <div className="accRow">
               <span className="accLable">Middle name</span>
-              <input
-                className="accInput"
-                value={middleName}
-                onChange={(e) => setMiddleName(e.target.value)}
-              />
+              <input className="accInput" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
             </div>
             <div className="accRow">
               <span className="accLable">Last name</span>
-              <input
-                className="accInput"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-              />
+              <input className="accInput" value={lastName} onChange={(e) => setLastName(e.target.value)} />
             </div>
             <div className="accRow">
               <span className="accLable">Email</span>
-              <input
-                className="accInput"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+              <input className="accInput" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="accRow">
               <span className="accLable">Phone</span>
-              <input
-                className="accInput"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-              />
+              <input className="accInput" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
             </div>
             <div className="accRow">
               <span className="accLable">Position</span>
-              <select
-                className="accInput"
-                value={positionId}
-                onChange={(e) => setPositionId(e.target.value)}
-              >
+              <select className="accInput" value={positionId} onChange={(e) => setPositionId(e.target.value)}>
                 <option value="">Select position</option>
                 {positions.map((p) => (
                   <option key={p.Id} value={p.Id}>
@@ -351,11 +302,7 @@ export default function NewEmployeePage() {
             </div>
             <div className="accRow">
               <span className="accLable">Manager</span>
-              <select
-                className="accInput"
-                value={managerId}
-                onChange={(e) => setManagerId(e.target.value)}
-              >
+              <select className="accInput" value={managerId} onChange={(e) => setManagerId(e.target.value)}>
                 <option value="">Select manager</option>
                 {managers.map((m) => (
                   <option key={m.Id} value={m.Id}>
@@ -409,10 +356,7 @@ export default function NewEmployeePage() {
             >
               {loading ? "Creating..." : "Create employee"}
             </button>
-            <button
-              className="profileButtonSecondary"
-              onClick={() => router.push("/employees")}
-            >
+            <button className="profileButtonSecondary" onClick={() => router.push("/employees")}>
               Cancel
             </button>
           </div>
