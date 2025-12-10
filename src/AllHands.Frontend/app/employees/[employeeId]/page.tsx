@@ -50,8 +50,8 @@ type ErrorResponse = {
 };
 
 type EmployeeByIdApiResponse = {
-  data?: EmployeeDetailsDto | null;
-  Data?: EmployeeDetailsDto | null;
+  data?: any;
+  Data?: any;
   error?: ErrorResponse | null;
   Error?: ErrorResponse | null;
 };
@@ -118,6 +118,7 @@ export default function EmployeeById() {
   const [managerId, setManagerId] = useState("");
   const [positionId, setPositionId] = useState("");
   const [roleId, setRoleId] = useState("");
+  const [status, setStatus] = useState<EmployeeStatus>("Undefined");
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -137,8 +138,7 @@ export default function EmployeeById() {
     return "";
   };
 
-  const formatFullName = (m: ManagerOption) =>
-    [m.firstName, m.middleName, m.lastName].filter(Boolean).join(" ");
+  const formatFullName = (m: ManagerOption) => [m.firstName, m.middleName, m.lastName].filter(Boolean).join(" ");
 
   const loadEmployee = async (employeeId: string) => {
     if (!employeeId) {
@@ -149,16 +149,11 @@ export default function EmployeeById() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${EMPLOYEES_API}/${employeeId}`, {
-        method: "GET",
-        credentials: "include",
-      });
-      if (!res.ok) {
-        throw new Error("Failed to load employee");
-      }
+      const res = await fetch(`${EMPLOYEES_API}/${employeeId}`, { method: "GET", credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load employee");
       const raw = (await res.json()) as EmployeeByIdApiResponse;
-      const dto = raw.data ?? raw.Data ?? null;
-      if (!dto) {
+      const rawDto = raw.data ?? raw.Data ?? null;
+      if (!rawDto) {
         const msg =
           raw.error?.errorMessage ||
           raw.error?.ErrorMessage ||
@@ -167,16 +162,30 @@ export default function EmployeeById() {
           "No employee data returned";
         throw new Error(msg);
       }
-      setEmployee(dto);
-      setFirstName(dto.firstName ?? "");
-      setMiddleName(dto.middleName ?? "");
-      setLastName(dto.lastName ?? "");
-      setEmail(dto.email ?? "");
-      setPhoneNumber(dto.phoneNumber ?? "");
-      setWorkStartDate(dto.workStartDate ? dto.workStartDate.substring(0, 10) : "");
-      setManagerId(dto.managerId ?? "");
-      setPositionId(dto.positionId ?? "");
-      setRoleId(dto.roleId ?? "");
+      const normalized: EmployeeDetailsDto = {
+        id: rawDto.id,
+        firstName: rawDto.firstName ?? "",
+        middleName: rawDto.middleName ?? null,
+        lastName: rawDto.lastName ?? "",
+        email: rawDto.email ?? "",
+        phoneNumber: rawDto.phoneNumber ?? null,
+        workStartDate: rawDto.workStartDate ?? null,
+        status: (rawDto.status as EmployeeStatus) ?? "Undefined",
+        managerId: (rawDto.managerId ?? rawDto.manager?.id ?? null) ?? null,
+        positionId: (rawDto.positionId ?? rawDto.position?.id ?? null) ?? null,
+        roleId: (rawDto.roleId ?? rawDto.role?.id ?? null) ?? null,
+      };
+      setEmployee(normalized);
+      setFirstName(normalized.firstName);
+      setMiddleName(normalized.middleName ?? "");
+      setLastName(normalized.lastName);
+      setEmail(normalized.email);
+      setPhoneNumber(normalized.phoneNumber ?? "");
+      setWorkStartDate(normalized.workStartDate ? normalized.workStartDate.substring(0, 10) : "");
+      setManagerId(normalized.managerId ?? "");
+      setPositionId(normalized.positionId ?? "");
+      setRoleId(normalized.roleId ?? "");
+      setStatus(normalized.status ?? "Undefined");
     } catch (e: any) {
       setEmployee(null);
       setError(e?.message || "Unexpected error while loading employee");
@@ -193,30 +202,21 @@ export default function EmployeeById() {
       const raw = (await res.json()) as PositionsApiResponse;
       const payload = raw.data ?? raw.Data ?? null;
       if (!payload) return;
-      const mapped: PositionOption[] = (payload.data ?? []).map((p) => ({
-        id: p.id,
-        name: p.name,
-      }));
+      const mapped: PositionOption[] = (payload.data ?? []).map((p) => ({ id: p.id, name: p.name }));
       setPositions(mapped);
-    } catch {}
+    } catch { }
   };
 
   const loadRoles = async () => {
     try {
-      const res = await fetch(ROLES_API, {
-        method: "GET",
-        credentials: "include",
-      });
+      const res = await fetch(ROLES_API, { method: "GET", credentials: "include" });
       if (!res.ok) return;
       const raw = (await res.json()) as RolesApiResponse;
       const arr = raw.data ?? raw.Data ?? null;
       if (!arr) return;
-      const mapped: RoleOption[] = (arr ?? []).map((r) => ({
-        id: r.id,
-        name: r.name,
-      }));
+      const mapped: RoleOption[] = (arr ?? []).map((r) => ({ id: r.id, name: r.name }));
       setRoles(mapped);
-    } catch {}
+    } catch { }
   };
 
   const loadManagers = async () => {
@@ -234,15 +234,12 @@ export default function EmployeeById() {
         lastName: e.lastName,
       }));
       setManagers(mapped);
-    } catch {}
+    } catch { }
   };
 
   const loadPermissions = async () => {
     try {
-      const res = await fetch(ACCOUNT_API, {
-        method: "GET",
-        credentials: "include",
-      });
+      const res = await fetch(ACCOUNT_API, { method: "GET", credentials: "include" });
       if (!res.ok) {
         setPermissions([]);
         return;
@@ -303,6 +300,7 @@ export default function EmployeeById() {
         managerId: managerId || null,
         positionId: positionId || null,
         roleId: roleId || null,
+        status,
       };
       const res = await fetch(`${EMPLOYEES_API}/${employee.id}`, {
         method: "PUT",
@@ -324,6 +322,7 @@ export default function EmployeeById() {
   };
 
   const disabled = !canEditEmployee || loading || saving;
+  const disabledStatus = disabled || status === "Unactivated";
 
   return (
     <div className="appBackground">
@@ -392,7 +391,12 @@ export default function EmployeeById() {
             </div>
             <div className="accRow">
               <label className="accLable">Status</label>
-              <input className="accInput" value={employee?.status ?? ""} disabled />
+              <select className="accInput" value={status} onChange={(e) => setStatus(e.target.value as EmployeeStatus)} disabled={disabledStatus}>
+                <option value="Undefined">Undefined</option>
+                <option value="Unactivated">Unactivated</option>
+                <option value="Active">Active</option>
+                <option value="Fired">Fired</option>
+              </select>
             </div>
             <div className="profileButtons" style={{ marginTop: 24 }}>
               {canEditEmployee && (
@@ -400,7 +404,6 @@ export default function EmployeeById() {
                   {saving ? "Saving..." : "Save changes"}
                 </button>
               )}
-              <button className="profileButtonSecondary" onClick={handleBack}>Cancel</button>
             </div>
           </div>
         </div>
