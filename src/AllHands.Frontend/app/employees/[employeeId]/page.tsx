@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import TopBar from "@/components/TopBar";
-import { useCurrentUser } from "@/hooks/currentUser";
 
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const EMPLOYEES_API = `${API_ROOT}/api/v1/employees`;
 const POSITIONS_API = `${API_ROOT}/api/v1/positions`;
 const ROLES_API = `${API_ROOT}/api/v1/roles`;
+const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 const EMPLOYEE_EDIT_PERMISSION = "employee.edit";
 
 type EmployeeStatus = "Undefined" | "Unactivated" | "Active" | "Fired";
@@ -101,12 +101,13 @@ type ManagersApiResponse = {
 export default function EmployeeById() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useCurrentUser();
 
   const [employee, setEmployee] = useState<EmployeeDetailsDto | null>(null);
   const [positions, setPositions] = useState<PositionOption[]>([]);
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [managers, setManagers] = useState<ManagerOption[]>([]);
+  const [permissions, setPermissions] = useState<string[]>([]);
+  const [canEditEmployee, setCanEditEmployee] = useState(false);
 
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
@@ -123,13 +124,6 @@ export default function EmployeeById() {
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
-
-  const rawPerms =
-    ((user as any)?.permissions as string[] | undefined) ??
-    ((user as any)?.Permissions as string[] | undefined) ??
-    [];
-  const perms = Array.isArray(rawPerms) ? rawPerms.map((p) => p.toLowerCase()) : [];
-  const canEditEmployee = perms.includes(EMPLOYEE_EDIT_PERMISSION.toLowerCase());
 
   const resolveEmployeeId = () => {
     const p = params as any;
@@ -243,6 +237,27 @@ export default function EmployeeById() {
     } catch {}
   };
 
+  const loadPermissions = async () => {
+    try {
+      const res = await fetch(ACCOUNT_API, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        setPermissions([]);
+        return;
+      }
+      const json = (await res.json()) as {
+        data?: { permissions?: string[] | null } | null;
+        error?: ErrorResponse | null;
+        isSuccessful?: boolean;
+      };
+      setPermissions(json.data?.permissions ?? []);
+    } catch {
+      setPermissions([]);
+    }
+  };
+
   useEffect(() => {
     const employeeId = resolveEmployeeId();
     if (!employeeId) {
@@ -254,7 +269,19 @@ export default function EmployeeById() {
     void loadPositions();
     void loadRoles();
     void loadManagers();
+    void loadPermissions();
   }, [params]);
+
+  useEffect(() => {
+    if (!permissions.length) {
+      setCanEditEmployee(false);
+      return;
+    }
+    const userPerms = permissions.map((p) => p.toLowerCase());
+    const needed = EMPLOYEE_EDIT_PERMISSION.toLowerCase();
+    const hasPermission = userPerms.includes(needed);
+    setCanEditEmployee(hasPermission);
+  }, [permissions]);
 
   const handleBack = () => {
     router.push("/employees");
