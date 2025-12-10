@@ -98,6 +98,11 @@ type ManagersApiResponse = {
   Data?: ManagersApiData | null;
 };
 
+type SaveErrorPayload = {
+  error?: ErrorResponse | null;
+  Error?: ErrorResponse | null;
+};
+
 export default function EmployeeById() {
   const params = useParams();
   const router = useRouter();
@@ -204,7 +209,7 @@ export default function EmployeeById() {
       if (!payload) return;
       const mapped: PositionOption[] = (payload.data ?? []).map((p) => ({ id: p.id, name: p.name }));
       setPositions(mapped);
-    } catch { }
+    } catch {}
   };
 
   const loadRoles = async () => {
@@ -216,7 +221,7 @@ export default function EmployeeById() {
       if (!arr) return;
       const mapped: RoleOption[] = (arr ?? []).map((r) => ({ id: r.id, name: r.name }));
       setRoles(mapped);
-    } catch { }
+    } catch {}
   };
 
   const loadManagers = async () => {
@@ -234,7 +239,7 @@ export default function EmployeeById() {
         lastName: e.lastName,
       }));
       setManagers(mapped);
-    } catch { }
+    } catch {}
   };
 
   const loadPermissions = async () => {
@@ -291,6 +296,7 @@ export default function EmployeeById() {
       setSaveError(null);
       setSaveSuccess(null);
       const body = {
+        id: employee.id,
         firstName,
         middleName: middleName || null,
         lastName,
@@ -309,8 +315,25 @@ export default function EmployeeById() {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Failed to save employee");
+        let message = `Failed to save employee (status ${res.status})`;
+        try {
+          const text = await res.text();
+          if (text) {
+            try {
+              const json = JSON.parse(text) as SaveErrorPayload;
+              const msg =
+                json.error?.errorMessage ||
+                json.error?.ErrorMessage ||
+                json.Error?.errorMessage ||
+                json.Error?.ErrorMessage;
+              if (msg) message = msg;
+              else message = text;
+            } catch {
+              message = text;
+            }
+          }
+        } catch {}
+        throw new Error(message);
       }
       setSaveSuccess("Changes saved");
       await loadEmployee(employee.id);

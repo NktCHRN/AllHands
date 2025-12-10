@@ -8,7 +8,6 @@ import { useCurrentUser } from "@/hooks/currentUser";
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const EMPLOYEES_API = `${API_ROOT}/api/v1/employees`;
 const POSITIONS_API = `${API_ROOT}/api/v1/positions`;
-const ACCOUNT_API = `${API_ROOT}/api/v1/account`;
 
 const EMPLOYEE_CREATE_PERMISSIONS = ["employee.create", "employee.edit"];
 
@@ -63,11 +62,10 @@ type ManagerOption = {
 
 export default function NewEmployeePage() {
   const router = useRouter();
-  const { loading: userLoading } = useCurrentUser();
+  const { user, loading: userLoading } = useCurrentUser();
 
   const [positions, setPositions] = useState<PositionDto[]>([]);
   const [managers, setManagers] = useState<ManagerOption[]>([]);
-  const [permissions, setPermissions] = useState<string[]>([]);
 
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
@@ -81,7 +79,12 @@ export default function NewEmployeePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [canCreateEmployees, setCanCreateEmployees] = useState(false);
+
+  const neededPerms = EMPLOYEE_CREATE_PERMISSIONS.map((p) => p.toLowerCase());
+  const userPerms = ((user?.permissions as string[] | null) ?? []).map((p) =>
+    p.toLowerCase()
+  );
+  const canCreateEmployees = neededPerms.some((p) => userPerms.includes(p));
 
   const loadPositions = async () => {
     try {
@@ -146,47 +149,10 @@ export default function NewEmployeePage() {
     }
   };
 
-  const loadPermissions = async () => {
-    try {
-      const res = await fetch(ACCOUNT_API, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        setPermissions([]);
-        return;
-      }
-
-      const json = (await res.json()) as {
-        data?: { permissions?: string[] | null } | null;
-        error?: ErrorResponse | null;
-        isSuccessful?: boolean;
-      };
-
-      setPermissions(json.data?.permissions ?? []);
-    } catch {
-      setPermissions([]);
-    }
-  };
-
   useEffect(() => {
     void loadPositions();
     void loadManagers();
-    void loadPermissions();
   }, []);
-
-  useEffect(() => {
-    if (!permissions.length) {
-      setCanCreateEmployees(false);
-      return;
-    }
-
-    const userPerms = permissions.map((p) => p.toLowerCase());
-    const needed = EMPLOYEE_CREATE_PERMISSIONS.map((p) => p.toLowerCase());
-    const hasPermission = needed.some((p) => userPerms.includes(p));
-    setCanCreateEmployees(hasPermission);
-  }, [permissions]);
 
   const handleSubmit = async () => {
     if (!canCreateEmployees) {
@@ -242,7 +208,7 @@ export default function NewEmployeePage() {
           if (json.error?.errorMessage) {
             message = json.error.errorMessage;
           }
-        } catch { }
+        } catch {}
         setError(message);
         return;
       }
@@ -264,13 +230,8 @@ export default function NewEmployeePage() {
   };
 
   const renderNoPermission = () => {
-    if (userLoading) {
-      return null;
-    }
-
-    if (canCreateEmployees) {
-      return null;
-    }
+    if (userLoading) return null;
+    if (canCreateEmployees) return null;
 
     return (
       <div
