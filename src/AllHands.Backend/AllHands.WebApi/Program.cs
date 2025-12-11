@@ -37,6 +37,8 @@ app.UseCors("CORS");
 
 app.UseHttpsRedirection();
 
+app.MapHealthChecks("/health");
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseMiddleware<RemoveCookieOnLoginMiddleware>();

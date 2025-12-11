@@ -110,6 +110,8 @@ public static class DependencyInjection
             });
         });
         
+        services.AddHealthChecks();
+        
         return services;
     }
 }
