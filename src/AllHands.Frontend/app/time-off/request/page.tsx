@@ -265,7 +265,7 @@ export default function RequestTimeOff() {
                 </div>
               </div>
 
-              <div style={{ marginTop: "20px" }}>
+              <div style={{ marginTop: "20px", gap: "24px" }}>
                 <button
                   type="submit"
                   className="profileButtonPrimary"
