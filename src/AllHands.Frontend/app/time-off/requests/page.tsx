@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import TopBar from "@/components/TopBar";
+import { useCurrentUser } from "@/hooks/currentUser";
 
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const TIME_OFF_REQUESTS_API = `${API_ROOT}/api/v1/time-off/requests`;
@@ -27,6 +28,7 @@ const PER_PAGE = 10;
 
 export default function TimeOffRequestsPage() {
   const router = useRouter();
+  const { user } = useCurrentUser();
 
   const [requests, setRequests] = useState<TimeOffRequestDto[]>([]);
   const [page, setPage] = useState(1);
@@ -38,29 +40,15 @@ export default function TimeOffRequestsPage() {
   const normalizeRequestItem = (raw: any): TimeOffRequestDto => {
     const type = raw.type ?? raw.Type ?? {};
     const approvedBy = raw.approvedBy ?? raw.ApprovedBy ?? {};
-
     const id = raw.id ?? raw.Id ?? "";
     const startDate = raw.startDate ?? raw.StartDate ?? "";
     const endDate = raw.endDate ?? raw.EndDate ?? "";
     const createdAt = raw.createdAt ?? raw.CreatedAt ?? "";
-
-    const status: TimeOffStatus =
-      raw.status ?? raw.Status ?? "Pending";
-
+    const status: TimeOffStatus = raw.status ?? raw.Status ?? "Pending";
     const typeName =
-      raw.typeName ??
-      raw.TypeName ??
-      type.name ??
-      type.Name ??
-      "";
-
+      raw.typeName ?? raw.TypeName ?? type.name ?? type.Name ?? "";
     const typeEmoji =
-      raw.typeEmoji ??
-      raw.TypeEmoji ??
-      type.emoji ??
-      type.Emoji ??
-      null;
-
+      raw.typeEmoji ?? raw.TypeEmoji ?? type.emoji ?? type.Emoji ?? null;
     const workingDays =
       raw.workingDays ??
       raw.WorkingDays ??
@@ -68,19 +56,23 @@ export default function TimeOffRequestsPage() {
       raw.WorkingDaysCount ??
       0;
 
+    const approvedByFirst =
+      approvedBy.firstName ?? approvedBy.FirstName ?? "";
+    const approvedByMiddle =
+      approvedBy.middleName ?? approvedBy.MiddleName ?? "";
+    const approvedByLast =
+      approvedBy.lastName ?? approvedBy.LastName ?? "";
+    const approvedByFromObject = [approvedByFirst, approvedByMiddle, approvedByLast]
+      .filter(Boolean)
+      .join(" ");
+
     const approvedByName =
       raw.approvedByName ??
       raw.ApprovedByName ??
-      approvedBy.fullName ??
-      approvedBy.FullName ??
-      approvedBy.name ??
-      approvedBy.Name ??
-      null;
+      (approvedByFromObject || null);
 
     const rejectionReason =
-      raw.rejectionReason ??
-      raw.RejectionReason ??
-      null;
+      raw.rejectionReason ?? raw.RejectionReason ?? null;
 
     return {
       id,
@@ -107,27 +99,18 @@ export default function TimeOffRequestsPage() {
       json?.errorMessage ??
       json?.ErrorMessage ??
       null;
-
     if (backendError) {
       setError(backendError);
     }
-
     const root = json?.data ?? json?.Data ?? json;
     const payload = root?.data ?? root?.Data ?? root;
-
     const rawItems: any[] =
       payload?.Items ??
       payload?.items ??
       (Array.isArray(payload) ? payload : []);
-
     const items = rawItems.map(normalizeRequestItem);
-
-    const currentPage =
-      payload?.Page ?? payload?.page ?? 1;
-
-    const pagesTotal =
-      payload?.TotalPages ?? payload?.totalPages ?? 1;
-
+    const currentPage = payload?.Page ?? payload?.page ?? 1;
+    const pagesTotal = payload?.TotalPages ?? payload?.totalPages ?? 1;
     return {
       items,
       page: currentPage,
@@ -168,26 +151,27 @@ export default function TimeOffRequestsPage() {
     return "#ffd27f";
   };
 
-  const loadRequests = async (pageNumber: number) => {
+  const loadRequests = async (pageNumber: number, employeeId?: string) => {
     try {
       setLoading(true);
       setError(null);
-
-      const url = `${TIME_OFF_EMPLOYEE_REQUESTS_API}?PerPage=${PER_PAGE}&Page=${pageNumber}`;
-
+      const params = new URLSearchParams();
+      params.set("PerPage", String(PER_PAGE));
+      params.set("Page", String(pageNumber));
+      if (employeeId) {
+        params.set("EmployeeId", employeeId);
+      }
+      const url = `${TIME_OFF_EMPLOYEE_REQUESTS_API}?${params.toString()}`;
       const res = await fetch(url, {
         method: "GET",
         credentials: "include",
       });
-
       if (!res.ok) {
         throw new Error("Failed to load time-off requests.");
       }
-
       const json = (await res.json()) as any;
       const { items, page: currentPage, totalPages } =
         normalizeRequestsPayload(json);
-
       setRequests(items || []);
       setPage(currentPage);
       setTotalPages(totalPages || 1);
@@ -202,23 +186,22 @@ export default function TimeOffRequestsPage() {
   };
 
   useEffect(() => {
-    void loadRequests(1);
-  }, []);
+    if (!user?.employeeId) return;
+    void loadRequests(1, user.employeeId);
+  }, [user?.employeeId]);
 
   const reloadCurrentPage = async () => {
-    await loadRequests(page);
+    await loadRequests(page, user?.employeeId || undefined);
   };
 
   const handleCancel = async (id: string) => {
     try {
       setCancelingId(id);
       setError(null);
-
       const res = await fetch(`${TIME_OFF_REQUESTS_API}/${id}/cancel`, {
         method: "POST",
         credentials: "include",
       });
-
       if (!res.ok) {
         let message = "Failed to cancel request.";
         try {
@@ -231,10 +214,9 @@ export default function TimeOffRequestsPage() {
           if (backendError) {
             message = backendError;
           }
-        } catch { }
+        } catch {}
         throw new Error(message);
       }
-
       await reloadCurrentPage();
     } catch (e: any) {
       setError(e?.message || "Unexpected error while cancelling request.");
@@ -248,12 +230,12 @@ export default function TimeOffRequestsPage() {
 
   const handlePrevPage = () => {
     if (!hasPrev || loading) return;
-    void loadRequests(page - 1);
+    void loadRequests(page - 1, user?.employeeId || undefined);
   };
 
   const handleNextPage = () => {
     if (!hasNext || loading) return;
-    void loadRequests(page + 1);
+    void loadRequests(page + 1, user?.employeeId || undefined);
   };
 
   const title = "My Time-Off Requests";
@@ -271,7 +253,6 @@ export default function TimeOffRequestsPage() {
               <p className="timeOffHeaderSubtitle">{subtitle}</p>
             </div>
           </div>
-
           {loading ? (
             <p>Loading requests...</p>
           ) : requests.length === 0 ? (
@@ -340,7 +321,6 @@ export default function TimeOffRequestsPage() {
               </table>
             </div>
           )}
-
           {error && (
             <p
               style={{
@@ -351,7 +331,6 @@ export default function TimeOffRequestsPage() {
               {error}
             </p>
           )}
-
           {totalPages > 1 && (
             <div className="timeOffPagination">
               <button
@@ -375,7 +354,6 @@ export default function TimeOffRequestsPage() {
               </button>
             </div>
           )}
-
           <div className="timeOffFooter">
             <button
               className="profileButtonPrimary"
