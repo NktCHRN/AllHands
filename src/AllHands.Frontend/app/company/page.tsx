@@ -19,6 +19,11 @@ type NewsItemDto = {
   id: string;
   text: string;
   createdAt?: string;
+  author?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
 };
 
 type TimeOffBalanceDto = {
@@ -217,6 +222,17 @@ export default function CompanyPage() {
                             </span>
                           )}
                         </div>
+                        {item.author && (
+                          <p className="companyPillMeta">
+                            Автор:{" "}
+                            {[
+                              item.author.firstName,
+                              item.author.lastName,
+                            ]
+                              .filter(Boolean)
+                              .join(" ") || item.author.email}
+                          </p>
+                        )}
                       </li>
                     ))}
                   </ul>
