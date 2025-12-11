@@ -153,21 +153,23 @@ export default function CompanyPage() {
           {error && <p className="errorMessage">{error}</p>}
           {!loading && !error && (
             <>
-              <div className="companyRowSplit">
-                <div className="companyCol">
-                  <div className="companyCard">
-                    <div className="companyHeader">
-                      <div className="companyLogo">
-                        <img src={logoUrl} alt={company?.name ?? "Company logo"} />
-                      </div>
-                      <div>
-                        <h1 className="companyName">{company?.name ?? "Company"}</h1>
-                        {company?.legalName && (
-                          <p className="companyLegalName">{company.legalName}</p>
-                        )}
-                      </div>
+              <div className="companyRow">
+                <div className="companyCard">
+                  <div className="companyHeader">
+                    <div className="companyLogo">
+                      <img src={logoUrl} alt={company?.name ?? "Company logo"} />
+                    </div>
+                    <div>
+                      <h1 className="companyName">{company?.name ?? "Company"}</h1>
+                      {company?.legalName && (
+                        <p className="companyLegalName">{company.legalName}</p>
+                      )}
                     </div>
                   </div>
+                </div>
+              </div>
+              <div className="companyRowSplit">
+                <div className="companyCol">
                   <div className="companyCard">
                     <h2 className="companySectionTitle">Time-off balance</h2>
                     {balances.length === 0 && (
@@ -247,10 +249,7 @@ export default function CompanyPage() {
                         {item.author && (
                           <p className="companyPillMeta">
                             Author:{" "}
-                            {[
-                              item.author.firstName,
-                              item.author.lastName,
-                            ]
+                            {[item.author.firstName, item.author.lastName]
                               .filter(Boolean)
                               .join(" ") || item.author.email}
                           </p>
