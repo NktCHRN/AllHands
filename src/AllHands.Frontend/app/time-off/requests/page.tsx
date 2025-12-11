@@ -39,7 +39,12 @@ export default function TimeOffRequestsPage() {
 
   const normalizeRequestItem = (raw: any): TimeOffRequestDto => {
     const type = raw.type ?? raw.Type ?? {};
-    const approvedBy = raw.approvedBy ?? raw.ApprovedBy ?? {};
+    const approver =
+      raw.approver ??
+      raw.Approver ??
+      raw.approvedBy ??
+      raw.ApprovedBy ??
+      {};
     const id = raw.id ?? raw.Id ?? "";
     const startDate = raw.startDate ?? raw.StartDate ?? "";
     const endDate = raw.endDate ?? raw.EndDate ?? "";
@@ -55,25 +60,25 @@ export default function TimeOffRequestsPage() {
       raw.workingDaysCount ??
       raw.WorkingDaysCount ??
       0;
-
-    const approvedByFirst =
-      approvedBy.firstName ?? approvedBy.FirstName ?? "";
-    const approvedByMiddle =
-      approvedBy.middleName ?? approvedBy.MiddleName ?? "";
-    const approvedByLast =
-      approvedBy.lastName ?? approvedBy.LastName ?? "";
-    const approvedByFromObject = [approvedByFirst, approvedByMiddle, approvedByLast]
+    const approverFirst =
+      approver.firstName ?? approver.FirstName ?? "";
+    const approverMiddle =
+      approver.middleName ?? approver.MiddleName ?? "";
+    const approverLast =
+      approver.lastName ?? approver.LastName ?? "";
+    const approverFromParts = [approverFirst, approverMiddle, approverLast]
       .filter(Boolean)
       .join(" ");
-
     const approvedByName =
       raw.approvedByName ??
       raw.ApprovedByName ??
-      (approvedByFromObject || null);
-
+      approver.fullName ??
+      approver.FullName ??
+      approver.name ??
+      approver.Name ??
+      (approverFromParts || null);
     const rejectionReason =
       raw.rejectionReason ?? raw.RejectionReason ?? null;
-
     return {
       id,
       startDate,
