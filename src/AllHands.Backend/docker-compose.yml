@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  api:
+    container_name: allhands-api
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/allhands.backend:${IMAGE_VERSION}
+    environment:
+      ASPNETCORE_URLS: http://+:5000
+      ASPNETCORE_ENVIRONMENT: "Production"
+    expose:
+      - "5000"                         # only inside docker network
+    networks:
+      - web
+
+  nginx:
+    container_name: allhands-nginx
+    image: nginx:alpine
+    depends_on:
+      - api
+    ports:
+      - "80:80"                       
+      # - "443:443"                    
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # - ./certs:/etc/nginx/certs:ro  # for TLS
+    networks:
+      - web
+
+networks:
+  web:
+    driver: bridge
