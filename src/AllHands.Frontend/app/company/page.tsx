@@ -43,6 +43,11 @@ type TimeOffRequestDto = {
   status?: string;
 };
 
+const roundBalance = (value?: number) => {
+  if (typeof value !== "number") return 0;
+  return Math.round(value * 2) / 2;
+};
+
 export default function CompanyPage() {
   const [company, setCompany] = useState<CompanyDto | null>(null);
   const [news, setNews] = useState<NewsItemDto[]>([]);
@@ -72,23 +77,29 @@ export default function CompanyPage() {
       setLoading(true);
       setError(null);
       const opts: RequestInit = { method: "GET", credentials: "include" };
+
       const companyRes = await fetch(COMPANY_API, opts);
       const newsRes = await fetch(NEWS_API, opts);
       const balancesRes = await fetch(TIME_OFF_BALANCES_API, opts);
+
       const reqParams = new URLSearchParams();
       reqParams.set("Page", "1");
       reqParams.set("PerPage", "1000");
       const requestsRes = await fetch(`${EMPLOYEE_TIME_OFF_REQUESTS_API}?${reqParams.toString()}`, opts);
+
       if (!companyRes.ok || !newsRes.ok || !balancesRes.ok) {
         setError("Failed to load data");
         return;
       }
+
       const companyJson = await companyRes.json();
       const newsJson = await newsRes.json();
       const balancesJson = await balancesRes.json();
+
       setCompany(companyJson.data ?? null);
       setNews(newsJson.data?.data ?? []);
       setBalances(balancesJson.data ?? []);
+
       let allRequests: TimeOffRequestDto[] = [];
       if (requestsRes.ok) {
         const requestsJson = await requestsRes.json();
@@ -102,11 +113,13 @@ export default function CompanyPage() {
           (Array.isArray(payload) ? payload : []);
         allRequests = rawItems.map(normalizeRequest);
       }
+
       const today = new Date();
       const from = new Date(today);
       const to = new Date(today);
       from.setDate(from.getDate() - 5);
       to.setDate(to.getDate() + 5);
+
       const filtered = allRequests.filter((r) => {
         if (r.status && r.status !== "Approved") return false;
         const start = new Date(r.startDate);
@@ -114,6 +127,7 @@ export default function CompanyPage() {
         if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
         return end >= from && start <= to;
       });
+
       setUpcomingRequests(filtered);
     } catch (e: any) {
       setError(e?.message || "An unexpected error occurred");
@@ -150,6 +164,7 @@ export default function CompanyPage() {
                   </div>
                 </div>
               </div>
+
               <div className="companyRowSplit">
                 <div className="companyCol">
                   <div className="companyCard">
@@ -165,11 +180,11 @@ export default function CompanyPage() {
                                 {b.typeName ?? "Time-off type"}
                               </p>
                               {b.daysPerYear !== undefined && (
-                                <p className="companyPillMeta">Year limit: {b.daysPerYear}</p>
+                                <p className="companyPillMeta">Year limit: {roundBalance(b.daysPerYear)}</p>
                               )}
                             </div>
                             <div className="companyPillMeta">
-                              Remaining: {b.days ?? 0} days
+                              Remaining: {roundBalance(b.days)} days
                             </div>
                           </div>
                         </li>
@@ -177,6 +192,7 @@ export default function CompanyPage() {
                     </ul>
                   </div>
                 </div>
+
                 <div className="companyCol">
                   <div className="companyCard">
                     <h2 className="companySectionTitle">Who is on time-off (±5 days)</h2>
@@ -201,6 +217,7 @@ export default function CompanyPage() {
                   </div>
                 </div>
               </div>
+
               <div className="companyRow">
                 <div className="companyCard">
                   <h2 className="companySectionTitle">News</h2>
