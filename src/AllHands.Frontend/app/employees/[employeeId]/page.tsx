@@ -130,7 +130,7 @@ export default function EmployeeById() {
   const canEditEmployee = userPerms.includes("employee.edit") || userPerms.includes("employee.create") || rolesLower.includes("admin");
   const canDeleteEmployee = userPerms.includes("employee.delete") || rolesLower.includes("admin");
 
-  const disabled = userLoading || !canEditEmployee || loading || saving;
+  const disabled = Boolean(userLoading) || !canEditEmployee || loading || saving;
   const formatFullName = (m: ManagerOption) => [m.firstName, m.middleName, m.lastName].filter(Boolean).join(" ");
 
   const loadEmployee = async (idFromRoute: string) => {
@@ -258,7 +258,7 @@ export default function EmployeeById() {
 
   const handleBack = () => router.push("/employees");
 
-  const requireFireReason = employee && toUiStatus(employee.originalStatus) === "Active" && form.status === "Fired";
+  const requireFireReason = Boolean(employee) && toUiStatus(employee!.originalStatus) === "Active" && form.status === "Fired";
 
   const handleSave = async () => {
     if (!canEditEmployee || !employee?.id) return;
