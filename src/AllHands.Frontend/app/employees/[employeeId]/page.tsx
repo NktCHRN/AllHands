@@ -82,13 +82,7 @@ async function readErrorMessage(res: Response, fallback: string) {
     if (!text) return fallback;
     try {
       const json = JSON.parse(text) as { error?: ErrorResponse | null; Error?: ErrorResponse | null };
-      return (
-        json.error?.errorMessage ||
-        json.error?.ErrorMessage ||
-        json.Error?.errorMessage ||
-        json.Error?.ErrorMessage ||
-        text
-      );
+      return json.error?.errorMessage || json.error?.ErrorMessage || json.Error?.errorMessage || json.Error?.ErrorMessage || text;
     } catch {
       return text;
     }
@@ -101,80 +95,65 @@ export default function EmployeeById() {
   const params = useParams();
   const router = useRouter();
   const { user, loading: userLoading } = useCurrentUser();
+
   const [employee, setEmployee] = useState<EmployeeDetails | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
+
   const [positions, setPositions] = useState<PositionOption[]>([]);
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [managers, setManagers] = useState<ManagerOption[]>([]);
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+
   const [deleteArmedUntil, setDeleteArmedUntil] = useState<number | null>(null);
+  const [showDeleteReason, setShowDeleteReason] = useState(false);
 
   const employeeIdFromRoute = useMemo(() => {
     const p = params as any;
     const candidate =
       (typeof p?.id === "string" ? p.id : "") ||
       (typeof p?.employeeId === "string" ? p.employeeId : "") ||
-      (typeof window !== "undefined"
-        ? (window.location.pathname.split("/").filter(Boolean).slice(-1)[0] ?? "")
-        : "");
+      (typeof window !== "undefined" ? (window.location.pathname.split("/").filter(Boolean).slice(-1)[0] ?? "") : "");
     return decodeURIComponent(candidate || "").trim();
   }, [params]);
 
-  const rawPerms =
-    ((user as any)?.permissions as string[] | null) ??
-    ((user as any)?.Permissions as string[] | null) ??
-    [];
+  const rawPerms = ((user as any)?.permissions as string[] | null) ?? ((user as any)?.Permissions as string[] | null) ?? [];
   const userPerms = Array.isArray(rawPerms) ? rawPerms.map((p) => String(p).toLowerCase()) : [];
-  const rawRoles =
-    ((user as any)?.roles as string[] | null) ??
-    ((user as any)?.Roles as string[] | null) ??
-    [];
+  const rawRoles = ((user as any)?.roles as string[] | null) ?? ((user as any)?.Roles as string[] | null) ?? [];
   const rolesLower = Array.isArray(rawRoles) ? rawRoles.map((r) => String(r).toLowerCase()) : [];
-  const canEditEmployee =
-    userPerms.includes("employee.edit") ||
-    userPerms.includes("employee.create") ||
-    rolesLower.includes("admin");
-  const canDeleteEmployee =
-    userPerms.includes("employee.delete") ||
-    rolesLower.includes("admin");
+
+  const canEditEmployee = userPerms.includes("employee.edit") || userPerms.includes("employee.create") || rolesLower.includes("admin");
+  const canDeleteEmployee = userPerms.includes("employee.delete") || rolesLower.includes("admin");
+
   const disabled = userLoading || !canEditEmployee || loading || saving;
-  const formatFullName = (m: ManagerOption) =>
-    [m.firstName, m.middleName, m.lastName].filter(Boolean).join(" ");
+  const formatFullName = (m: ManagerOption) => [m.firstName, m.middleName, m.lastName].filter(Boolean).join(" ");
 
   const loadEmployee = async (idFromRoute: string) => {
     if (!idFromRoute) {
       setError("Invalid employee id");
       setEmployee(null);
       setForm(emptyForm);
+      setShowDeleteReason(false);
       return;
     }
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${EMPLOYEES_API}/${idFromRoute}`, {
-        method: "GET",
-        credentials: "include",
-      });
+      const res = await fetch(`${EMPLOYEES_API}/${idFromRoute}`, { method: "GET", credentials: "include" });
       if (res.status === 404) {
         router.push("/employees");
         return;
       }
-      if (!res.ok) {
-        throw new Error(`Failed to load employee (status ${res.status})`);
-      }
+      if (!res.ok) throw new Error(`Failed to load employee (status ${res.status})`);
       const raw = (await res.json()) as ApiEnvelope;
       const dto = getPayload(raw);
       if (!dto) {
-        const msg =
-          raw.error?.errorMessage ||
-          raw.error?.ErrorMessage ||
-          raw.Error?.errorMessage ||
-          raw.Error?.ErrorMessage ||
-          "No employee data returned";
+        const msg = raw.error?.errorMessage || raw.error?.ErrorMessage || raw.Error?.errorMessage || raw.Error?.ErrorMessage || "No employee data returned";
         throw new Error(msg);
       }
       const id = getEmployeeId(dto);
@@ -185,16 +164,8 @@ export default function EmployeeById() {
         pick(dto?.manager, "employeeId", "EmployeeId", "id", "Id") ??
         pick(dto?.Manager, "employeeId", "EmployeeId", "id", "Id")
       );
-      const positionId = toStr(
-        pick(dto, "positionId", "PositionId") ??
-        pick(dto?.position, "id", "Id") ??
-        pick(dto?.Position, "id", "Id")
-      );
-      const roleId = toStr(
-        pick(dto, "roleId", "RoleId") ??
-        pick(dto?.role, "id", "Id") ??
-        pick(dto?.Role, "id", "Id")
-      );
+      const positionId = toStr(pick(dto, "positionId", "PositionId") ?? pick(dto?.position, "id", "Id") ?? pick(dto?.Position, "id", "Id"));
+      const roleId = toStr(pick(dto, "roleId", "RoleId") ?? pick(dto?.role, "id", "Id") ?? pick(dto?.Role, "id", "Id"));
       const workStartDateRaw = pick<string>(dto, "workStartDate", "WorkStartDate") ?? "";
       const workStartDate = workStartDateRaw ? String(workStartDateRaw).substring(0, 10) : "";
       setEmployee({ id, originalStatus });
@@ -213,9 +184,12 @@ export default function EmployeeById() {
         statusReason: "",
         deleteReason: "",
       }));
+      setShowDeleteReason(false);
+      setDeleteArmedUntil(null);
     } catch (e: any) {
       setEmployee(null);
       setForm(emptyForm);
+      setShowDeleteReason(false);
       setError(e?.message || "Unexpected error while loading employee");
     } finally {
       setLoading(false);
@@ -224,19 +198,13 @@ export default function EmployeeById() {
 
   const loadPositions = async () => {
     try {
-      const res = await fetch(`${POSITIONS_API}?perPage=100&page=1`, {
-        method: "GET",
-        credentials: "include",
-      });
+      const res = await fetch(`${POSITIONS_API}?perPage=100&page=1`, { method: "GET", credentials: "include" });
       if (!res.ok) return;
       const raw = (await res.json()) as ApiEnvelope;
       const payload = getPayload(raw);
       const arr = payload?.data ?? payload?.Data ?? [];
       const mapped: PositionOption[] = (arr ?? [])
-        .map((p: any) => ({
-          id: toStr(pick(p, "id", "Id")),
-          name: toStr(pick(p, "name", "Name")),
-        }))
+        .map((p: any) => ({ id: toStr(pick(p, "id", "Id")), name: toStr(pick(p, "name", "Name")) }))
         .filter((p: PositionOption) => Boolean(p.id));
       setPositions(mapped);
     } catch { }
@@ -244,18 +212,12 @@ export default function EmployeeById() {
 
   const loadRoles = async () => {
     try {
-      const res = await fetch(ROLES_API, {
-        method: "GET",
-        credentials: "include",
-      });
+      const res = await fetch(ROLES_API, { method: "GET", credentials: "include" });
       if (!res.ok) return;
       const raw = (await res.json()) as ApiEnvelope;
       const arr = getPayload(raw) ?? [];
       const mapped: RoleOption[] = (arr ?? [])
-        .map((r: any) => ({
-          id: toStr(pick(r, "id", "Id")),
-          name: toStr(pick(r, "name", "Name")),
-        }))
+        .map((r: any) => ({ id: toStr(pick(r, "id", "Id")), name: toStr(pick(r, "name", "Name")) }))
         .filter((r: RoleOption) => Boolean(r.id));
       setRoles(mapped);
     } catch { }
@@ -263,10 +225,7 @@ export default function EmployeeById() {
 
   const loadManagers = async () => {
     try {
-      const res = await fetch(`${EMPLOYEES_API}?perPage=1000&page=1&status=Active`, {
-        method: "GET",
-        credentials: "include",
-      });
+      const res = await fetch(`${EMPLOYEES_API}?perPage=1000&page=1&status=Active`, { method: "GET", credentials: "include" });
       if (!res.ok) return;
       const raw = (await res.json()) as ApiEnvelope;
       const payload = getPayload(raw);
@@ -288,6 +247,7 @@ export default function EmployeeById() {
       setError("Invalid employee id");
       setEmployee(null);
       setForm(emptyForm);
+      setShowDeleteReason(false);
       return;
     }
     void loadEmployee(employeeIdFromRoute);
@@ -298,12 +258,18 @@ export default function EmployeeById() {
 
   const handleBack = () => router.push("/employees");
 
+  const requireFireReason = employee && toUiStatus(employee.originalStatus) === "Active" && form.status === "Fired";
+
   const handleSave = async () => {
     if (!canEditEmployee || !employee?.id) return;
     try {
       setSaving(true);
       setSaveError(null);
       setSaveSuccess(null);
+
+      const prevUi = toUiStatus(employee.originalStatus);
+      const nextUi = form.status;
+
       const body = {
         employeeId: employee.id,
         firstName: form.firstName,
@@ -316,47 +282,50 @@ export default function EmployeeById() {
         positionId: form.positionId || null,
         roleId: form.roleId || null,
       };
+
+      if (prevUi === "Fired" && nextUi === "Active") {
+        const rehRes = await fetch(`${EMPLOYEES_API}/${employee.id}/rehire`, {
+          method: "PUT",
+          credentials: "include",
+          headers: { Accept: "*/*" },
+        });
+        if (!rehRes.ok) throw new Error(await readErrorMessage(rehRes, `Failed to rehire (status ${rehRes.status})`));
+
+        const res = await fetch(`${EMPLOYEES_API}/${employee.id}`, {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json", Accept: "*/*" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(await readErrorMessage(res, `Failed to save employee (status ${res.status})`));
+
+        setSaveSuccess("Changes saved");
+        await loadEmployee(employee.id);
+        return;
+      }
+
       const res = await fetch(`${EMPLOYEES_API}/${employee.id}`, {
         method: "PUT",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "*/*",
-        },
+        headers: { "Content-Type": "application/json", Accept: "*/*" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) {
-        throw new Error(await readErrorMessage(res, `Failed to save employee (status ${res.status})`));
-      }
-      const nextStatus: EmployeeStatus = form.status;
-      if (employee.originalStatus !== nextStatus && employee.originalStatus !== "Unactivated") {
-        if (nextStatus === "Fired") {
-          const fireReason = toStr(form.statusReason) || "Fired by admin";
+      if (!res.ok) throw new Error(await readErrorMessage(res, `Failed to save employee (status ${res.status})`));
+
+      if (prevUi !== nextUi && employee.originalStatus !== "Unactivated") {
+        if (nextUi === "Fired") {
+          const fireReason = toStr(form.statusReason);
+          if (!fireReason) throw new Error("Reason must not be empty.");
           const fireRes = await fetch(`${EMPLOYEES_API}/${employee.id}/fire`, {
             method: "PUT",
             credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "*/*",
-            },
+            headers: { "Content-Type": "application/json", Accept: "*/*" },
             body: JSON.stringify({ reason: fireReason, employeeId: employee.id }),
           });
-          if (!fireRes.ok) {
-            throw new Error(await readErrorMessage(fireRes, `Failed to change status (status ${fireRes.status})`));
-          }
-        } else if (nextStatus === "Active") {
-          const rehRes = await fetch(`${EMPLOYEES_API}/${employee.id}/rehire`, {
-            method: "PUT",
-            credentials: "include",
-            headers: {
-              Accept: "*/*",
-            },
-          });
-          if (!rehRes.ok) {
-            throw new Error(await readErrorMessage(rehRes, `Failed to change status (status ${rehRes.status})`));
-          }
+          if (!fireRes.ok) throw new Error(await readErrorMessage(fireRes, `Failed to fire (status ${fireRes.status})`));
         }
       }
+
       setSaveSuccess("Changes saved");
       await loadEmployee(employee.id);
     } catch (e: any) {
@@ -372,25 +341,22 @@ export default function EmployeeById() {
     const armed = deleteArmedUntil !== null && now < deleteArmedUntil;
     if (!armed) {
       setDeleteArmedUntil(now + 7000);
+      setShowDeleteReason(true);
       return;
     }
     try {
       setSaving(true);
       setSaveError(null);
       setSaveSuccess(null);
-      const delReason = toStr(form.deleteReason) || "Deleted by admin";
+      const delReason = toStr(form.deleteReason);
+      if (!delReason) throw new Error("Delete reason must not be empty.");
       const res = await fetch(`${EMPLOYEES_API}/${employee.id}`, {
         method: "DELETE",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "*/*",
-        },
+        headers: { "Content-Type": "application/json", Accept: "*/*" },
         body: JSON.stringify({ reason: delReason, employeeId: employee.id }),
       });
-      if (!res.ok) {
-        throw new Error(await readErrorMessage(res, `Failed to delete employee (status ${res.status})`));
-      }
+      if (!res.ok) throw new Error(await readErrorMessage(res, `Failed to delete employee (status ${res.status})`));
       router.push("/employees");
     } catch (e: any) {
       setSaveError(e?.message || "Failed to delete employee");
@@ -443,9 +409,7 @@ export default function EmployeeById() {
               <input
                 className="accInput"
                 value={form.firstName}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, firstName: e.target.value }))
-                }
+                onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))}
                 disabled={disabled}
               />
             </div>
@@ -456,9 +420,7 @@ export default function EmployeeById() {
               <input
                 className="accInput"
                 value={form.middleName}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, middleName: e.target.value }))
-                }
+                onChange={(e) => setForm((p) => ({ ...p, middleName: e.target.value }))}
                 disabled={disabled}
               />
             </div>
@@ -469,9 +431,7 @@ export default function EmployeeById() {
               <input
                 className="accInput"
                 value={form.lastName}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, lastName: e.target.value }))
-                }
+                onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))}
                 disabled={disabled}
               />
             </div>
@@ -483,9 +443,7 @@ export default function EmployeeById() {
                 className="accInput"
                 type="email"
                 value={form.email}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, email: e.target.value }))
-                }
+                onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                 disabled={disabled}
               />
             </div>
@@ -496,9 +454,7 @@ export default function EmployeeById() {
               <input
                 className="accInput"
                 value={form.phoneNumber}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, phoneNumber: e.target.value }))
-                }
+                onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))}
                 disabled={disabled}
               />
             </div>
@@ -510,9 +466,7 @@ export default function EmployeeById() {
                 className="accInput"
                 type="date"
                 value={form.workStartDate}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, workStartDate: e.target.value }))
-                }
+                onChange={(e) => setForm((p) => ({ ...p, workStartDate: e.target.value }))}
                 disabled={disabled}
               />
             </div>
@@ -523,9 +477,7 @@ export default function EmployeeById() {
               <select
                 className="accInput"
                 value={form.managerId}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, managerId: e.target.value }))
-                }
+                onChange={(e) => setForm((p) => ({ ...p, managerId: e.target.value }))}
                 disabled={disabled}
               >
                 <option value="">
@@ -545,9 +497,7 @@ export default function EmployeeById() {
               <select
                 className="accInput"
                 value={form.positionId}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, positionId: e.target.value }))
-                }
+                onChange={(e) => setForm((p) => ({ ...p, positionId: e.target.value }))}
                 disabled={disabled}
               >
                 <option value="">
@@ -567,9 +517,7 @@ export default function EmployeeById() {
               <select
                 className="accInput"
                 value={form.roleId}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, roleId: e.target.value }))
-                }
+                onChange={(e) => setForm((p) => ({ ...p, roleId: e.target.value }))}
                 disabled={disabled}
               >
                 <option value="">
@@ -589,13 +537,15 @@ export default function EmployeeById() {
               <select
                 className="accInput"
                 value={form.status}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const next = e.target.value as UiStatus;
+                  const prev = employee ? toUiStatus(employee.originalStatus) : "Active";
                   setForm((p) => ({
                     ...p,
-                    status: e.target.value as UiStatus,
-                    statusReason: e.target.value === "Fired" ? p.statusReason : "",
-                  }))
-                }
+                    status: next,
+                    statusReason: prev === "Active" && next === "Fired" ? p.statusReason : "",
+                  }));
+                }}
                 disabled={disabled}
               >
                 <option value="Active">
@@ -606,7 +556,7 @@ export default function EmployeeById() {
                 </option>
               </select>
             </div>
-            {form.status === "Fired" && (
+            {requireFireReason && (
               <div className="accRow">
                 <label className="accLable">
                   Reason
@@ -614,15 +564,13 @@ export default function EmployeeById() {
                 <input
                   className="accInput"
                   value={form.statusReason}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, statusReason: e.target.value }))
-                  }
+                  onChange={(e) => setForm((p) => ({ ...p, statusReason: e.target.value }))}
                   disabled={disabled}
                   placeholder="Type reason"
                 />
               </div>
             )}
-            {canDeleteEmployee && (
+            {canDeleteEmployee && showDeleteReason && (
               <div className="accRow">
                 <label className="accLable">
                   Delete reason
@@ -630,9 +578,7 @@ export default function EmployeeById() {
                 <input
                   className="accInput"
                   value={form.deleteReason}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, deleteReason: e.target.value }))
-                  }
+                  onChange={(e) => setForm((p) => ({ ...p, deleteReason: e.target.value }))}
                   disabled={saving || loading || !employee?.id}
                   placeholder="Type reason for deletion"
                 />
@@ -643,7 +589,7 @@ export default function EmployeeById() {
                 <button
                   className="profileButtonPrimary"
                   onClick={handleSave}
-                  disabled={disabled || !employee?.id || (form.status === "Fired" && !toStr(form.statusReason))}
+                  disabled={disabled || !employee?.id || (requireFireReason && !toStr(form.statusReason))}
                 >
                   {saving ? "Saving..." : "Save changes"}
                 </button>
@@ -653,7 +599,7 @@ export default function EmployeeById() {
                   <button
                     className="profileButtonSecondary"
                     onClick={handleDelete}
-                    disabled={saving || loading || !employee?.id}
+                    disabled={saving || loading || !employee?.id || (showDeleteHint && !toStr(form.deleteReason))}
                     style={{ borderColor: "#ff7a7a", color: "#ff7a7a" }}
                   >
                     {saving ? "Processing..." : showDeleteHint ? "Click again to delete" : "Delete employee"}
