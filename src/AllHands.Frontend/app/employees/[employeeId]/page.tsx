@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import TopBar from "@/components/TopBar";
 import { useCurrentUser } from "@/hooks/currentUser";
@@ -38,15 +39,15 @@ type EmployeeByIdApiResponse = {
   Error?: ErrorResponse | null;
 };
 
-type PositionsApiInnerDto = { id: string; name: string };
-type PositionsApiData = { data: PositionsApiInnerDto[]; totalCount: number };
+type PositionsApiInnerDto = { id?: string; Id?: string; name?: string; Name?: string };
+type PositionsApiData = { data?: PositionsApiInnerDto[]; Data?: PositionsApiInnerDto[]; totalCount?: number; TotalCount?: number };
 type PositionsApiResponse = { data?: PositionsApiData | null; Data?: PositionsApiData | null };
 
-type RolesApiInnerDto = { id: string; name: string };
+type RolesApiInnerDto = { id?: string; Id?: string; name?: string; Name?: string };
 type RolesApiResponse = { data?: RolesApiInnerDto[] | null; Data?: RolesApiInnerDto[] | null };
 
-type ManagersApiEmployee = { id: string; firstName: string; middleName?: string | null; lastName: string };
-type ManagersApiData = { data: ManagersApiEmployee[]; totalCount: number };
+type ManagersApiEmployee = { id?: string; Id?: string; firstName?: string; FirstName?: string; middleName?: string | null; MiddleName?: string | null; lastName?: string; LastName?: string };
+type ManagersApiData = { data?: ManagersApiEmployee[]; Data?: ManagersApiEmployee[]; totalCount?: number; TotalCount?: number };
 type ManagersApiResponse = { data?: ManagersApiData | null; Data?: ManagersApiData | null };
 
 type SaveErrorPayload = { error?: ErrorResponse | null; Error?: ErrorResponse | null };
@@ -74,21 +75,24 @@ export default function EmployeeById() {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+
+  const [deleteArmedUntil, setDeleteArmedUntil] = useState<number | null>(null);
 
   const rawPerms =
     ((user as any)?.permissions as string[] | null) ??
     ((user as any)?.Permissions as string[] | null) ??
     [];
-  const userPerms = Array.isArray(rawPerms) ? rawPerms.map((p) => p.toLowerCase()) : [];
+  const userPerms = Array.isArray(rawPerms) ? rawPerms.map((p) => String(p).toLowerCase()) : [];
 
   const rawRoles =
     ((user as any)?.roles as string[] | null) ??
     ((user as any)?.Roles as string[] | null) ??
     [];
-  const rolesLower = Array.isArray(rawRoles) ? rawRoles.map((r) => r.toLowerCase()) : [];
+  const rolesLower = Array.isArray(rawRoles) ? rawRoles.map((r) => String(r).toLowerCase()) : [];
 
   const canEditEmployee =
     userPerms.includes("employee.edit") ||
@@ -99,23 +103,44 @@ export default function EmployeeById() {
     userPerms.includes("employee.delete") ||
     rolesLower.includes("admin");
 
-  const resolveEmployeeId = () => {
+  const disabled = userLoading || !canEditEmployee || loading || saving;
+  const statusDisabled = disabled || status === "Unactivated";
+
+  const employeeIdFromRoute = useMemo(() => {
     const p = params as any;
-    if (typeof p?.id === "string") return p.id;
-    if (typeof p?.employeeId === "string") return p.employeeId;
-    if (typeof window !== "undefined") {
-      const parts = window.location.pathname.split("/");
-      const last = parts[parts.length - 1];
-      if (last) return last;
-    }
-    return "";
+    const candidate =
+      (typeof p?.id === "string" ? p.id : "") ||
+      (typeof p?.employeeId === "string" ? p.employeeId : "") ||
+      (typeof window !== "undefined"
+        ? (window.location.pathname.split("/").filter(Boolean).slice(-1)[0] ?? "")
+        : "");
+    return decodeURIComponent(candidate || "").trim();
+  }, [params]);
+
+  const formatFullName = (m: ManagerOption) => [m.firstName, m.middleName, m.lastName].filter(Boolean).join(" ");
+
+  const readErrorMessage = async (res: Response, fallback: string) => {
+    let message = fallback;
+    try {
+      const text = await res.text();
+      if (!text) return message;
+      try {
+        const json = JSON.parse(text) as SaveErrorPayload;
+        message =
+          json.error?.errorMessage ||
+          json.error?.ErrorMessage ||
+          json.Error?.errorMessage ||
+          json.Error?.ErrorMessage ||
+          text;
+      } catch {
+        message = text;
+      }
+    } catch { }
+    return message;
   };
 
-  const formatFullName = (m: ManagerOption) =>
-    [m.firstName, m.middleName, m.lastName].filter(Boolean).join(" ");
-
-  const loadEmployee = async (employeeId: string) => {
-    if (!employeeId) {
+  const loadEmployee = async (idFromRoute: string) => {
+    if (!idFromRoute) {
       setError("Invalid employee id");
       setEmployee(null);
       return;
@@ -123,7 +148,7 @@ export default function EmployeeById() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${EMPLOYEES_API}/${employeeId}`, {
+      const res = await fetch(`${EMPLOYEES_API}/${idFromRoute}`, {
         method: "GET",
         credentials: "include",
       });
@@ -131,10 +156,12 @@ export default function EmployeeById() {
         router.push("/employees");
         return;
       }
-      if (!res.ok) throw new Error("Failed to load employee");
+      if (!res.ok) {
+        throw new Error(`Failed to load employee (status ${res.status})`);
+      }
       const raw = (await res.json()) as EmployeeByIdApiResponse;
-      const rawDto = raw.data ?? raw.Data ?? null;
-      if (!rawDto) {
+      const dto = raw.data ?? raw.Data ?? null;
+      if (!dto) {
         const msg =
           raw.error?.errorMessage ||
           raw.error?.ErrorMessage ||
@@ -143,18 +170,44 @@ export default function EmployeeById() {
           "No employee data returned";
         throw new Error(msg);
       }
+      const id = String(dto.id ?? dto.Id ?? "").trim();
+      if (!id) throw new Error("Employee id is missing in API response");
       const normalized: EmployeeDetailsDto = {
-        id: rawDto.id,
-        firstName: rawDto.firstName ?? "",
-        middleName: rawDto.middleName ?? null,
-        lastName: rawDto.lastName ?? "",
-        email: rawDto.email ?? "",
-        phoneNumber: rawDto.phoneNumber ?? null,
-        workStartDate: rawDto.workStartDate ?? null,
-        status: (rawDto.status as EmployeeStatus) ?? "Undefined",
-        managerId: (rawDto.managerId ?? rawDto.manager?.id ?? null) ?? null,
-        positionId: (rawDto.positionId ?? rawDto.position?.id ?? null) ?? null,
-        roleId: (rawDto.roleId ?? rawDto.role?.id ?? null) ?? null,
+        id,
+        firstName: String(dto.firstName ?? dto.FirstName ?? ""),
+        middleName: (dto.middleName ?? dto.MiddleName ?? null) as string | null,
+        lastName: String(dto.lastName ?? dto.LastName ?? ""),
+        email: String(dto.email ?? dto.Email ?? ""),
+        phoneNumber: (dto.phoneNumber ?? dto.PhoneNumber ?? null) as string | null,
+        workStartDate: (dto.workStartDate ?? dto.WorkStartDate ?? null) as string | null,
+        status: String(dto.status ?? dto.Status ?? "Undefined") as EmployeeStatus,
+        managerId: String(
+          dto.managerId ??
+          dto.ManagerId ??
+          dto.manager?.id ??
+          dto.manager?.Id ??
+          dto.Manager?.id ??
+          dto.Manager?.Id ??
+          ""
+        ).trim() || null,
+        positionId: String(
+          dto.positionId ??
+          dto.PositionId ??
+          dto.position?.id ??
+          dto.position?.Id ??
+          dto.Position?.id ??
+          dto.Position?.Id ??
+          ""
+        ).trim() || null,
+        roleId: String(
+          dto.roleId ??
+          dto.RoleId ??
+          dto.role?.id ??
+          dto.role?.Id ??
+          dto.Role?.id ??
+          dto.Role?.Id ??
+          ""
+        ).trim() || null,
       };
       setEmployee(normalized);
       setFirstName(normalized.firstName);
@@ -162,9 +215,7 @@ export default function EmployeeById() {
       setLastName(normalized.lastName);
       setEmail(normalized.email);
       setPhoneNumber(normalized.phoneNumber ?? "");
-      setWorkStartDate(
-        normalized.workStartDate ? normalized.workStartDate.substring(0, 10) : ""
-      );
+      setWorkStartDate(normalized.workStartDate ? String(normalized.workStartDate).substring(0, 10) : "");
       setManagerId(normalized.managerId ?? "");
       setPositionId(normalized.positionId ?? "");
       setRoleId(normalized.roleId ?? "");
@@ -179,96 +230,96 @@ export default function EmployeeById() {
 
   const loadPositions = async () => {
     try {
-      const url = `${POSITIONS_API}?perPage=100&page=1`;
-      const res = await fetch(url, { method: "GET", credentials: "include" });
-      if (!res.ok) return;
-      const raw = (await res.json()) as PositionsApiResponse;
-      const payload = raw.data ?? raw.Data ?? null;
-      if (!payload) return;
-      const mapped: PositionOption[] = (payload.data ?? []).map((p) => ({
-        id: p.id,
-        name: p.name,
-      }));
-      setPositions(mapped);
-    } catch {}
-  };
-
-  const loadRoles = async () => {
-    try {
-      const res = await fetch(ROLES_API, {
+      const res = await fetch(`${POSITIONS_API}?perPage=100&page=1`, {
         method: "GET",
         credentials: "include",
       });
       if (!res.ok) return;
+      const raw = (await res.json()) as PositionsApiResponse;
+      const payload = raw.data ?? raw.Data ?? null;
+      const arr = payload?.data ?? payload?.Data ?? [];
+      const mapped: PositionOption[] = (arr ?? [])
+        .map((p) => ({
+          id: String(p.id ?? p.Id ?? "").trim(),
+          name: String(p.name ?? p.Name ?? "").trim(),
+        }))
+        .filter((p) => Boolean(p.id));
+      setPositions(mapped);
+    } catch { }
+  };
+
+  const loadRoles = async () => {
+    try {
+      const res = await fetch(ROLES_API, { method: "GET", credentials: "include" });
+      if (!res.ok) return;
       const raw = (await res.json()) as RolesApiResponse;
-      const arr = raw.data ?? raw.Data ?? null;
-      if (!arr) return;
-      const mapped: RoleOption[] = (arr ?? []).map((r) => ({
-        id: r.id,
-        name: r.name,
-      }));
+      const arr = raw.data ?? raw.Data ?? [];
+      const mapped: RoleOption[] = (arr ?? [])
+        .map((r) => ({
+          id: String(r.id ?? r.Id ?? "").trim(),
+          name: String(r.name ?? r.Name ?? "").trim(),
+        }))
+        .filter((r) => Boolean(r.id));
       setRoles(mapped);
-    } catch {}
+    } catch { }
   };
 
   const loadManagers = async () => {
     try {
-      const url = `${EMPLOYEES_API}?perPage=1000&page=1&status=Active`;
-      const res = await fetch(url, { method: "GET", credentials: "include" });
+      const res = await fetch(`${EMPLOYEES_API}?perPage=1000&page=1&status=Active`, {
+        method: "GET",
+        credentials: "include",
+      });
       if (!res.ok) return;
       const raw = (await res.json()) as ManagersApiResponse;
       const payload = raw.data ?? raw.Data ?? null;
-      if (!payload) return;
-      const mapped: ManagerOption[] = (payload.data ?? []).map((e) => ({
-        id: e.id,
-        firstName: e.firstName,
-        middleName: e.middleName ?? null,
-        lastName: e.lastName,
-      }));
+      const arr = payload?.data ?? payload?.Data ?? [];
+      const mapped: ManagerOption[] = (arr ?? [])
+        .map((e) => ({
+          id: String(e.id ?? e.Id ?? "").trim(),
+          firstName: String(e.firstName ?? e.FirstName ?? ""),
+          middleName: (e.middleName ?? e.MiddleName ?? null) as string | null,
+          lastName: String(e.lastName ?? e.LastName ?? ""),
+        }))
+        .filter((m) => Boolean(m.id));
       setManagers(mapped);
-    } catch {}
+    } catch { }
   };
 
   useEffect(() => {
-    const employeeId = resolveEmployeeId();
-    if (!employeeId) {
+    if (!employeeIdFromRoute) {
       setError("Invalid employee id");
       setEmployee(null);
       return;
     }
-    void loadEmployee(employeeId);
+    void loadEmployee(employeeIdFromRoute);
     void loadPositions();
     void loadRoles();
     void loadManagers();
-  }, [params]);
+  }, [employeeIdFromRoute]);
 
   const handleBack = () => {
     router.push("/employees");
   };
 
   const handleSave = async () => {
-    if (!canEditEmployee || !employee) return;
+    if (!canEditEmployee || !employee?.id) return;
     try {
       setSaving(true);
       setSaveError(null);
       setSaveSuccess(null);
-
       const body = {
-        positionId: positionId || null,
-        managerId: managerId || null,
-        email,
         firstName,
         middleName: middleName || null,
         lastName,
+        email,
         phoneNumber: phoneNumber || null,
         workStartDate: workStartDate || null,
+        managerId: managerId || null,
+        positionId: positionId || null,
         roleId: roleId || null,
-        employeeId: employee.id,
       };
-
       const url = `${EMPLOYEES_API}/${employee.id}`;
-      console.log("PUT employee", url, body);
-
       const res = await fetch(url, {
         method: "PUT",
         credentials: "include",
@@ -278,62 +329,28 @@ export default function EmployeeById() {
         },
         body: JSON.stringify(body),
       });
-
       if (!res.ok) {
-        let message = `Failed to save employee (status ${res.status})`;
-        try {
-          const text = await res.text();
-          if (text) {
-            try {
-              const json = JSON.parse(text) as SaveErrorPayload;
-              const msg =
-                json.error?.errorMessage ||
-                json.error?.ErrorMessage ||
-                json.Error?.errorMessage ||
-                json.Error?.ErrorMessage;
-              if (msg) message = msg;
-              else message = text;
-            } catch {
-              message = text;
-            }
-          }
-        } catch {}
+        const message = await readErrorMessage(res, `Failed to save employee (status ${res.status})`);
         throw new Error(message);
       }
-
       if (employee.status !== status && employee.status !== "Unactivated") {
         if (status === "Fired") {
-          const fireBody = { reason: "", employeeId: employee.id };
-          const fireUrl = `${EMPLOYEES_API}/${employee.id}/fire`;
-          console.log("PUT fire", fireUrl, fireBody);
-          const fireRes = await fetch(fireUrl, {
+          const fireRes = await fetch(`${EMPLOYEES_API}/${employee.id}/fire`, {
             method: "PUT",
             credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "*/*",
-            },
-            body: JSON.stringify(fireBody),
+            headers: { "Content-Type": "application/json", Accept: "*/*" },
+            body: JSON.stringify({ reason: "" }),
           });
-          if (!fireRes.ok) {
-            throw new Error(`Failed to change status (status ${fireRes.status})`);
-          }
+          if (!fireRes.ok) throw new Error(`Failed to change status (status ${fireRes.status})`);
         } else if (status === "Active") {
-          const rehUrl = `${EMPLOYEES_API}/${employee.id}/rehire`;
-          console.log("PUT rehire", rehUrl);
-          const rehRes = await fetch(rehUrl, {
+          const rehRes = await fetch(`${EMPLOYEES_API}/${employee.id}/rehire`, {
             method: "PUT",
             credentials: "include",
-            headers: {
-              Accept: "*/*",
-            },
+            headers: { Accept: "*/*" },
           });
-          if (!rehRes.ok) {
-            throw new Error(`Failed to change status (status ${rehRes.status})`);
-          }
+          if (!rehRes.ok) throw new Error(`Failed to change status (status ${rehRes.status})`);
         }
       }
-
       setSaveSuccess("Changes saved");
       await loadEmployee(employee.id);
     } catch (e: any) {
@@ -344,41 +361,44 @@ export default function EmployeeById() {
   };
 
   const handleDelete = async () => {
-    if (!canDeleteEmployee || !employee) return;
-    const confirmed = window.confirm(
-      "Are you sure you want to permanently delete this employee?"
-    );
-    if (!confirmed) return;
+    if (!canDeleteEmployee || !employee?.id) return;
+    const now = Date.now();
+    const armed = deleteArmedUntil !== null && now < deleteArmedUntil;
+    if (!armed) {
+      setDeleteArmedUntil(now + 7000);
+      return;
+    }
     try {
       setSaving(true);
       setSaveError(null);
       setSaveSuccess(null);
-
       const url = `${EMPLOYEES_API}/${employee.id}`;
-      console.log("DELETE employee", url);
-
       const res = await fetch(url, {
         method: "DELETE",
         credentials: "include",
-        headers: {
-          Accept: "*/*",
-        },
+        headers: { Accept: "*/*" },
       });
-
+      // Якщо бекенд ВИМАГАЄ body, заміни блок вище на цей:
+      // const res = await fetch(url, {
+      //   method: "DELETE",
+      //   credentials: "include",
+      //   headers: { "Content-Type": "application/json", Accept: "*/*" },
+      //   body: JSON.stringify({ reason: "" }),
+      // });
       if (!res.ok) {
-        throw new Error(`Failed to delete employee (status ${res.status})`);
+        const message = await readErrorMessage(res, `Failed to delete employee (status ${res.status})`);
+        throw new Error(message);
       }
-
       router.push("/employees");
     } catch (e: any) {
       setSaveError(e?.message || "Failed to delete employee");
     } finally {
+      setDeleteArmedUntil(null);
       setSaving(false);
     }
   };
 
-  const disabled = userLoading || !canEditEmployee || loading || saving;
-  const statusDisabled = disabled || status === "Unactivated";
+  const showDeleteHint = deleteArmedUntil !== null && Date.now() < deleteArmedUntil;
 
   return (
     <div className="appBackground">
@@ -386,25 +406,15 @@ export default function EmployeeById() {
       <div className="pageWrapper">
         <div className="pageCard">
           <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h1 className="profileTitle">
-              {employee ? `${employee.firstName} ${employee.lastName}` : "Employee info"}
-            </h1>
+            <h1 className="profileTitle">{employee ? `${employee.firstName} ${employee.lastName}` : "Employee info"}</h1>
             <button className="profileButtonSecondary" onClick={handleBack}>
               Back to list
             </button>
           </div>
           {error && <div className="errorMessage">{error}</div>}
           {saveError && <div className="errorMessage">{saveError}</div>}
-          {saveSuccess && (
-            <div style={{ marginBottom: 16, color: "#90ee90", fontSize: 16 }}>
-              {saveSuccess}
-            </div>
-          )}
-          {loading && (
-            <div style={{ opacity: 0.8, marginTop: 10, marginBottom: 10 }}>
-              Loading...
-            </div>
-          )}
+          {saveSuccess && <div style={{ marginBottom: 16, color: "#90ee90", fontSize: 16 }}>{saveSuccess}</div>}
+          {loading && <div style={{ opacity: 0.8, marginTop: 10, marginBottom: 10 }}>Loading...</div>}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div className="accRow">
               <label className="accLable">First name</label>
@@ -474,19 +484,21 @@ export default function EmployeeById() {
             </div>
             <div className="profileButtons" style={{ marginTop: 24, display: "flex", gap: 16 }}>
               {canEditEmployee && (
-                <button className="profileButtonPrimary" onClick={handleSave} disabled={disabled || !employee}>
+                <button className="profileButtonPrimary" onClick={handleSave} disabled={disabled || !employee?.id}>
                   {saving ? "Saving..." : "Save changes"}
                 </button>
               )}
               {canDeleteEmployee && (
-                <button
-                  className="profileButtonSecondary"
-                  onClick={handleDelete}
-                  disabled={saving || loading || !employee}
-                  style={{ borderColor: "#ff7a7a", color: "#ff7a7a" }}
-                >
-                  {saving ? "Processing..." : "Delete employee"}
-                </button>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                  <button className="profileButtonSecondary" onClick={handleDelete} disabled={saving || loading || !employee?.id} style={{ borderColor: "#ff7a7a", color: "#ff7a7a" }}>
+                    {saving ? "Processing..." : showDeleteHint ? "Click again to delete" : "Delete employee"}
+                  </button>
+                  {showDeleteHint && (
+                    <div style={{ marginTop: 10, fontSize: 14, opacity: 0.85 }}>
+                      Are you sure? Click the button again within a few seconds to confirm deletion.
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>

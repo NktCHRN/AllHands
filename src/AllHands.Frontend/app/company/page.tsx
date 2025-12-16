@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import TopBar from "@/components/TopBar";
 
@@ -30,8 +29,8 @@ type TimeOffBalanceDto = {
   typeId?: string;
   typeName?: string;
   typeEmoji?: string | null;
-  remainingDays?: number;
-  usedDays?: number;
+  days?: number;
+  daysPerYear?: number;
 };
 
 type TimeOffRequestDto = {
@@ -59,18 +58,8 @@ export default function CompanyPage() {
     const middle = employee.middleName ?? employee.MiddleName ?? "";
     const last = employee.lastName ?? employee.LastName ?? "";
     const employeeName = [first, middle, last].filter(Boolean).join(" ") || undefined;
-    const typeName =
-      raw.typeName ??
-      raw.TypeName ??
-      type.name ??
-      type.Name ??
-      undefined;
-    const typeEmoji =
-      raw.typeEmoji ??
-      raw.TypeEmoji ??
-      type.emoji ??
-      type.Emoji ??
-      null;
+    const typeName = raw.typeName ?? raw.TypeName ?? type.name ?? type.Name ?? undefined;
+    const typeEmoji = raw.typeEmoji ?? raw.TypeEmoji ?? type.emoji ?? type.Emoji ?? null;
     const id = raw.id ?? raw.Id ?? "";
     const startDate = raw.startDate ?? raw.StartDate ?? "";
     const endDate = raw.endDate ?? raw.EndDate ?? "";
@@ -89,34 +78,29 @@ export default function CompanyPage() {
       const reqParams = new URLSearchParams();
       reqParams.set("Page", "1");
       reqParams.set("PerPage", "1000");
-      const requestsRes = await fetch(
-        `${EMPLOYEE_TIME_OFF_REQUESTS_API}?${reqParams.toString()}`,
-        opts
-      );
+      const requestsRes = await fetch(`${EMPLOYEE_TIME_OFF_REQUESTS_API}?${reqParams.toString()}`, opts);
       if (!companyRes.ok || !newsRes.ok || !balancesRes.ok) {
         setError("Failed to load data");
         return;
       }
-      const companyJson: any = await companyRes.json();
-      const newsJson: any = await newsRes.json();
-      const balancesJson: any = await balancesRes.json();
+      const companyJson = await companyRes.json();
+      const newsJson = await newsRes.json();
+      const balancesJson = await balancesRes.json();
       setCompany(companyJson.data ?? null);
       setNews(newsJson.data?.data ?? []);
       setBalances(balancesJson.data ?? []);
       let allRequests: TimeOffRequestDto[] = [];
       if (requestsRes.ok) {
-        const requestsJson: any = await requestsRes.json();
+        const requestsJson = await requestsRes.json();
         const root = requestsJson.data ?? requestsJson.Data ?? requestsJson;
         const payload = root.data ?? root.Data ?? root;
-        const rawItems: any[] =
+        const rawItems =
           payload.items ??
           payload.Items ??
           payload.data ??
           payload.Data ??
           (Array.isArray(payload) ? payload : []);
         allRequests = rawItems.map(normalizeRequest);
-      } else {
-        allRequests = [];
       }
       const today = new Date();
       const from = new Date(today);
@@ -161,9 +145,7 @@ export default function CompanyPage() {
                     </div>
                     <div>
                       <h1 className="companyName">{company?.name ?? "Company"}</h1>
-                      {company?.legalName && (
-                        <p className="companyLegalName">{company.legalName}</p>
-                      )}
+                      {company?.legalName && <p className="companyLegalName">{company.legalName}</p>}
                     </div>
                   </div>
                 </div>
@@ -172,9 +154,7 @@ export default function CompanyPage() {
                 <div className="companyCol">
                   <div className="companyCard">
                     <h2 className="companySectionTitle">Time-off balance</h2>
-                    {balances.length === 0 && (
-                      <p className="companyTextMuted">No data</p>
-                    )}
+                    {balances.length === 0 && <p className="companyTextMuted">No data</p>}
                     <ul className="companyList">
                       {balances.map((b) => (
                         <li key={b.typeId ?? b.typeName} className="companyListItem">
@@ -184,14 +164,12 @@ export default function CompanyPage() {
                                 {b.typeEmoji && <span>{b.typeEmoji} </span>}
                                 {b.typeName ?? "Time-off type"}
                               </p>
-                              {b.usedDays !== undefined && (
-                                <p className="companyPillMeta">
-                                  Used: {b.usedDays}
-                                </p>
+                              {b.daysPerYear !== undefined && (
+                                <p className="companyPillMeta">Year limit: {b.daysPerYear}</p>
                               )}
                             </div>
                             <div className="companyPillMeta">
-                              Remaining: {b.remainingDays ?? 0} days
+                              Remaining: {b.days ?? 0} days
                             </div>
                           </div>
                         </li>
@@ -203,16 +181,12 @@ export default function CompanyPage() {
                   <div className="companyCard">
                     <h2 className="companySectionTitle">Who is on time-off (±5 days)</h2>
                     {upcomingRequests.length === 0 && (
-                      <p className="companyTextMuted">
-                        No time-off in this period
-                      </p>
+                      <p className="companyTextMuted">No time-off in this period</p>
                     )}
                     <ul className="companyList">
                       {upcomingRequests.map((r) => (
                         <li key={r.id} className="companyListItem">
-                          <p className="companyPillTitle">
-                            {r.employeeName ?? "Employee"}
-                          </p>
+                          <p className="companyPillTitle">{r.employeeName ?? "Employee"}</p>
                           <p className="companyPillMeta">
                             {r.typeEmoji && <span>{r.typeEmoji} </span>}
                             {r.typeName ?? "Time-off"}
@@ -230,16 +204,12 @@ export default function CompanyPage() {
               <div className="companyRow">
                 <div className="companyCard">
                   <h2 className="companySectionTitle">News</h2>
-                  {news.length === 0 && (
-                    <p className="companyTextMuted">No news yet</p>
-                  )}
+                  {news.length === 0 && <p className="companyTextMuted">No news yet</p>}
                   <ul className="companyList">
                     {news.map((item) => (
                       <li key={item.id} className="companyListItem">
                         <div className="companyNewsHeader">
-                          <p className="companyNewsTitle">
-                            {item.text || "News item"}
-                          </p>
+                          <p className="companyNewsTitle">{item.text || "News item"}</p>
                           {item.createdAt && (
                             <span className="companyNewsDate">
                               {new Date(item.createdAt).toLocaleDateString()}
