@@ -11,11 +11,11 @@ public static class DependencyInjection
 {
     extension(WolverineOptions options)
     {
-        public void AddListener<TEvent>(string topic, string service)
+        public void AddListener<TEvent>(string environment, string topic, string service)
         {
             ArgumentNullException.ThrowIfNull(options);
         
-            var queue = GetQueueName(service, topic);
+            var queue = GetQueueName(environment, service, topic);
         
             options.ListenToSqsQueue(queue)
                 .ConfigureDeadLetterQueue(GetDeadLetterQueueName(queue));
@@ -25,12 +25,12 @@ public static class DependencyInjection
                 .SubscribeSqsQueue(queue, sub => sub.RawMessageDelivery = true);
         }
 
-        public void AddPublisher<TEvent>(string topic)
+        public void AddPublisher<TEvent>(string environment, string topic)
         {
             ArgumentNullException.ThrowIfNull(options);
         
             options.PublishMessage<TEvent>()
-                .ToSnsTopic(topic);
+                .ToSnsTopic(GetTopicName(environment, topic));
         }
     }
 
@@ -44,6 +44,7 @@ public static class DependencyInjection
         return services;
     }
 
-    private static string GetQueueName(string service, string topic) => $"{service}_{topic}";
+    private static string GetQueueName(string environment, string service, string topic) => $"{environment.ToLower()}_{service.ToLower()}_{topic}";
+    private static string GetTopicName(string environment, string topic) => $"{environment.ToLower()}_{topic}";
     private static string GetDeadLetterQueueName(string queue) => $"{queue}_errors";
 }
