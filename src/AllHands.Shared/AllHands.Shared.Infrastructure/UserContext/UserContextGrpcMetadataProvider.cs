@@ -10,6 +10,7 @@ public static class UserContextGrpcMetadataProvider
         {
             {UserContextHeaders.Id, userContext.Id.ToString()},
             {UserContextHeaders.CompanyId, userContext.CompanyId.ToString()},
+            {UserContextHeaders.EmployeeId, userContext.EmployeeId.ToString()},
             {UserContextHeaders.Email, userContext.Email},
             {UserContextHeaders.FirstName, userContext.FirstName},
             {UserContextHeaders.LastName, userContext.LastName},

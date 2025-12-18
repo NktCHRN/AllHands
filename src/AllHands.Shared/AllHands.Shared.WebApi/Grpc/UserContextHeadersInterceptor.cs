@@ -35,6 +35,11 @@ public sealed class UserContextHeadersInterceptor(IUserContextAccessor userConte
         {
             userContext.CompanyId = Guid.Parse(headers.GetValue(UserContextHeaders.CompanyId)!);
         }
+        
+        if (!string.IsNullOrEmpty(headers.GetValue(UserContextHeaders.EmployeeId)))
+        {
+            userContext.EmployeeId = Guid.Parse(headers.GetValue(UserContextHeaders.EmployeeId)!);
+        }
 
         userContext.FirstName = headers.GetValue(UserContextHeaders.FirstName) ?? string.Empty;
 

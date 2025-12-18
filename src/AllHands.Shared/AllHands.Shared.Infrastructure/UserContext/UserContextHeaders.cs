@@ -10,6 +10,7 @@ public static class UserContextHeaders
     public const string MiddleName = "x-middle-name";
     public const string LastName = "x-last-name";
     public const string Roles = "x-roles";
+    public const string EmployeeId = "x-employee-id";
     
     public const string Permissions = "x-permissions";
     public const string PermissionsBin = "x-permissions-bin";

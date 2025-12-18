@@ -1,5 +1,8 @@
 ﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace AllHands.Shared.WebApi.Rest;
 
@@ -31,5 +34,13 @@ public static class DependencyInjection
         });
         
         return services;
+    }
+
+    public static IConfigurationBuilder AddAllHandsSystemsManager(this IConfigurationBuilder configuration, IHostEnvironment environment, string serviceName)
+    {
+        return configuration.AddSystemsManager(opt =>
+        {
+            opt.Path = $"/AllHands/{serviceName}/{environment.EnvironmentName}";
+        });
     }
 }

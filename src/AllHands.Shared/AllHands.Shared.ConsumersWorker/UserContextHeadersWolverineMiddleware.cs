@@ -32,6 +32,11 @@ public sealed class UserContextHeadersWolverineMiddleware(IUserContextAccessor u
         {
             context.CompanyId = Guid.Parse(envelope.Headers[UserContextHeaders.CompanyId]!);
         }
+        
+        if (!string.IsNullOrEmpty(envelope.Headers[UserContextHeaders.EmployeeId]))
+        {
+            context.EmployeeId = Guid.Parse(envelope.Headers[UserContextHeaders.EmployeeId]!);
+        }
 
         if (!string.IsNullOrEmpty(envelope.Headers[UserContextHeaders.FirstName]))
         {

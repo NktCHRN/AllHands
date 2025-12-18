@@ -51,6 +51,12 @@ public sealed class UserContextHeadersMiddleware
         {
             userContext.CompanyId = companyId;
         }
+        
+        if (headers.TryGetValue(UserContextHeaders.EmployeeId, out var employeeIdValues) &&
+            Guid.TryParse(employeeIdValues.ToString(), out var employeeId))
+        {
+            userContext.EmployeeId = employeeId;
+        }
 
         if (headers.TryGetValue(UserContextHeaders.FirstName, out var firstNameValues))
         {

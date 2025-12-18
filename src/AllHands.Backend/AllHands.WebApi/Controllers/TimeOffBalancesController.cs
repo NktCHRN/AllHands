@@ -58,7 +58,7 @@ public sealed class TimeOffBalancesController(IMediator mediator, ICurrentUserSe
     }
     
     [HasPermission(Permissions.TimeOffBalanceEdit)]
-    [HttpPut("employees/{employeeId:guid}/balances/types/{typeId:guid}")]
+    [HttpPatch("employees/{employeeId:guid}/balances/types/{typeId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateBalance([FromRoute] Guid employeeId, [FromRoute] Guid typeId, [FromBody] UpdateBalanceCommand command, CancellationToken cancellationToken)
     {

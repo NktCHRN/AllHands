@@ -78,6 +78,7 @@ public class ContextAwareBus(IMessageBus messageBus, Domain.UserContext.UserCont
         
         options.Headers.Add(UserContextHeaders.Id, userContext.Id.ToString());
         options.Headers.Add(UserContextHeaders.CompanyId, userContext.CompanyId.ToString());
+        options.Headers.Add(UserContextHeaders.EmployeeId, userContext.EmployeeId.ToString());
         options.Headers.Add(UserContextHeaders.Email, userContext.Email);
         options.Headers.Add(UserContextHeaders.FirstName, userContext.FirstName);
         options.Headers.Add(UserContextHeaders.LastName, userContext.LastName);
