@@ -6,4 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\AllHands.Shared.Infrastructure\AllHands.Shared.Infrastructure.csproj" />
+    </ItemGroup>
+
 </Project>

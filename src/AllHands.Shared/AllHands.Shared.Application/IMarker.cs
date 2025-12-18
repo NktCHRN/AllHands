@@ -1,5 +1,6 @@
 ﻿namespace AllHands.Shared.Application;
 
-public class Class1
+public interface IMarker
 {
+    
 }

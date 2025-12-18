@@ -10,7 +10,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllHands.Shared.WebApi", "A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllHands.Shared.ConsumersWorker", "AllHands.Shared.ConsumersWorker\AllHands.Shared.ConsumersWorker.csproj", "{6DD1281C-3CF5-409D-B2FE-EDFCD6B58FCF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllHands.Shared.Communication", "AllHands.Shared.Communication\AllHands.Shared.Communication.csproj", "{DC340B30-205B-48BF-9D6A-A47D8BB65452}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllHands.Shared.Contracts", "AllHands.Shared.Contracts\AllHands.Shared.Contracts.csproj", "{520E72DC-070C-45E7-BACE-3D838BE7F738}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,9 +38,9 @@ Global
 		{6DD1281C-3CF5-409D-B2FE-EDFCD6B58FCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6DD1281C-3CF5-409D-B2FE-EDFCD6B58FCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6DD1281C-3CF5-409D-B2FE-EDFCD6B58FCF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DC340B30-205B-48BF-9D6A-A47D8BB65452}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DC340B30-205B-48BF-9D6A-A47D8BB65452}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DC340B30-205B-48BF-9D6A-A47D8BB65452}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DC340B30-205B-48BF-9D6A-A47D8BB65452}.Release|Any CPU.Build.0 = Release|Any CPU
+		{520E72DC-070C-45E7-BACE-3D838BE7F738}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{520E72DC-070C-45E7-BACE-3D838BE7F738}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{520E72DC-070C-45E7-BACE-3D838BE7F738}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{520E72DC-070C-45E7-BACE-3D838BE7F738}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

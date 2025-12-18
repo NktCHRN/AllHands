@@ -1,4 +1,4 @@
-﻿namespace AllHands.Shared.Infrastructure.Messaging;
+﻿namespace AllHands.Shared.Communication;
 
 public static class Topics
 {
