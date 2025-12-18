@@ -21,7 +21,7 @@ public static class DependencyInjection
                 .ConfigureDeadLetterQueue(GetDeadLetterQueueName(queue));
     
             options.PublishMessage<TEvent>()
-                .ToSnsTopic(topic)
+                .ToSnsTopic(GetTopicName(environment, topic))
                 .SubscribeSqsQueue(queue, sub => sub.RawMessageDelivery = true);
         }
 
