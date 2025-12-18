@@ -1,4 +1,4 @@
-﻿namespace AllHands.Shared.Communication;
+﻿namespace AllHands.Shared.Contracts.Messaging;
 
 public static class Services
 {
