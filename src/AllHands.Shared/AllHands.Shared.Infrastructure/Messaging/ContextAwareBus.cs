@@ -95,6 +95,8 @@ public class ContextAwareBus(IMessageBus messageBus, Domain.UserContext.UserCont
 
         options.Headers.Add(UserContextHeaders.Roles, JsonSerializer.Serialize(userContext.Roles));
         
+        options.TenantId = userContext.CompanyId.ToString();
+        
         return messageBus.PublishAsync(message, options);
     }
 
