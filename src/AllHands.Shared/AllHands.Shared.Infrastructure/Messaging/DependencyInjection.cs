@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Wolverine;
 using Wolverine.AmazonSns;
 using Wolverine.AmazonSqs;
@@ -32,6 +33,18 @@ public static class DependencyInjection
             options.PublishMessage<TEvent>()
                 .ToSnsTopic(GetTopicName(environment, topic));
         }
+    }
+    
+    public static IHostApplicationBuilder UseAllHandsWolverine(this IHostApplicationBuilder builder, Action<WolverineOptions>? configure)
+    {
+        return builder.UseWolverine(options =>
+        {
+            options.UseAmazonSqsTransport().AutoProvision();
+    
+            options.UseAmazonSnsTransport().AutoProvision();
+            
+            configure?.Invoke(options);
+        });
     }
 
     public static IServiceCollection AddContextAwareBus(this IServiceCollection services)
