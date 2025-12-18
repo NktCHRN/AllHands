@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using AllHands.Shared.Contracts.Messaging.Events;
 using AllHands.Shared.Infrastructure.UserContext;
 using AllHands.Shared.Infrastructure.Utilities;
 using Wolverine;
@@ -69,6 +70,11 @@ public class ContextAwareBus(IMessageBus messageBus, Domain.UserContext.UserCont
     public ValueTask PublishAsync<T>(T message, DeliveryOptions? options = null)
     {
         options ??= new DeliveryOptions();
+
+        if (message is IAllHandsEvent @event)
+        {
+            options.GroupId = @event.GroupId;
+        }
         
         options.Headers.Add(UserContextHeaders.Id, userContext.Id.ToString());
         options.Headers.Add(UserContextHeaders.CompanyId, userContext.CompanyId.ToString());
