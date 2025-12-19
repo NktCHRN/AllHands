@@ -2,7 +2,7 @@ using AllHands.Shared.ConsumersWorker;
 using AllHands.Shared.Contracts.Messaging;
 using AllHands.Shared.Contracts.Messaging.Events.Employees;
 using AllHands.Shared.Infrastructure.Messaging;
-using Wolverine;
+using Microsoft.Extensions.Hosting;
 
 var builder = Host.CreateApplicationBuilder(args);
 

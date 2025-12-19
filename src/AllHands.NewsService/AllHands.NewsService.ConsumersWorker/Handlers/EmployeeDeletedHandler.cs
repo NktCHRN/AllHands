@@ -1,6 +1,7 @@
 ﻿using AllHands.NewsService.Application.Features.Employees.Delete;
 using AllHands.Shared.Contracts.Messaging.Events.Employees;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace AllHands.NewsService.ConsumersWorker.Handlers;
 

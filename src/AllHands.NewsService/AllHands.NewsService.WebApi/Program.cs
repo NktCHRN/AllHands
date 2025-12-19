@@ -36,6 +36,18 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+var runMigrations = app.Configuration.GetValue<bool>("RUN_MIGRATIONS");
+var runMigrationsAndExit =  app.Configuration.GetValue<bool>("RUN_MIGRATIONS_AND_EXIT");
+if (runMigrations || runMigrationsAndExit)
+{
+    await MigrateAsync();
+}
+
+if (runMigrationsAndExit)
+{
+    return;
+}
+
 app.Run();
 return;
 
