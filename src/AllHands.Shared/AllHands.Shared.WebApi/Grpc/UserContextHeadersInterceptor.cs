@@ -6,7 +6,7 @@ using Grpc.Core.Interceptors;
 
 namespace AllHands.Shared.WebApi.Grpc;
 
-public sealed class UserContextHeadersInterceptor(IUserContextAccessor userContextAccessor) : Interceptor
+public sealed class UserContextHeadersInterceptor(IUserContextSetuper userContextSetuper) : Interceptor
 {
     public override async Task<TResponse> UnaryServerHandler<TRequest, TResponse>(
         TRequest request,
@@ -16,11 +16,7 @@ public sealed class UserContextHeadersInterceptor(IUserContextAccessor userConte
         // Read headers
         var headers = context.RequestHeaders;
 
-        var userContext = userContextAccessor.UserContext;
-        if (userContext == null)
-        {
-            return await continuation(request, context);
-        }
+        var userContext = new UserContext();
         
         if (!string.IsNullOrEmpty(headers.GetValue(UserContextHeaders.Id)))
         {
@@ -58,6 +54,8 @@ public sealed class UserContextHeadersInterceptor(IUserContextAccessor userConte
             userContext.Permissions = new BitArray(permissionsByteArray);
         }
 
+        userContextSetuper.Push(userContext);
+        
         return await continuation(request, context);
     }
 }

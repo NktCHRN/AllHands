@@ -17,8 +17,7 @@ public static class DependencyInjection
             Action<StoreOptions> configure
         )
         {
-            services.AddSingleton<ISessionFactory, TenantSessionFactory>();
-            return services.AddMarten(options =>
+            var addMartenResult = services.AddMarten(options =>
             {
                 // Establish the connection string to your Marten database
                 options.Connection(configuration.GetConnectionString("postgres")!);
@@ -41,6 +40,8 @@ public static class DependencyInjection
             
                 configure(options);
             });
+            services.AddSingleton<ISessionFactory, TenantSessionFactory>();
+            return addMartenResult;
         }
 
         public IServiceCollection AddRedis(IConfiguration configuration, string serviceName)

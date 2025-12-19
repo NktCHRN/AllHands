@@ -6,15 +6,11 @@ using Wolverine;
 
 namespace AllHands.Shared.ConsumersWorker;
 
-public sealed class UserContextHeadersWolverineMiddleware(IUserContextAccessor userContextAccessor)
+public sealed class UserContextHeadersWolverineMiddleware(IUserContextSetuper userContextSetuper)
 {
     public void Before(Envelope envelope)
     {
-        var context = userContextAccessor.UserContext;
-        if (context is null)
-        {
-            return;
-        }
+        var context = new UserContext();
         
         if (!string.IsNullOrEmpty(envelope.Headers[UserContextHeaders.Id]))
         {
@@ -60,5 +56,7 @@ public sealed class UserContextHeadersWolverineMiddleware(IUserContextAccessor u
             context.Permissions =
                 new BitArray(Convert.FromBase64String(envelope.Headers[UserContextHeaders.Permissions]!));
         }
+        
+        userContextSetuper.Push(context);
     }
 }

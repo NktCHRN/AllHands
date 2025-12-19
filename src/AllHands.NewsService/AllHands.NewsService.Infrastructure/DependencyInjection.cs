@@ -1,4 +1,5 @@
-﻿using AllHands.Shared.Infrastructure.Auth;
+﻿using AllHands.NewsService.Domain.Models;
+using AllHands.Shared.Infrastructure.Auth;
 using AllHands.Shared.Infrastructure.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,9 +13,10 @@ public static class DependencyInjection
     {
         services.AddAuth();
         
-        services.AddAllHandsMarten(configuration, _ =>
+        services.AddAllHandsMarten(configuration, opt =>
         {
-            
+            opt.Schema.For<Employee>();
+            opt.Schema.For<NewsPost>();
         }).IntegrateWithWolverine();
         
         return services;

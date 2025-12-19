@@ -2,7 +2,7 @@
 
 namespace AllHands.Shared.Domain.UserContext;
 
-public sealed class UserContext
+public sealed class UserContext : IUserContext
 {
     public Guid Id { get; set; }
     public string Email { get; set; } = string.Empty;
