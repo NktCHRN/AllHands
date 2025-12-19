@@ -15,8 +15,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Features\Employees\Delete\" />
-      <Folder Include="Features\Employees\Save\" />
       <Folder Include="Features\News\" />
     </ItemGroup>
 
