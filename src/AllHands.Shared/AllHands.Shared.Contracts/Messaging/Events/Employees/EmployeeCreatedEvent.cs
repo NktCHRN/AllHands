@@ -7,7 +7,6 @@ public sealed record EmployeeCreatedEvent(
     string LastName,
     string Email, 
     string? PhoneNumber,
-    EmployeeStatus Status,
     DateOnly WorkStartDate,
     Guid ManagerId,
     Guid PositionId,

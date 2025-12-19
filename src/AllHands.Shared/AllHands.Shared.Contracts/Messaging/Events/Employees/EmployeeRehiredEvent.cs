@@ -1,15 +1,7 @@
 ﻿namespace AllHands.Shared.Contracts.Messaging.Events.Employees;
 
-public sealed record EmployeeUpdatedEvent(
+public sealed record EmployeeRehiredEvent(
     Guid Id,
-    string FirstName,
-    string? MiddleName,
-    string LastName,
-    string Email, 
-    string? PhoneNumber,
-    DateOnly WorkStartDate,
-    Guid ManagerId,
-    Guid PositionId,
     Guid CompanyId,
     Guid UserId) : IAllHandsEvent
 {

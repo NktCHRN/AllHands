@@ -7,4 +7,5 @@ public static class Topics
     public const string Position = "position-events";
     public const string Role = "role-events";
     public const string User = "user-events";
+    public const string Invitation = "invitation-events";
 }
