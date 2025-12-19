@@ -213,11 +213,6 @@ export default function NewsManagment() {
               <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 10 }}>
                 New post
               </div>
-              {!loading && !canCreate && (
-                <div style={{ marginBottom: 12, color: "#ff7a7a" }}>
-                  You don’t have permission to create news (news.create).
-                </div>
-              )}
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 <input
                   className="inputText"
