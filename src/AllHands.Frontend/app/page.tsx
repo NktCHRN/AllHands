@@ -3,7 +3,7 @@
 import Image from "next/image";
 import TopBar from "@/components/TopBar";
 import { useCurrentUser } from "@/hooks/currentUser";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const COMPANY_API = `${API_ROOT}/api/v1/company`;
@@ -40,7 +40,9 @@ export default function HomePage() {
   const [company, setCompany] = useState<CompanyDto | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string>("");
+  const [err, setErr] = useState("");
+
+  const lastLogoUrlRef = useRef<string | null>(null);
 
   const token = useMemo(() => {
     const t =
@@ -55,12 +57,15 @@ export default function HomePage() {
       setCompany(null);
       setErr("");
       setLoading(false);
-      setLogoUrl(prev => {
+      setLogoUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
         return null;
       });
+      lastLogoUrlRef.current = null;
       return;
     }
+
+    if (userLoading) return;
 
     let cancelled = false;
 
@@ -72,36 +77,34 @@ export default function HomePage() {
         const headers: Record<string, string> = {};
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
-        const res = await fetch(COMPANY_API, {
-          method: "GET",
-          headers,
-          cache: "no-store",
-          credentials: "include",
-        });
-
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(`Company request failed: ${res.status} ${text}`);
-        }
-
-        const json = await res.json();
-        const dto: CompanyDto | null = json?.data ?? null;
-
-        let nextLogoUrl: string | null = null;
-
-        try {
-          const logoRes = await fetch(COMPANY_LOGO_API, {
+        const [companyRes, logoRes] = await Promise.all([
+          fetch(COMPANY_API, {
             method: "GET",
             headers,
             cache: "no-store",
             credentials: "include",
-          });
+          }),
+          fetch(COMPANY_LOGO_API, {
+            method: "GET",
+            headers,
+            cache: "no-store",
+            credentials: "include",
+          }).catch(() => null),
+        ]);
 
-          if (logoRes.ok) {
-            const blob = await logoRes.blob();
-            nextLogoUrl = URL.createObjectURL(blob);
-          }
-        } catch {}
+        if (!companyRes.ok) {
+          const text = await companyRes.text().catch(() => "");
+          throw new Error(`Company request failed: ${companyRes.status} ${text}`);
+        }
+
+        const companyJson = await companyRes.json();
+        const dto: CompanyDto | null = companyJson?.data ?? null;
+
+        let nextLogoUrl: string | null = null;
+        if (logoRes && logoRes.ok) {
+          const blob = await logoRes.blob();
+          nextLogoUrl = URL.createObjectURL(blob);
+        }
 
         if (cancelled) {
           if (nextLogoUrl) URL.revokeObjectURL(nextLogoUrl);
@@ -110,14 +113,17 @@ export default function HomePage() {
 
         setCompany(dto);
 
-        setLogoUrl(prev => {
-          if (prev) URL.revokeObjectURL(prev);
-          return nextLogoUrl;
-        });
-      } catch (e: any) {
-        if (!cancelled) {
-          setErr(e?.message ? String(e.message) : "Failed to load company");
+        if (nextLogoUrl) {
+          setLogoUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return nextLogoUrl;
+          });
+          lastLogoUrlRef.current = nextLogoUrl;
+        } else {
+          setLogoUrl((prev) => prev);
         }
+      } catch (e: any) {
+        if (!cancelled) setErr(e?.message ? String(e.message) : "Failed to load company");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -128,21 +134,17 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthed, token]);
+  }, [isAuthed, userLoading, token]);
 
-  const baseWrapStyle: React.CSSProperties = {
-    backgroundColor: "#0D081E",
-    minHeight: "100vh",
-  };
+  useEffect(() => {
+    return () => {
+      if (lastLogoUrlRef.current) URL.revokeObjectURL(lastLogoUrlRef.current);
+    };
+  }, []);
 
   if (!isAuthed) {
     return (
-      <div
-        style={{
-          backgroundColor: "#0D081E",
-          minHeight: "100vh",
-        }}
-      >
+      <div className="appBackground">
         <TopBar />
         <div
           style={{
@@ -156,18 +158,10 @@ export default function HomePage() {
           }}
         >
           <div>
-            <h1
-              style={{
-                fontSize: "clamp(30px, 3.5vw, 90px)",
-              }}
-            >
+            <h1 style={{ fontSize: "clamp(30px, 3.5vw, 90px)" }}>
               TRANSFORM YOUR HR. EMPOWER YOUR TEAM
             </h1>
-            <h1
-              style={{
-                fontSize: "clamp(10px, 3.5vw, 50px)",
-              }}
-            >
+            <h1 style={{ fontSize: "clamp(10px, 3.5vw, 50px)" }}>
               AllHands is an advanced, forward-thinking system designed to elevate productivity and streamline performance across your company
             </h1>
           </div>
@@ -176,11 +170,7 @@ export default function HomePage() {
             width={900}
             height={900}
             alt="Company logo"
-            style={{
-              width: "50vw",
-              height: "auto",
-              objectFit: "contain",
-            }}
+            style={{ width: "50vw", height: "auto", objectFit: "contain" }}
             priority
           />
         </div>
@@ -189,100 +179,103 @@ export default function HomePage() {
   }
 
   return (
-    <div
-      style={{
-        ...baseWrapStyle,
-      }}
-    >
+    <div className="appBackground">
       <TopBar />
-      <div
-        style={{
-          minHeight: "calc(100vh - 100px)",
-          padding: "55px 75px",
-          color: "#FBEAB8",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 60,
-          flexWrap: "nowrap",
-        }}
-      >
+
+      <div className="pageWrapper">
         <div
+          className="pageCard"
           style={{
-            flex: "1 1 auto",
-            maxWidth: 760,
+            maxWidth: 1500,
+            width: "min(1500px, calc(100vw - 72px))",
           }}
         >
-          <div
-            style={{
-              opacity: 0.85,
-              fontSize: 14,
-              marginBottom: 10,
-            }}
-          >
-            Company overview
+          <div className="employeesHeader">
+            <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
+              <div
+                style={{
+                  width: 96,
+                  height: 96,
+                  borderRadius: 22,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  boxShadow: "0 14px 42px rgba(0,0,0,0.28)",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  overflow: "hidden",
+                  flex: "0 0 auto",
+                }}
+              >
+                {logoUrl ? (
+                  <Image
+                    src={logoUrl}
+                    width={96}
+                    height={96}
+                    alt="Company logo"
+                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                  />
+                ) : (
+                  <div style={{ opacity: 0.92, fontSize: 34, fontWeight: 900 }}>A</div>
+                )}
+              </div>
+
+              <div
+                className="employeesTitle"
+                style={{
+                  fontSize: "clamp(54px, 4.6vw, 84px)",
+                  lineHeight: 1.02,
+                  letterSpacing: 0.3,
+                }}
+              >
+                {company?.name ?? "Company"}
+              </div>
+            </div>
           </div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "clamp(34px, 3.2vw, 64px)",
-              lineHeight: 1.1,
-            }}
-          >
-            {company?.name ?? "Company"}
-          </h1>
+
           {(userLoading || loading) && (
-            <div
-              style={{
-                marginTop: 14,
-                opacity: 0.85,
-                fontSize: 16,
-              }}
-            >
+            <div style={{ marginTop: 14, opacity: 0.85, fontSize: 16 }}>
               Loading company data…
             </div>
           )}
-          {!!err && (
-            <div
-              style={{
-                marginTop: 16,
-                background: "rgba(255, 60, 60, 0.12)",
-                border: "1px solid rgba(255, 60, 60, 0.35)",
-                padding: 14,
-                borderRadius: 12,
-                color: "#ffd3d3",
-                maxWidth: 900,
-                wordBreak: "break-word",
-              }}
-            >
-              {err}
-            </div>
-          )}
-          {!!company && !err && (
-            <div
-              style={{
-                marginTop: 18,
-                background: "rgba(251, 234, 184, 0.06)",
-                border: "1px solid rgba(251, 234, 184, 0.18)",
-                borderRadius: 16,
-                padding: 22,
-                lineHeight: 1.55,
-              }}
-            >
+          {err && <div className="errorMessage">{err}</div>}
+          {!!company && !err && !loading && (
+            <div style={{ marginTop: 18 }}>
               <div
                 style={{
-                  marginBottom: 14,
-                  opacity: 0.92,
-                  fontSize: 18,
+                  marginTop: 8,
+                  padding: "18px 20px",
+                  borderRadius: 18,
+                  background: "rgba(255,255,255,0.035)",
+                  border: "1px solid rgba(255,255,255,0.075)",
                 }}
               >
-                {company.description ? company.description : "—"}
+                <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 12 }}>
+                  About company
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 24,
+                    lineHeight: 1.85,
+                    opacity: 0.97,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {company.description ? company.description : "—"}
+                </div>
               </div>
+
               <div
                 style={{
                   display: "grid",
                   gap: 12,
-                  marginTop: 10,
+                  marginTop: 18,
+                  fontSize: 17,
+                  padding: "16px 20px",
+                  borderRadius: 18,
+                  background: "rgba(255,255,255,0.025)",
+                  border: "1px solid rgba(255,255,255,0.065)",
                 }}
               >
                 <Row label="Email domain" value={company.emailDomain ?? "—"} />
@@ -297,65 +290,12 @@ export default function HomePage() {
                 />
                 <Row label="Created at" value={fmtIso(company.createdAt)} />
               </div>
+
+              <div style={{ marginTop: 16, opacity: 0.78, fontSize: 14 }}>
+                You’re signed in as: {toStr((user as any)?.email ?? (user as any)?.Email ?? "—")}
+              </div>
             </div>
           )}
-        </div>
-        <div
-          style={{
-            flex: "0 0 460px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              background: "rgba(251, 234, 184, 0.06)",
-              border: "1px solid rgba(251, 234, 184, 0.18)",
-              borderRadius: 16,
-              padding: 22,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              minHeight: 320,
-            }}
-          >
-            {logoUrl ? (
-              <Image
-                src={logoUrl}
-                width={520}
-                height={520}
-                alt="Company logo"
-                style={{
-                  width: "100%",
-                  maxWidth: 420,
-                  height: "auto",
-                  objectFit: "contain",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  opacity: 0.8,
-                  textAlign: "center",
-                  padding: 24,
-                }}
-              >
-                Logo not available
-              </div>
-            )}
-          </div>
-          <div
-            style={{
-              marginTop: 12,
-              opacity: 0.8,
-              fontSize: 13,
-              alignSelf: "flex-start",
-            }}
-          >
-            You’re signed in as: {toStr((user as any)?.email ?? (user as any)?.Email ?? "—")}
-          </div>
         </div>
       </div>
     </div>
@@ -364,28 +304,22 @@ export default function HomePage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: 14,
-        alignItems: "baseline",
-        flexWrap: "wrap",
-      }}
-    >
-      <div
-        style={{
-          width: 240,
-          opacity: 0.75,
-        }}
-      >
+    <div style={{
+      display: "flex",
+      gap: 16,
+      alignItems: "baseline",
+      flexWrap: "wrap"
+    }}>
+      <div style={{
+        width: 260,
+        opacity: 0.78
+      }}>
         {label}
       </div>
-      <div
-        style={{
-          opacity: 0.95,
-          wordBreak: "break-word",
-        }}
-      >
+      <div style={{
+        opacity: 0.98,
+        wordBreak: "break-word"
+      }}>
         {value}
       </div>
     </div>
