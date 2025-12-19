@@ -8,9 +8,8 @@ const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const LIST_API = `${API_ROOT}/api/v1/time-off/employees/requests`;
 const APPROVE_API = (id: string) => `${API_ROOT}/api/v1/time-off/requests/${id}/approve`;
 const REJECT_API = (id: string) => `${API_ROOT}/api/v1/time-off/requests/${id}/reject`;
-const CANCEL_API = (id: string) => `${API_ROOT}/api/v1/time-off/requests/${id}/cancel`;
 
-type TimeOffStatus = "Undefined" | "Pending" | "Cancelled" | "Approved" | "Rejected";
+type TimeOffStatus = "Pending" | "Cancelled" | "Approved" | "Rejected";
 
 type TimeOffTypeDto = {
   id: string;
@@ -41,7 +40,7 @@ type TimeOffRequestDto = {
   startDate: string;
   endDate: string;
   type: TimeOffTypeDto;
-  status: TimeOffStatus;
+  status: TimeOffStatus | string;
   workingDaysCount?: number | null;
   rejectionReason?: string | null;
   employee: EmployeeMiniDto;
@@ -59,7 +58,7 @@ type PagedResponse<T> = {
 
 type ReasonModalState =
   | { open: false }
-  | { open: true; mode: "reject" | "cancel"; requestId: string; title: string };
+  | { open: true; requestId: string; title: string };
 
 function toStr(v: any) {
   return String(v ?? "").trim();
@@ -102,7 +101,7 @@ function formatDateRange(start: string, end: string) {
   return `${sText} – ${eText}`;
 }
 
-function statusColor(status: TimeOffStatus) {
+function statusColor(status: string) {
   if (status === "Approved") return "#7CFC9A";
   if (status === "Rejected") return "#ff6b6b";
   if (status === "Cancelled") return "#cccccc";
@@ -163,22 +162,15 @@ async function apiFetchJson<T>(input: RequestInfo, init?: RequestInit): Promise<
 
 export default function TimeOffManagementPage() {
   const { user, loading: userLoading } = useCurrentUser();
-
   const perms = useMemo(() => getPermsLower(user), [user]);
 
   const canApprove =
-    perms.includes("timeoff.approve") ||
-    perms.includes("timeoff.manage") ||
+    perms.includes("timeoffpage.edit") ||
+    perms.includes("timeoff.approve.detailadminapprove") ||
     perms.includes("admin");
 
   const canReject =
-    perms.includes("timeoff.reject") ||
-    perms.includes("timeoff.manage") ||
-    perms.includes("admin");
-
-  const canCancel =
-    perms.includes("timeoff.cancel") ||
-    perms.includes("timeoff.manage") ||
+    perms.includes("timeoffpage.edit") ||
     perms.includes("admin");
 
   const [busy, setBusy] = useState(false);
@@ -194,6 +186,7 @@ export default function TimeOffManagementPage() {
   const [total, setTotal] = useState(0);
 
   const [reasonModal, setReasonModal] = useState<ReasonModalState>({ open: false });
+  const [rejectId, setRejectId] = useState<string | null>(null);
   const [reasonText, setReasonText] = useState("");
 
   const filteredRows = useMemo(() => {
@@ -211,7 +204,7 @@ export default function TimeOffManagementPage() {
     const pp = Math.max(1, perPage);
     const t = Math.max(0, total);
     return Math.max(1, Math.ceil(t / pp));
-  }, [total]);
+  }, [total, perPage]);
 
   async function load() {
     setError(null);
@@ -258,54 +251,18 @@ export default function TimeOffManagementPage() {
   }
 
   function openReject(id: string) {
+    if (!canReject) return;
     setReasonText("");
-    setReasonModal({
-      open: true,
-      mode: "reject",
-      requestId: id,
-      title: "Reject request (reason required)",
-    });
+    setRejectId(id);
+    setReasonModal({ open: true, requestId: id, title: "Reject request (reason required)" });
   }
 
-  function openCancel(id: string) {
-    setReasonText("");
-    setReasonModal({
-      open: true,
-      mode: "cancel",
-      requestId: id,
-      title: "Cancel request",
-    });
-  }
+  async function submitReject() {
+    if (!rejectId) return;
 
-  async function submitReason() {
-    if (!reasonModal.open) return;
-
-    const id = reasonModal.requestId;
-    const mode = reasonModal.mode;
-
-    if (mode === "reject") {
-      const reason = toStr(reasonText);
-      if (!reason) {
-        setError("Reason is required for reject.");
-        return;
-      }
-
-      setBusy(true);
-      setError(null);
-
-      try {
-        await apiFetchJson<void>(REJECT_API(id), {
-          method: "POST",
-          body: JSON.stringify({ reason }),
-        });
-        setReasonModal({ open: false });
-        await load();
-      } catch (e: any) {
-        setError(safeErrorMessage(e?.message ?? "Reject failed"));
-      } finally {
-        setBusy(false);
-      }
-
+    const reason = toStr(reasonText);
+    if (!reason) {
+      setError("Reason is required for reject.");
       return;
     }
 
@@ -313,11 +270,15 @@ export default function TimeOffManagementPage() {
     setError(null);
 
     try {
-      await apiFetchJson<void>(CANCEL_API(id), { method: "POST" });
+      await apiFetchJson<void>(REJECT_API(rejectId), {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      });
       setReasonModal({ open: false });
+      setRejectId(null);
       await load();
     } catch (e: any) {
-      setError(safeErrorMessage(e?.message ?? "Cancel failed"));
+      setError(safeErrorMessage(e?.message ?? "Reject failed"));
     } finally {
       setBusy(false);
     }
@@ -335,7 +296,7 @@ export default function TimeOffManagementPage() {
             <div>
               <h1 className="timeOffHeaderTitle">Time-Off Management</h1>
               <p className="timeOffHeaderSubtitle">
-                View all employee requests and manage approvals / cancellations.
+                View all employee requests and manage approvals / rejections.
               </p>
             </div>
 
@@ -373,9 +334,6 @@ export default function TimeOffManagementPage() {
                 </option>
                 <option value="Cancelled" style={{ background: "#150d2f", color: "#fbeab8" }}>
                   Cancelled
-                </option>
-                <option value="Undefined" style={{ background: "#150d2f", color: "#fbeab8" }}>
-                  Undefined
                 </option>
               </select>
 
@@ -423,9 +381,9 @@ export default function TimeOffManagementPage() {
                   </tr>
                 ) : (
                   filteredRows.map((r) => {
-                    const canActApprove = canApprove && r.status === "Pending";
-                    const canActReject = canReject && r.status === "Pending";
-                    const canActCancel = canCancel && (r.status === "Pending" || r.status === "Approved");
+                    const isPending = r.status === "Pending";
+                    const canActApprove = canApprove && isPending;
+                    const canActReject = canReject && isPending;
 
                     return (
                       <tr key={r.id}>
@@ -447,18 +405,18 @@ export default function TimeOffManagementPage() {
                           <span
                             className="timeOffStatusPill"
                             style={{
-                              borderColor: statusColor(r.status),
-                              color: statusColor(r.status),
+                              borderColor: statusColor(String(r.status)),
+                              color: statusColor(String(r.status)),
                             }}
                           >
-                            {r.status}
+                            {String(r.status)}
                           </span>
 
                           <div style={{ marginTop: 8, opacity: 0.85, fontSize: 14 }}>
                             Approved by: <span style={{ fontWeight: 700 }}>{fmtName(r.approver)}</span>
                           </div>
 
-                          {r.status === "Rejected" && r.rejectionReason ? (
+                          {String(r.status) === "Rejected" && r.rejectionReason ? (
                             <div style={{ marginTop: 6, opacity: 0.9, fontSize: 14 }}>
                               Reason: <span style={{ fontWeight: 700 }}>{r.rejectionReason}</span>
                             </div>
@@ -498,23 +456,6 @@ export default function TimeOffManagementPage() {
                             }}
                           >
                             Reject
-                          </button>
-
-                          <button
-                            className="profileButtonSecondary"
-                            type="button"
-                            disabled={busy || !canActCancel}
-                            onClick={() => openCancel(r.id)}
-                            style={{
-                              padding: "8px 16px",
-                              fontSize: 14,
-                              opacity: busy || !canActCancel ? 0.5 : 1,
-                              cursor: busy || !canActCancel ? "not-allowed" : "pointer",
-                              borderColor: "rgba(204, 204, 204, 0.8)",
-                              color: "rgba(204, 204, 204, 0.95)",
-                            }}
-                          >
-                            Cancel
                           </button>
                         </td>
                       </tr>
@@ -559,7 +500,7 @@ export default function TimeOffManagementPage() {
 
       {reasonModal.open ? (
         <div
-          onClick={() => (busy ? null : setReasonModal({ open: false }))}
+          onClick={() => (busy ? null : (setReasonModal({ open: false }), setRejectId(null)))}
           style={{
             position: "fixed",
             inset: 0,
@@ -586,9 +527,7 @@ export default function TimeOffManagementPage() {
             <div style={{ fontSize: 22, fontWeight: 900 }}>{reasonModal.title}</div>
 
             <div style={{ marginTop: 10, opacity: 0.85, fontSize: 15 }}>
-              {reasonModal.mode === "reject"
-                ? "Please provide a rejection reason (required)."
-                : "Optional note (backend may ignore it for cancel)."}
+              Please provide a rejection reason (required).
             </div>
 
             <textarea
@@ -596,7 +535,7 @@ export default function TimeOffManagementPage() {
               value={reasonText}
               onChange={(e) => setReasonText(e.target.value)}
               disabled={busy}
-              placeholder={reasonModal.mode === "reject" ? "Reason..." : "Optional note..."}
+              placeholder="Reason..."
               style={{ marginTop: 12, width: "100%", minHeight: 120, resize: "vertical" }}
             />
 
@@ -604,7 +543,7 @@ export default function TimeOffManagementPage() {
               <button
                 className="profileButtonSecondary"
                 type="button"
-                onClick={() => setReasonModal({ open: false })}
+                onClick={() => (setReasonModal({ open: false }), setRejectId(null))}
                 disabled={busy}
                 style={{ opacity: busy ? 0.55 : 1 }}
               >
@@ -614,9 +553,9 @@ export default function TimeOffManagementPage() {
               <button
                 className="profileButtonPrimary"
                 type="button"
-                onClick={() => submitReason()}
-                disabled={busy || (reasonModal.mode === "reject" && !toStr(reasonText))}
-                style={{ opacity: busy || (reasonModal.mode === "reject" && !toStr(reasonText)) ? 0.55 : 1 }}
+                onClick={() => submitReject()}
+                disabled={busy || !toStr(reasonText)}
+                style={{ opacity: busy || !toStr(reasonText) ? 0.55 : 1 }}
               >
                 Submit
               </button>
