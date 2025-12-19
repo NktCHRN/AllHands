@@ -503,7 +503,7 @@ body {
 }
 
 .timeOffPageWrapper {
-  padding: 50px 30px;
+  padding: 46px 26px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -512,10 +512,10 @@ body {
 
 .timeOffCard {
   width: 100%;
-  max-width: 1100px;
+  max-width: 1500px;
   background: rgba(15, 10, 40, 0.9);
   border-radius: 34px;
-  padding: 60px 70px;
+  padding: 54px 60px;
   color: #fbeab8;
   box-shadow: 0 40px 90px rgba(0, 0, 0, 0.7);
 }
@@ -529,15 +529,15 @@ body {
 }
 
 .timeOffHeaderTitle {
-  font-size: 46px;
+  font-size: 52px;
   font-weight: 900;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   letter-spacing: 0.4px;
 }
 
 .timeOffHeaderSubtitle {
   opacity: 0.85;
-  font-size: 15px;
+  font-size: 17px;
 }
 
 .timeOffTableWrapper {
@@ -549,40 +549,42 @@ body {
 .timeOffTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 16px;
+  line-height: 1.35;
 }
 
 .timeOffTh {
   text-align: left;
-  padding: 10px 12px;
+  padding: 14px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  font-weight: 600;
-  font-size: 13px;
+  font-weight: 700;
+  font-size: 15px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .timeOffTd {
-  padding: 10px 12px;
+  padding: 14px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 16px;
 }
 
 .timeOffTd--narrow {
-  max-width: 260px;
+  max-width: 320px;
 }
 
 .timeOffTd--actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 }
 
 .timeOffStatusPill {
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
   background-color: rgba(0, 0, 0, 0.35);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 800;
   border: 1px solid #ffd27f;
   color: #ffd27f;
 }
@@ -596,7 +598,7 @@ body {
 }
 
 .timeOffPaginationInfo {
-  font-size: 13px;
+  font-size: 14px;
   opacity: 0.8;
 }
 
