@@ -54,11 +54,11 @@ type PagedResponse<T> = {
     page?: number;
     perPage?: number;
   };
+  isSuccessful?: boolean;
+  error?: any;
 };
 
-type ReasonModalState =
-  | { open: false }
-  | { open: true; requestId: string; title: string };
+type ReasonModalState = { open: false } | { open: true; requestId: string; title: string };
 
 function toStr(v: any) {
   return String(v ?? "").trim();
@@ -69,10 +69,7 @@ function lower(v: any) {
 }
 
 function getPermsLower(user: any): string[] {
-  const raw =
-    (user?.permissions as string[] | null) ??
-    (user?.Permissions as string[] | null) ??
-    [];
+  const raw = (user?.permissions as string[] | null) ?? (user?.Permissions as string[] | null) ?? [];
   if (!Array.isArray(raw)) return [];
   return raw.map((x) => lower(x));
 }
@@ -111,11 +108,7 @@ function statusColor(status: string) {
 
 function safeErrorMessage(raw: string) {
   const s = toStr(raw);
-  const looksLikeHtml =
-    s.includes("<!DOCTYPE") ||
-    s.includes("<html") ||
-    s.includes("<head") ||
-    s.includes("<body");
+  const looksLikeHtml = s.includes("<!DOCTYPE") || s.includes("<html") || s.includes("<head") || s.includes("<body");
   if (looksLikeHtml) {
     const apiHint = API_ROOT
       ? `API base: ${API_ROOT}`
@@ -137,24 +130,17 @@ async function apiFetchJson<T>(input: RequestInfo, init?: RequestInit): Promise<
     },
   });
 
-  const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
-
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(safeErrorMessage(text || `HTTP ${res.status}`));
   }
 
-  if (res.status === 204) {
-    return null as any;
-  }
+  if (res.status === 204) return null as any;
 
+  const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
   if (!contentType.includes("application/json")) {
     const text = await res.text().catch(() => "");
-    throw new Error(
-      safeErrorMessage(
-        text || `Expected JSON but got "${contentType || "unknown"}". Check API route.`
-      )
-    );
+    throw new Error(safeErrorMessage(text || `Expected JSON but got "${contentType || "unknown"}".`));
   }
 
   return (await res.json()) as T;
@@ -164,14 +150,8 @@ export default function TimeOffManagementPage() {
   const { user, loading: userLoading } = useCurrentUser();
   const perms = useMemo(() => getPermsLower(user), [user]);
 
-  const canApprove =
-    perms.includes("timeoffpage.edit") ||
-    perms.includes("timeoff.approve.detailadminapprove") ||
-    perms.includes("admin");
-
-  const canReject =
-    perms.includes("timeoffpage.edit") ||
-    perms.includes("admin");
+  const canApprove = perms.includes("timeoffpage.edit") || perms.includes("timeoff.approve.detailadminapprove") || perms.includes("admin");
+  const canReject = perms.includes("timeoffpage.edit") || perms.includes("timeoff.approve.detailadminapprove") || perms.includes("admin");
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -193,9 +173,7 @@ export default function TimeOffManagementPage() {
     const q = lower(employeeQ);
     if (!q) return rows;
     return rows.filter((r) => {
-      const full = lower(
-        `${r.employee.firstName} ${r.employee.middleName ?? ""} ${r.employee.lastName} ${r.employee.email}`
-      );
+      const full = lower(`${r.employee.firstName} ${r.employee.middleName ?? ""} ${r.employee.lastName} ${r.employee.email}`);
       return full.includes(q);
     });
   }, [rows, employeeQ]);
@@ -204,7 +182,7 @@ export default function TimeOffManagementPage() {
     const pp = Math.max(1, perPage);
     const t = Math.max(0, total);
     return Math.max(1, Math.ceil(t / pp));
-  }, [total, perPage]);
+  }, [total]);
 
   async function load() {
     setError(null);
@@ -272,7 +250,7 @@ export default function TimeOffManagementPage() {
     try {
       await apiFetchJson<void>(REJECT_API(rejectId), {
         method: "POST",
-        body: JSON.stringify({ reason }),
+        body: JSON.stringify({ id: rejectId, reason }),
       });
       setReasonModal({ open: false });
       setRejectId(null);
@@ -290,14 +268,13 @@ export default function TimeOffManagementPage() {
   return (
     <div className="appBackground">
       <TopBar />
+
       <div className="timeOffPageWrapper">
         <div className="timeOffCard">
           <div className="timeOffHeader">
             <div>
               <h1 className="timeOffHeaderTitle">Time-Off Management</h1>
-              <p className="timeOffHeaderSubtitle">
-                View all employee requests and manage approvals / rejections.
-              </p>
+              <p className="timeOffHeaderSubtitle">View all employee requests and manage approvals / rejections.</p>
             </div>
 
             <div className="employeesFilters" style={{ marginBottom: 0, justifyContent: "flex-end" }}>
@@ -381,7 +358,7 @@ export default function TimeOffManagementPage() {
                   </tr>
                 ) : (
                   filteredRows.map((r) => {
-                    const isPending = r.status === "Pending";
+                    const isPending = String(r.status) === "Pending";
                     const canActApprove = canApprove && isPending;
                     const canActReject = canReject && isPending;
 
@@ -526,9 +503,7 @@ export default function TimeOffManagementPage() {
           >
             <div style={{ fontSize: 22, fontWeight: 900 }}>{reasonModal.title}</div>
 
-            <div style={{ marginTop: 10, opacity: 0.85, fontSize: 15 }}>
-              Please provide a rejection reason (required).
-            </div>
+            <div style={{ marginTop: 10, opacity: 0.85, fontSize: 15 }}>Please provide a rejection reason (required).</div>
 
             <textarea
               className="accInput"
