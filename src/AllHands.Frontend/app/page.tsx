@@ -51,12 +51,14 @@ export default function HomePage() {
   }, [user]);
 
   useEffect(() => {
-    setCompany(null);
-    setErr("");
-
     if (!isAuthed) {
-      if (logoUrl) URL.revokeObjectURL(logoUrl);
-      setLogoUrl(null);
+      setCompany(null);
+      setErr("");
+      setLoading(false);
+      setLogoUrl(prev => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
       return;
     }
 
@@ -115,12 +117,6 @@ export default function HomePage() {
       } catch (e: any) {
         if (!cancelled) {
           setErr(e?.message ? String(e.message) : "Failed to load company");
-          setCompany(null);
-
-          setLogoUrl(prev => {
-            if (prev) URL.revokeObjectURL(prev);
-            return null;
-          });
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -132,7 +128,7 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthed, token, logoUrl]);
+  }, [isAuthed, token]);
 
   const baseWrapStyle: React.CSSProperties = {
     backgroundColor: "#0D081E",
@@ -205,22 +201,23 @@ export default function HomePage() {
           padding: "55px 75px",
           color: "#FBEAB8",
           display: "flex",
-          gap: 40,
+          justifyContent: "space-between",
           alignItems: "flex-start",
-          flexWrap: "wrap",
+          gap: 60,
+          flexWrap: "nowrap",
         }}
       >
         <div
           style={{
-            flex: "1 1 520px",
-            minWidth: 320,
+            flex: "1 1 auto",
+            maxWidth: 760,
           }}
         >
           <div
             style={{
               opacity: 0.85,
               fontSize: 14,
-              marginBottom: 8,
+              marginBottom: 10,
             }}
           >
             Company overview
@@ -228,7 +225,8 @@ export default function HomePage() {
           <h1
             style={{
               margin: 0,
-              fontSize: "clamp(28px, 3.0vw, 52px)",
+              fontSize: "clamp(34px, 3.2vw, 64px)",
+              lineHeight: 1.1,
             }}
           >
             {company?.name ?? "Company"}
@@ -238,6 +236,7 @@ export default function HomePage() {
               style={{
                 marginTop: 14,
                 opacity: 0.85,
+                fontSize: 16,
               }}
             >
               Loading company data…
@@ -246,7 +245,7 @@ export default function HomePage() {
           {!!err && (
             <div
               style={{
-                marginTop: 14,
+                marginTop: 16,
                 background: "rgba(255, 60, 60, 0.12)",
                 border: "1px solid rgba(255, 60, 60, 0.35)",
                 padding: 14,
@@ -259,21 +258,22 @@ export default function HomePage() {
               {err}
             </div>
           )}
-          {!!company && !loading && !err && (
+          {!!company && !err && (
             <div
               style={{
                 marginTop: 18,
                 background: "rgba(251, 234, 184, 0.06)",
                 border: "1px solid rgba(251, 234, 184, 0.18)",
                 borderRadius: 16,
-                padding: 18,
-                lineHeight: 1.45,
+                padding: 22,
+                lineHeight: 1.55,
               }}
             >
               <div
                 style={{
-                  marginBottom: 10,
-                  opacity: 0.9,
+                  marginBottom: 14,
+                  opacity: 0.92,
+                  fontSize: 18,
                 }}
               >
                 {company.description ? company.description : "—"}
@@ -281,8 +281,8 @@ export default function HomePage() {
               <div
                 style={{
                   display: "grid",
-                  gap: 10,
-                  marginTop: 14,
+                  gap: 12,
+                  marginTop: 10,
                 }}
               >
                 <Row label="Email domain" value={company.emailDomain ?? "—"} />
@@ -302,30 +302,34 @@ export default function HomePage() {
         </div>
         <div
           style={{
-            flex: "0 1 420px",
-            minWidth: 260,
+            flex: "0 0 460px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
         >
           <div
             style={{
+              width: "100%",
               background: "rgba(251, 234, 184, 0.06)",
               border: "1px solid rgba(251, 234, 184, 0.18)",
               borderRadius: 16,
-              padding: 18,
+              padding: 22,
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
+              minHeight: 320,
             }}
           >
             {logoUrl ? (
               <Image
                 src={logoUrl}
-                width={420}
-                height={420}
+                width={520}
+                height={520}
                 alt="Company logo"
                 style={{
                   width: "100%",
-                  maxWidth: 360,
+                  maxWidth: 420,
                   height: "auto",
                   objectFit: "contain",
                 }}
@@ -347,6 +351,7 @@ export default function HomePage() {
               marginTop: 12,
               opacity: 0.8,
               fontSize: 13,
+              alignSelf: "flex-start",
             }}
           >
             You’re signed in as: {toStr((user as any)?.email ?? (user as any)?.Email ?? "—")}
@@ -362,7 +367,7 @@ function Row({ label, value }: { label: string; value: string }) {
     <div
       style={{
         display: "flex",
-        gap: 12,
+        gap: 14,
         alignItems: "baseline",
         flexWrap: "wrap",
       }}
