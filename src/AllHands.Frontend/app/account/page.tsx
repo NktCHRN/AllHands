@@ -41,6 +41,8 @@ export default function Account() {
   const [resetSending, setResetSending] = useState(false);
   const [resetInfo, setResetInfo] = useState<string | null>(null);
 
+  const photoPreviewRef = useRef<string | null>(null);
+
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -88,8 +90,16 @@ export default function Account() {
 
       if (avatarRes.ok) {
         const blob = await avatarRes.blob();
-        setPhotoPreview(URL.createObjectURL(blob));
+        const url = URL.createObjectURL(blob);
+
+        if (photoPreviewRef.current) URL.revokeObjectURL(photoPreviewRef.current);
+        photoPreviewRef.current = url;
+
+        setPhotoPreview(url);
       } else {
+        if (photoPreviewRef.current) URL.revokeObjectURL(photoPreviewRef.current);
+        photoPreviewRef.current = null;
+
         setPhotoPreview(null);
       }
     } catch (e: any) {
@@ -102,6 +112,12 @@ export default function Account() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    return () => {
+      if (photoPreviewRef.current) URL.revokeObjectURL(photoPreviewRef.current);
+    };
+  }, []);
 
   const LoadFileDialog = () => fileInputRef.current?.click();
 
@@ -121,12 +137,20 @@ export default function Account() {
   const onFileSelected = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setPhotoPreview(URL.createObjectURL(file));
+
+    const url = URL.createObjectURL(file);
+
+    if (photoPreviewRef.current) URL.revokeObjectURL(photoPreviewRef.current);
+    photoPreviewRef.current = url;
+
+    setPhotoPreview(url);
 
     try {
       await uploadPhoto(file);
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      e.target.value = "";
     }
   };
 
@@ -226,6 +250,10 @@ export default function Account() {
               backgroundImage: photoPreview
                 ? `url(${photoPreview})`
                 : "linear-gradient(#b388ff,#fbeab8)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              aspectRatio: "1 / 1",
             }}
             onClick={LoadFileDialog}
           />
