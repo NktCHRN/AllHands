@@ -74,6 +74,7 @@ export default function HomePage() {
           method: "GET",
           headers,
           cache: "no-store",
+          credentials: "include",
         });
 
         if (!res.ok) {
@@ -91,6 +92,7 @@ export default function HomePage() {
             method: "GET",
             headers,
             cache: "no-store",
+            credentials: "include",
           });
 
           if (logoRes.ok) {
@@ -130,7 +132,7 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthed, token]);
+  }, [isAuthed, token, logoUrl]);
 
   const baseWrapStyle: React.CSSProperties = {
     backgroundColor: "#0D081E",
