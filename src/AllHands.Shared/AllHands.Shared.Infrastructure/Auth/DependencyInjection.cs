@@ -8,8 +8,6 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddAuth(this IServiceCollection services)
     {
-        services.TryAddScoped<Domain.UserContext.UserContext>();
-        
         services.AddSingleton<IPermissionsContainer, PermissionsContainer>();
         services.AddSingleton<IUserPermissionService, UserPermissionService>();
         

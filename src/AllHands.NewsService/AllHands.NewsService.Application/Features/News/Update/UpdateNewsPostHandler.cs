@@ -6,7 +6,7 @@ using MediatR;
 
 namespace AllHands.NewsService.Application.Features.News.Update;
 
-public sealed class UpdateNewsPostHandler(IDocumentSession documentSession, UserContext userContext, TimeProvider timeProvider) : IRequestHandler<UpdateNewsPostCommand>
+public sealed class UpdateNewsPostHandler(IDocumentSession documentSession, IUserContext userContext, TimeProvider timeProvider) : IRequestHandler<UpdateNewsPostCommand>
 {
     public async Task Handle(UpdateNewsPostCommand request, CancellationToken cancellationToken)
     {

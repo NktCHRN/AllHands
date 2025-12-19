@@ -6,7 +6,7 @@ using MediatR;
 
 namespace AllHands.NewsService.Application.Features.News.Create;
 
-public sealed class CreateNewsPostHandler(IDocumentSession documentSession, UserContext userContext, TimeProvider timeProvider) : IRequestHandler<CreateNewsPostCommand, CreatedEntityDto>
+public sealed class CreateNewsPostHandler(IDocumentSession documentSession, IUserContext userContext, TimeProvider timeProvider) : IRequestHandler<CreateNewsPostCommand, CreatedEntityDto>
 {
     public async Task<CreatedEntityDto> Handle(CreateNewsPostCommand request, CancellationToken cancellationToken)
     {

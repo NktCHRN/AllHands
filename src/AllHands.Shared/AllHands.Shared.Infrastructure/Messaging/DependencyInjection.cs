@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using AllHands.Shared.Domain.UserContext;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Wolverine;
@@ -37,7 +38,7 @@ public static class DependencyInjection
     
     public static IHostApplicationBuilder UseAllHandsWolverine(this IHostApplicationBuilder builder, Action<WolverineOptions>? configure)
     {
-        return builder.UseWolverine(options =>
+        var result = builder.UseWolverine(options =>
         {
             options.UseAmazonSqsTransport().AutoProvision();
     
@@ -45,14 +46,16 @@ public static class DependencyInjection
             
             configure?.Invoke(options);
         });
+
+        builder.Services.AddContextAwareBus();
+        
+        return result;
     }
 
-    public static IServiceCollection AddContextAwareBus(this IServiceCollection services)
+    private static IServiceCollection AddContextAwareBus(this IServiceCollection services)
     {
-        services.TryAddScoped<Domain.UserContext.UserContext>();
-        
         services.AddScoped<MessageContext>();
-        services.AddScoped<IMessageBus>(sp => new ContextAwareBus(sp.GetRequiredService<MessageContext>(), sp.GetRequiredService<Domain.UserContext.UserContext>()));
+        services.AddScoped<IMessageBus>(sp => new ContextAwareBus(sp.GetRequiredService<MessageContext>(), sp.GetRequiredService<IUserContextAccessor>()));
         
         return services;
     }

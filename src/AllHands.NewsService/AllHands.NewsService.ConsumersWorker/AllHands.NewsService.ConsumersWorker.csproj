@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="AllHands.Shared.ConsumersWorker" Version="1.0.7" />
+      <PackageReference Include="AllHands.Shared.ConsumersWorker" Version="1.0.10" />
     </ItemGroup>
 
     <ItemGroup>
@@ -22,4 +22,10 @@
       </Content>
     </ItemGroup>
 
+    <ItemGroup>
+        <Content Include="appsettings*.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+    
 </Project>

@@ -1,3 +1,6 @@
+using AllHands.NewsService.Application;
+using AllHands.NewsService.ConsumersWorker;
+using AllHands.NewsService.Infrastructure;
 using AllHands.Shared.ConsumersWorker;
 using AllHands.Shared.Contracts.Messaging;
 using AllHands.Shared.Contracts.Messaging.Events.Employees;
@@ -8,6 +11,8 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Configuration.AddAllHandsSystemsManager(builder.Environment, "NewsService");
 
+builder.Services.AddApplication()
+    .AddInfrastructure(builder.Configuration);
 builder.UseAllHandsWolverine(opts =>
 {
     var environmentName = builder.Environment.EnvironmentName;
@@ -18,7 +23,10 @@ builder.UseAllHandsWolverine(opts =>
     
     opts.AddIncomingHeadersMiddleware();
     
+    opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
     opts.Policies.UseDurableInboxOnAllListeners();
+    
+    opts.Discovery.IncludeAssembly(typeof(IConsumersWorkerMarker).Assembly);
 });
 
 var app = builder.Build();

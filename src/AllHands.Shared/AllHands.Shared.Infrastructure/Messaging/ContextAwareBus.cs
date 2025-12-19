@@ -1,13 +1,16 @@
 ﻿using System.Text.Json;
 using AllHands.Shared.Contracts.Messaging.Events;
+using AllHands.Shared.Domain.UserContext;
 using AllHands.Shared.Infrastructure.UserContext;
 using AllHands.Shared.Infrastructure.Utilities;
 using Wolverine;
 
 namespace AllHands.Shared.Infrastructure.Messaging;
 
-public class ContextAwareBus(IMessageBus messageBus, Domain.UserContext.UserContext userContext) : IMessageBus
+public class ContextAwareBus(IMessageBus messageBus, IUserContextAccessor userContextAccessor) : IMessageBus
 {
+    private IUserContext? UserContext => userContextAccessor.UserContext;
+    
     public Task InvokeAsync(object message, CancellationToken cancellation = new CancellationToken(), TimeSpan? timeout = null)
     {
         return messageBus.InvokeAsync(message, cancellation, timeout);
@@ -75,28 +78,33 @@ public class ContextAwareBus(IMessageBus messageBus, Domain.UserContext.UserCont
         {
             options.GroupId = @event.GroupId;
         }
-        
-        options.Headers.Add(UserContextHeaders.Id, userContext.Id.ToString());
-        options.Headers.Add(UserContextHeaders.CompanyId, userContext.CompanyId.ToString());
-        options.Headers.Add(UserContextHeaders.EmployeeId, userContext.EmployeeId.ToString());
-        options.Headers.Add(UserContextHeaders.Email, userContext.Email);
-        options.Headers.Add(UserContextHeaders.FirstName, userContext.FirstName);
-        options.Headers.Add(UserContextHeaders.LastName, userContext.LastName);
-        options.Headers.Add(UserContextHeaders.Permissions, Convert.ToBase64String(userContext.Permissions.ToByteArray()));
 
-        if (!string.IsNullOrEmpty(userContext.PhoneNumber))
+        if (UserContext is null)
         {
-            options.Headers.Add(UserContextHeaders.PhoneNumber, userContext.PhoneNumber);
+            throw new InvalidOperationException("Setup UserContext to use this method");
+        }
+        
+        options.Headers.Add(UserContextHeaders.Id, UserContext.Id.ToString());
+        options.Headers.Add(UserContextHeaders.CompanyId, UserContext.CompanyId.ToString());
+        options.Headers.Add(UserContextHeaders.EmployeeId, UserContext.EmployeeId.ToString());
+        options.Headers.Add(UserContextHeaders.Email, UserContext.Email);
+        options.Headers.Add(UserContextHeaders.FirstName, UserContext.FirstName);
+        options.Headers.Add(UserContextHeaders.LastName, UserContext.LastName);
+        options.Headers.Add(UserContextHeaders.Permissions, Convert.ToBase64String(UserContext.Permissions.ToByteArray()));
+
+        if (!string.IsNullOrEmpty(UserContext.PhoneNumber))
+        {
+            options.Headers.Add(UserContextHeaders.PhoneNumber, UserContext.PhoneNumber);
         }
 
-        if (!string.IsNullOrEmpty(userContext.MiddleName))
+        if (!string.IsNullOrEmpty(UserContext.MiddleName))
         {
-            options.Headers.Add(UserContextHeaders.MiddleName, userContext.MiddleName);
+            options.Headers.Add(UserContextHeaders.MiddleName, UserContext.MiddleName);
         }
 
-        options.Headers.Add(UserContextHeaders.Roles, JsonSerializer.Serialize(userContext.Roles));
+        options.Headers.Add(UserContextHeaders.Roles, JsonSerializer.Serialize(UserContext.Roles));
         
-        options.TenantId = userContext.CompanyId.ToString();
+        options.TenantId = UserContext.CompanyId.ToString();
         
         return messageBus.PublishAsync(message, options);
     }
