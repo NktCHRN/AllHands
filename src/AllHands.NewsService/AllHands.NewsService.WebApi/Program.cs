@@ -1,6 +1,7 @@
 using AllHands.NewsService.Application;
 using AllHands.NewsService.Infrastructure;
 using AllHands.NewsService.WebApi;
+using AllHands.Shared.Infrastructure.Messaging;
 using AllHands.Shared.WebApi.Rest;
 using Marten;
 
@@ -11,6 +12,11 @@ builder.Configuration.AddAllHandsSystemsManager(builder.Environment, "NewsServic
 builder.Services.AddApplication()
     .AddInfrastructure(builder.Configuration)
     .AddWebApi(builder.Configuration, builder.Environment);
+
+builder.UseAllHandsWolverine(opts =>
+{
+    opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
+});
 
 var app = builder.Build();
 

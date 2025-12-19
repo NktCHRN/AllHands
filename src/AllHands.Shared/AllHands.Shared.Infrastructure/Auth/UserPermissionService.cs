@@ -5,7 +5,7 @@ namespace AllHands.Shared.Infrastructure.Auth;
 
 public sealed class UserPermissionService(IPermissionsContainer permissionsContainer, IUserContextAccessor userContextAccessor) : IUserPermissionService
 {
-    private Domain.UserContext.UserContext? UserContext => userContextAccessor.UserContext;
+    private IUserContext? UserContext => userContextAccessor.UserContext;
     
     public bool IsAllowed(string permission)
     {

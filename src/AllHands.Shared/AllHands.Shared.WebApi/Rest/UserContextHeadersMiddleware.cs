@@ -9,13 +9,11 @@ namespace AllHands.Shared.WebApi.Rest;
 public sealed class UserContextHeadersMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly ILogger<UserContextHeadersMiddleware> _logger;
-    private readonly IUserContextAccessor _userContextAccessor;
+    private readonly IUserContextSetuper _userContextSetuper;
     
-    public UserContextHeadersMiddleware(RequestDelegate next, ILogger<UserContextHeadersMiddleware> logger, IUserContextAccessor userContextAccessor)
+    public UserContextHeadersMiddleware(RequestDelegate next, IUserContextSetuper userContextSetuper)
     {
-        _logger = logger;
-        _userContextAccessor = userContextAccessor;
+        _userContextSetuper = userContextSetuper;
         _next = next;
     }
 
@@ -23,12 +21,13 @@ public sealed class UserContextHeadersMiddleware
     {
         var headers = httpContext.Request.Headers;
         
-        var userContext = _userContextAccessor.UserContext;
-        if (userContext == null || IsGrpcRequest(httpContext.Request))
+        if (IsGrpcRequest(httpContext.Request))
         {
             await _next(httpContext);
             return;
         }
+
+        var userContext = new UserContext();
         
         if (headers.TryGetValue(UserContextHeaders.Id, out var idValues) &&
             Guid.TryParse(idValues.ToString(), out var userId))
@@ -83,6 +82,8 @@ public sealed class UserContextHeadersMiddleware
         {
             userContext.Permissions = new BitArray(Convert.FromBase64String(permissions.ToString()));
         }
+        
+        _userContextSetuper.Push(userContext);
         
         await _next(httpContext);
     }

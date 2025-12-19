@@ -2,5 +2,5 @@
 
 public interface IUserContextAccessor
 {
-    UserContext? UserContext { get; }
+    IUserContext? UserContext { get; }
 }
