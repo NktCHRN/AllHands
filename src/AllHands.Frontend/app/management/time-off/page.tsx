@@ -9,7 +9,7 @@ const LIST_API = `${API_ROOT}/api/v1/time-off/employees/requests`;
 const APPROVE_API = (id: string) => `${API_ROOT}/api/v1/time-off/requests/${id}/approve`;
 const REJECT_API = (id: string) => `${API_ROOT}/api/v1/time-off/requests/${id}/reject`;
 
-type TimeOffStatus = "Pending" | "Cancelled" | "Approved" | "Rejected";
+type TimeOffStatus = "Undefined" | "Pending" | "Cancelled" | "Approved" | "Rejected";
 
 type TimeOffTypeDto = {
   id: string;
@@ -98,11 +98,24 @@ function formatDateRange(start: string, end: string) {
   return `${sText} – ${eText}`;
 }
 
-function statusColor(status: string) {
+function normalizeStatus(s: any): TimeOffStatus | "Unknown" {
+  const v = lower(s);
+
+  if (v === "undefined") return "Undefined";
+  if (v === "pending") return "Pending";
+  if (v === "cancelled" || v === "canceled") return "Cancelled";
+  if (v === "approved") return "Approved";
+  if (v === "rejected") return "Rejected";
+
+  return "Unknown";
+}
+
+function statusColor(status: TimeOffStatus | "Unknown") {
   if (status === "Approved") return "#7CFC9A";
   if (status === "Rejected") return "#ff6b6b";
   if (status === "Cancelled") return "#cccccc";
   if (status === "Pending") return "#ffd27f";
+  if (status === "Undefined") return "#b388ff";
   return "#b388ff";
 }
 
@@ -125,7 +138,7 @@ async function apiFetchJson<T>(input: RequestInfo, init?: RequestInit): Promise<
     credentials: "include",
     headers: {
       Accept: "application/json",
-      "Content-Type": "application/json",
+      ...(init?.body ? { "Content-Type": "application/json" } : {}),
       ...(init?.headers ?? {}),
     },
   });
@@ -150,8 +163,10 @@ export default function TimeOffManagementPage() {
   const { user, loading: userLoading } = useCurrentUser();
   const perms = useMemo(() => getPermsLower(user), [user]);
 
-  const canApprove = perms.includes("timeoffpage.edit") || perms.includes("timeoff.approve.detailadminapprove") || perms.includes("admin");
-  const canReject = perms.includes("timeoffpage.edit") || perms.includes("timeoff.approve.detailadminapprove") || perms.includes("admin");
+  const canApprove =
+    perms.includes("timeoffpage.edit") || perms.includes("timeoff.approve.detailadminapprove") || perms.includes("admin");
+  const canReject =
+    perms.includes("timeoffpage.edit") || perms.includes("timeoff.approve.detailadminapprove") || perms.includes("admin");
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -182,7 +197,7 @@ export default function TimeOffManagementPage() {
     const pp = Math.max(1, perPage);
     const t = Math.max(0, total);
     return Math.max(1, Math.ceil(t / pp));
-  }, [total]);
+  }, [total, perPage]);
 
   async function load() {
     setError(null);
@@ -219,7 +234,7 @@ export default function TimeOffManagementPage() {
     setError(null);
 
     try {
-      await apiFetchJson<void>(APPROVE_API(id), { method: "POST" });
+      await apiFetchJson<void>(APPROVE_API(id), { method: "POST", body: "{}" });
       await load();
     } catch (e: any) {
       setError(safeErrorMessage(e?.message ?? "Approve failed"));
@@ -312,6 +327,9 @@ export default function TimeOffManagementPage() {
                 <option value="Cancelled" style={{ background: "#150d2f", color: "#fbeab8" }}>
                   Cancelled
                 </option>
+                <option value="Undefined" style={{ background: "#150d2f", color: "#fbeab8" }}>
+                  Undefined
+                </option>
               </select>
 
               <button
@@ -329,13 +347,11 @@ export default function TimeOffManagementPage() {
               </button>
             </div>
           </div>
-
           {error ? (
             <div className="errorMessage" style={{ whiteSpace: "pre-wrap" }}>
               {error}
             </div>
           ) : null}
-
           <div className="timeOffTableWrapper">
             <table className="timeOffTable">
               <thead>
@@ -348,7 +364,6 @@ export default function TimeOffManagementPage() {
                   <th className="timeOffTh">Actions</th>
                 </tr>
               </thead>
-
               <tbody>
                 {filteredRows.length === 0 ? (
                   <tr>
@@ -358,7 +373,9 @@ export default function TimeOffManagementPage() {
                   </tr>
                 ) : (
                   filteredRows.map((r) => {
-                    const isPending = String(r.status) === "Pending";
+                    const normStatus = normalizeStatus(r.status);
+                    const isPending = normStatus === "Pending";
+
                     const canActApprove = canApprove && isPending;
                     const canActReject = canReject && isPending;
 
@@ -382,18 +399,18 @@ export default function TimeOffManagementPage() {
                           <span
                             className="timeOffStatusPill"
                             style={{
-                              borderColor: statusColor(String(r.status)),
-                              color: statusColor(String(r.status)),
+                              borderColor: statusColor(normStatus),
+                              color: statusColor(normStatus),
                             }}
                           >
-                            {String(r.status)}
+                            {normStatus === "Unknown" ? String(r.status) : normStatus}
                           </span>
 
                           <div style={{ marginTop: 8, opacity: 0.85, fontSize: 14 }}>
                             Approved by: <span style={{ fontWeight: 700 }}>{fmtName(r.approver)}</span>
                           </div>
 
-                          {String(r.status) === "Rejected" && r.rejectionReason ? (
+                          {normalizeStatus(r.status) === "Rejected" && r.rejectionReason ? (
                             <div style={{ marginTop: 6, opacity: 0.9, fontSize: 14 }}>
                               Reason: <span style={{ fontWeight: 700 }}>{r.rejectionReason}</span>
                             </div>
@@ -417,7 +434,6 @@ export default function TimeOffManagementPage() {
                           >
                             Approve
                           </button>
-
                           <button
                             className="profileButtonSecondary"
                             type="button"
@@ -442,7 +458,6 @@ export default function TimeOffManagementPage() {
               </tbody>
             </table>
           </div>
-
           {totalPages > 1 ? (
             <div className="timeOffPagination">
               <button
@@ -454,11 +469,9 @@ export default function TimeOffManagementPage() {
               >
                 Previous
               </button>
-
               <span className="timeOffPaginationInfo">
                 Page {page} of {totalPages}
               </span>
-
               <button
                 className="profileButtonSecondary"
                 type="button"
@@ -470,7 +483,6 @@ export default function TimeOffManagementPage() {
               </button>
             </div>
           ) : null}
-
           <div style={{ marginTop: 10, opacity: 0.75, fontSize: 14 }}>Total: {total}</div>
         </div>
       </div>
@@ -502,9 +514,7 @@ export default function TimeOffManagementPage() {
             }}
           >
             <div style={{ fontSize: 22, fontWeight: 900 }}>{reasonModal.title}</div>
-
             <div style={{ marginTop: 10, opacity: 0.85, fontSize: 15 }}>Please provide a rejection reason (required).</div>
-
             <textarea
               className="accInput"
               value={reasonText}
@@ -524,7 +534,6 @@ export default function TimeOffManagementPage() {
               >
                 Close
               </button>
-
               <button
                 className="profileButtonPrimary"
                 type="button"
