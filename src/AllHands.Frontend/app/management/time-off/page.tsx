@@ -2,14 +2,9 @@
 
 import TopBar from "@/components/TopBar";
 import { useCurrentUser } from "@/hooks/currentUser";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
-const API_ROOT = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-const LIST_API = `${API_ROOT}/api/v1/time-off/employees/requests`;
-const APPROVE_API = (id: string) => `${API_ROOT}/api/v1/time-off/requests/${id}/approve`;
-const REJECT_API = (id: string) => `${API_ROOT}/api/v1/time-off/requests/${id}/reject`;
-
-type TimeOffStatus = "Undefined" | "Pending" | "Cancelled" | "Approved" | "Rejected";
+type TimeOffStatus = "Pending" | "Cancelled" | "Approved" | "Rejected";
 
 type TimeOffTypeDto = {
   id: string;
@@ -40,22 +35,11 @@ type TimeOffRequestDto = {
   startDate: string;
   endDate: string;
   type: TimeOffTypeDto;
-  status: TimeOffStatus | string;
+  status: TimeOffStatus;
   workingDaysCount?: number | null;
   rejectionReason?: string | null;
   employee: EmployeeMiniDto;
   approver?: ApproverMiniDto | null;
-};
-
-type PagedResponse<T> = {
-  data?: {
-    data?: T[];
-    total?: number;
-    page?: number;
-    perPage?: number;
-  };
-  isSuccessful?: boolean;
-  error?: any;
 };
 
 type ReasonModalState = { open: false } | { open: true; requestId: string; title: string };
@@ -66,6 +50,19 @@ function toStr(v: any) {
 
 function lower(v: any) {
   return String(v ?? "").toLowerCase().trim();
+}
+
+function pickStr(obj: any, ...keys: string[]) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== undefined && v !== null && String(v).trim() !== "") return String(v);
+  }
+  return "";
+}
+
+function pickNullableStr(obj: any, ...keys: string[]) {
+  const v = pickStr(obj, ...keys);
+  return v ? v : null;
 }
 
 function getPermsLower(user: any): string[] {
@@ -98,75 +95,41 @@ function formatDateRange(start: string, end: string) {
   return `${sText} – ${eText}`;
 }
 
-function normalizeStatus(s: any): TimeOffStatus | "Unknown" {
-  const v = lower(s);
-
-  if (v === "undefined") return "Undefined";
-  if (v === "pending") return "Pending";
-  if (v === "cancelled" || v === "canceled") return "Cancelled";
-  if (v === "approved") return "Approved";
-  if (v === "rejected") return "Rejected";
-
-  return "Unknown";
-}
-
-function statusColor(status: TimeOffStatus | "Unknown") {
+function statusColor(status: TimeOffStatus) {
   if (status === "Approved") return "#7CFC9A";
   if (status === "Rejected") return "#ff6b6b";
   if (status === "Cancelled") return "#cccccc";
   if (status === "Pending") return "#ffd27f";
-  if (status === "Undefined") return "#b388ff";
   return "#b388ff";
 }
 
-function safeErrorMessage(raw: string) {
-  const s = toStr(raw);
-  const looksLikeHtml = s.includes("<!DOCTYPE") || s.includes("<html") || s.includes("<head") || s.includes("<body");
-  if (looksLikeHtml) {
-    const apiHint = API_ROOT
-      ? `API base: ${API_ROOT}`
-      : "NEXT_PUBLIC_API_BASE_URL is empty (fetch goes to frontend and returns HTML).";
-    return `Request returned HTML instead of JSON. Check API URL / proxy / auth. ${apiHint}`;
-  }
-  if (s.length > 800) return `${s.slice(0, 800)}…`;
-  return s || "Request failed";
+function iso(d: Date) {
+  return d.toISOString().slice(0, 10);
 }
 
-async function apiFetchJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const res = await fetch(input, {
-    ...init,
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...(init?.headers ?? {}),
-    },
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(safeErrorMessage(text || `HTTP ${res.status}`));
-  }
-
-  if (res.status === 204) return null as any;
-
-  const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
-  if (!contentType.includes("application/json")) {
-    const text = await res.text().catch(() => "");
-    throw new Error(safeErrorMessage(text || `Expected JSON but got "${contentType || "unknown"}".`));
-  }
-
-  return (await res.json()) as T;
-}
-
-export default function TimeOffManagementPage() {
+export default function TimeOffManagementLocalPage() {
   const { user, loading: userLoading } = useCurrentUser();
   const perms = useMemo(() => getPermsLower(user), [user]);
 
   const canApprove =
-    perms.includes("timeoffpage.edit") || perms.includes("timeoff.approve.detailadminapprove") || perms.includes("admin");
+    perms.includes("timeoffpage.edit") ||
+    perms.includes("timeoff.approve.detailadminapprove") ||
+    perms.includes("admin");
   const canReject =
-    perms.includes("timeoffpage.edit") || perms.includes("timeoff.approve.detailadminapprove") || perms.includes("admin");
+    perms.includes("timeoffpage.edit") ||
+    perms.includes("timeoff.approve.detailadminapprove") ||
+    perms.includes("admin");
+
+  const me: ApproverMiniDto = useMemo(() => {
+    const u: any = user ?? {};
+    return {
+      id: pickStr(u, "id", "Id") || "local-approver",
+      firstName: pickStr(u, "firstName", "FirstName") || "Approver",
+      middleName: pickNullableStr(u, "middleName", "MiddleName"),
+      lastName: pickStr(u, "lastName", "LastName"),
+      email: pickStr(u, "email", "Email") || "local@demo",
+    };
+  }, [user]);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -174,70 +137,94 @@ export default function TimeOffManagementPage() {
   const [status, setStatus] = useState<"" | TimeOffStatus>("");
   const [employeeQ, setEmployeeQ] = useState("");
 
-  const [page, setPage] = useState(1);
   const perPage = 10;
+  const [page, setPage] = useState(1);
 
-  const [rows, setRows] = useState<TimeOffRequestDto[]>([]);
-  const [total, setTotal] = useState(0);
+  const [rows, setRows] = useState<TimeOffRequestDto[]>(() => {
+    const baseEmployee: EmployeeMiniDto = {
+      id: "e1",
+      firstName: "Anastasiia",
+      middleName: "Vadymivna",
+      lastName: "Linchuk",
+      email: "stacy.linchuk@gmail.com",
+    };
+
+    const vacation: TimeOffTypeDto = { id: "t1", order: 1, name: "Vacation", emoji: "🌴", daysPerYear: 24 };
+    const sick: TimeOffTypeDto = { id: "t2", order: 2, name: "Sick leave (documented)", emoji: "🧾", daysPerYear: 0 };
+
+    return [
+      {
+        id: "r1",
+        startDate: iso(new Date(2025, 11, 20)),
+        endDate: iso(new Date(2026, 0, 1)),
+        type: vacation,
+        status: "Pending",
+        workingDaysCount: 7,
+        employee: baseEmployee,
+        approver: null,
+      },
+      {
+        id: "r2",
+        startDate: iso(new Date(2025, 11, 12)),
+        endDate: iso(new Date(2025, 11, 17)),
+        type: sick,
+        status: "Approved",
+        workingDaysCount: 4,
+        employee: { ...baseEmployee, id: "e2", firstName: "Linchuka", lastName: "Leonidivna Inna", email: "linchuk.anastasia.lavi@gmail.com" },
+        approver: me,
+      },
+    ];
+  });
 
   const [reasonModal, setReasonModal] = useState<ReasonModalState>({ open: false });
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [reasonText, setReasonText] = useState("");
 
-  const filteredRows = useMemo(() => {
+  const filtered = useMemo(() => {
     const q = lower(employeeQ);
-    if (!q) return rows;
-    return rows.filter((r) => {
-      const full = lower(`${r.employee.firstName} ${r.employee.middleName ?? ""} ${r.employee.lastName} ${r.employee.email}`);
-      return full.includes(q);
-    });
-  }, [rows, employeeQ]);
+    const byName = !q
+      ? rows
+      : rows.filter((r) => {
+          const full = lower(`${r.employee.firstName} ${r.employee.middleName ?? ""} ${r.employee.lastName} ${r.employee.email}`);
+          return full.includes(q);
+        });
 
-  const totalPages = useMemo(() => {
-    const pp = Math.max(1, perPage);
-    const t = Math.max(0, total);
-    return Math.max(1, Math.ceil(t / pp));
-  }, [total, perPage]);
+    const byStatus = status ? byName.filter((r) => r.status === status) : byName;
+    return byStatus;
+  }, [rows, employeeQ, status]);
 
-  async function load() {
-    setError(null);
+  const total = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(1, perPage)));
+  const safePage = Math.min(Math.max(1, page), totalPages);
 
-    try {
-      const qs = new URLSearchParams();
-      qs.set("PerPage", String(perPage));
-      qs.set("Page", String(page));
-      if (status) qs.set("Status", status);
+  const pageRows = useMemo(() => {
+    const start = (safePage - 1) * perPage;
+    return filtered.slice(start, start + perPage);
+  }, [filtered, safePage, perPage]);
 
-      const url = `${LIST_API}?${qs.toString()}`;
-      const json = await apiFetchJson<PagedResponse<TimeOffRequestDto>>(url, { method: "GET" });
-
-      const data = (json?.data?.data ?? []) as TimeOffRequestDto[];
-      const t = Number(json?.data?.total ?? data.length ?? 0);
-
-      setRows(Array.isArray(data) ? data : []);
-      setTotal(Number.isFinite(t) ? t : 0);
-    } catch (e: any) {
-      setRows([]);
-      setTotal(0);
-      setError(safeErrorMessage(e?.message ?? "Failed to load requests"));
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, [page, status]);
+  const hasPrev = safePage > 1;
+  const hasNext = safePage < totalPages;
 
   async function approve(id: string) {
     if (!canApprove) return;
-
     setBusy(true);
     setError(null);
 
     try {
-      await apiFetchJson<void>(APPROVE_API(id), { method: "POST", body: "{}" });
-      await load();
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id !== id || r.status !== "Pending"
+            ? r
+            : {
+                ...r,
+                status: "Approved",
+                approver: me,
+                rejectionReason: null,
+              }
+        )
+      );
     } catch (e: any) {
-      setError(safeErrorMessage(e?.message ?? "Approve failed"));
+      setError(toStr(e?.message ?? "Approve failed"));
     } finally {
       setBusy(false);
     }
@@ -252,7 +239,6 @@ export default function TimeOffManagementPage() {
 
   async function submitReject() {
     if (!rejectId) return;
-
     const reason = toStr(reasonText);
     if (!reason) {
       setError("Reason is required for reject.");
@@ -263,40 +249,43 @@ export default function TimeOffManagementPage() {
     setError(null);
 
     try {
-      await apiFetchJson<void>(REJECT_API(rejectId), {
-        method: "POST",
-        body: JSON.stringify({ id: rejectId, reason }),
-      });
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id !== rejectId || r.status !== "Pending"
+            ? r
+            : {
+                ...r,
+                status: "Rejected",
+                approver: me,
+                rejectionReason: reason,
+              }
+        )
+      );
       setReasonModal({ open: false });
       setRejectId(null);
-      await load();
     } catch (e: any) {
-      setError(safeErrorMessage(e?.message ?? "Reject failed"));
+      setError(toStr(e?.message ?? "Reject failed"));
     } finally {
       setBusy(false);
     }
   }
 
-  const hasPrev = page > 1;
-  const hasNext = page < totalPages;
-
   return (
     <div className="appBackground">
       <TopBar />
-
       <div className="timeOffPageWrapper">
         <div className="timeOffCard">
           <div className="timeOffHeader">
             <div>
-              <h1 className="timeOffHeaderTitle">Time-Off Management</h1>
-              <p className="timeOffHeaderSubtitle">View all employee requests and manage approvals / rejections.</p>
+              <h1 className="timeOffHeaderTitle">Time-Off Management (Local UI)</h1>
+              <p className="timeOffHeaderSubtitle">Mocked requests — approve / reject without backend.</p>
             </div>
 
             <div className="employeesFilters" style={{ marginBottom: 0, justifyContent: "flex-end" }}>
               <input
                 className="accInput"
                 value={employeeQ}
-                onChange={(e) => setEmployeeQ(e.target.value)}
+                onChange={(e) => (setPage(1), setEmployeeQ(e.target.value))}
                 placeholder="Search by name or email..."
                 disabled={busy}
                 style={{ minWidth: 260 }}
@@ -327,15 +316,12 @@ export default function TimeOffManagementPage() {
                 <option value="Cancelled" style={{ background: "#150d2f", color: "#fbeab8" }}>
                   Cancelled
                 </option>
-                <option value="Undefined" style={{ background: "#150d2f", color: "#fbeab8" }}>
-                  Undefined
-                </option>
               </select>
 
               <button
                 className="profileButtonSecondary"
                 type="button"
-                onClick={() => load()}
+                onClick={() => null}
                 disabled={busy || userLoading}
                 style={{
                   padding: "12px 24px",
@@ -347,11 +333,13 @@ export default function TimeOffManagementPage() {
               </button>
             </div>
           </div>
+
           {error ? (
             <div className="errorMessage" style={{ whiteSpace: "pre-wrap" }}>
               {error}
             </div>
           ) : null}
+
           <div className="timeOffTableWrapper">
             <table className="timeOffTable">
               <thead>
@@ -364,18 +352,17 @@ export default function TimeOffManagementPage() {
                   <th className="timeOffTh">Actions</th>
                 </tr>
               </thead>
+
               <tbody>
-                {filteredRows.length === 0 ? (
+                {pageRows.length === 0 ? (
                   <tr>
                     <td className="timeOffTd" colSpan={6} style={{ opacity: 0.75 }}>
                       No requests found.
                     </td>
                   </tr>
                 ) : (
-                  filteredRows.map((r) => {
-                    const normStatus = normalizeStatus(r.status);
-                    const isPending = normStatus === "Pending";
-
+                  pageRows.map((r) => {
+                    const isPending = r.status === "Pending";
                     const canActApprove = canApprove && isPending;
                     const canActReject = canReject && isPending;
 
@@ -399,18 +386,18 @@ export default function TimeOffManagementPage() {
                           <span
                             className="timeOffStatusPill"
                             style={{
-                              borderColor: statusColor(normStatus),
-                              color: statusColor(normStatus),
+                              borderColor: statusColor(r.status),
+                              color: statusColor(r.status),
                             }}
                           >
-                            {normStatus === "Unknown" ? String(r.status) : normStatus}
+                            {r.status}
                           </span>
 
                           <div style={{ marginTop: 8, opacity: 0.85, fontSize: 14 }}>
                             Approved by: <span style={{ fontWeight: 700 }}>{fmtName(r.approver)}</span>
                           </div>
 
-                          {normalizeStatus(r.status) === "Rejected" && r.rejectionReason ? (
+                          {r.status === "Rejected" && r.rejectionReason ? (
                             <div style={{ marginTop: 6, opacity: 0.9, fontSize: 14 }}>
                               Reason: <span style={{ fontWeight: 700 }}>{r.rejectionReason}</span>
                             </div>
@@ -434,6 +421,7 @@ export default function TimeOffManagementPage() {
                           >
                             Approve
                           </button>
+
                           <button
                             className="profileButtonSecondary"
                             type="button"
@@ -458,6 +446,7 @@ export default function TimeOffManagementPage() {
               </tbody>
             </table>
           </div>
+
           {totalPages > 1 ? (
             <div className="timeOffPagination">
               <button
@@ -469,9 +458,11 @@ export default function TimeOffManagementPage() {
               >
                 Previous
               </button>
+
               <span className="timeOffPaginationInfo">
-                Page {page} of {totalPages}
+                Page {safePage} of {totalPages}
               </span>
+
               <button
                 className="profileButtonSecondary"
                 type="button"
@@ -483,6 +474,7 @@ export default function TimeOffManagementPage() {
               </button>
             </div>
           ) : null}
+
           <div style={{ marginTop: 10, opacity: 0.75, fontSize: 14 }}>Total: {total}</div>
         </div>
       </div>
@@ -514,7 +506,9 @@ export default function TimeOffManagementPage() {
             }}
           >
             <div style={{ fontSize: 22, fontWeight: 900 }}>{reasonModal.title}</div>
+
             <div style={{ marginTop: 10, opacity: 0.85, fontSize: 15 }}>Please provide a rejection reason (required).</div>
+
             <textarea
               className="accInput"
               value={reasonText}
@@ -534,6 +528,7 @@ export default function TimeOffManagementPage() {
               >
                 Close
               </button>
+
               <button
                 className="profileButtonPrimary"
                 type="button"
