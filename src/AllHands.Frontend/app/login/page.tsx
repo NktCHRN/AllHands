@@ -44,7 +44,7 @@ export default function LoginPage() {
       }
 
       setLoading(false);
-      router.push("/account");
+      router.push("/");
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);
@@ -58,7 +58,6 @@ export default function LoginPage() {
         <h1 style={{ marginBottom: "5px", fontSize: "42px", fontWeight: "bold" }}>
           Log in
         </h1>
-
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <input
             type="email"
@@ -68,7 +67,6 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-
           <input
             type="password"
             placeholder="password"
@@ -78,7 +76,6 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-
         <button
           className="button"
           style={{ marginTop: "5px" }}
@@ -87,7 +84,6 @@ export default function LoginPage() {
         >
           {loading ? "Logging..." : "Login"}
         </button>
-
         <Link
           href="/forgot-password"
           style={{
@@ -100,7 +96,6 @@ export default function LoginPage() {
         >
           Forgot password?
         </Link>
-
         {error && <div className="error">{error}</div>}
       </div>
     </div>
