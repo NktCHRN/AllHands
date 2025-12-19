@@ -17,6 +17,8 @@ builder.UseAllHandsWolverine(opts =>
     opts.AddListener<EmployeeDeletedEvent>(environmentName, Topics.Employee, Services.NewsService);
     
     opts.AddIncomingHeadersMiddleware();
+    
+    opts.Policies.UseDurableInboxOnAllListeners();
 });
 
 var app = builder.Build();
