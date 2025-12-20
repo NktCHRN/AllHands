@@ -136,27 +136,30 @@ async function apiFetchJson<T>(
 
 function unwrapArray<T>(json: any): T[] {
   const d = json?.data ?? json;
-  const maybe =
-    d?.data ??
-    d?.items ??
-    d?.employees ??
-    d?.types ??
-    d?.balances ??
-    d;
+  const maybe = d?.data ?? d?.items ?? d?.employees ?? d?.types ?? d?.balances ?? d;
   return Array.isArray(maybe) ? (maybe as T[]) : [];
+}
+
+function fmtInt(v: any) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "0";
+  return String(Math.round(n));
+}
+
+function parseNumberStrict(s: string): number | null {
+  const raw = toStr(s);
+  if (!raw) return null;
+  const norm = raw.replace(",", ".");
+  const n = Number(norm);
+  if (Number.isNaN(n) || !Number.isFinite(n)) return null;
+  return n;
 }
 
 export default function TimeOffBalancePage() {
   const { user, loading: userLoading } = useCurrentUser();
 
-  const perms = useMemo(
-    () => getPermsLower(user),
-    [user]
-  );
-
-  const canEdit =
-    perms.includes("timeoffbalance.edit") ||
-    perms.includes("admin");
+  const perms = useMemo(() => getPermsLower(user), [user]);
+  const canEdit = perms.includes("timeoffbalance.edit") || perms.includes("admin");
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -188,9 +191,7 @@ export default function TimeOffBalancePage() {
     const q = lower(employeeQ);
     if (!q) return employees;
     return employees.filter((e) =>
-      lower(
-        `${e.firstName} ${e.middleName ?? ""} ${e.lastName} ${e.email}`
-      ).includes(q)
+      lower(`${e.firstName} ${e.middleName ?? ""} ${e.lastName} ${e.email}`).includes(q)
     );
   }, [employees, employeeQ]);
 
@@ -208,38 +209,25 @@ export default function TimeOffBalancePage() {
     qs.set("PerPage", "1000");
     qs.set("Page", "1");
 
-    const json = await apiFetchJson<any>(
-      `${EMPLOYEES_API}?${qs.toString()}`,
-      {
-        method: "GET",
-      }
-    );
+    const json = await apiFetchJson<any>(`${EMPLOYEES_API}?${qs.toString()}`, {
+      method: "GET",
+    });
 
-    setEmployees(
-      unwrapArray<EmployeeMiniDto>(json)
-    );
+    setEmployees(unwrapArray<EmployeeMiniDto>(json));
   }
 
   async function loadTypes() {
-    const json = await apiFetchJson<any>(
-      TIMEOFF_TYPES_API,
-      {
-        method: "GET",
-      }
-    );
+    const json = await apiFetchJson<any>(TIMEOFF_TYPES_API, {
+      method: "GET",
+    });
 
-    setTypes(
-      unwrapArray<TimeOffTypeDto>(json)
-    );
+    setTypes(unwrapArray<TimeOffTypeDto>(json));
   }
 
   async function loadBalances(employeeId: string) {
-    const json = await apiFetchJson<any>(
-      BALANCES_API(employeeId),
-      {
-        method: "GET",
-      }
-    );
+    const json = await apiFetchJson<any>(BALANCES_API(employeeId), {
+      method: "GET",
+    });
 
     const list = unwrapArray<BalanceApiItem>(json);
 
@@ -257,14 +245,9 @@ export default function TimeOffBalancePage() {
     setBusy(true);
 
     try {
-      await Promise.all([
-        loadEmployees(),
-        loadTypes(),
-      ]);
+      await Promise.all([loadEmployees(), loadTypes()]);
     } catch (e: any) {
-      setError(
-        safeErrorMessage(e?.message ?? "Failed to load data")
-      );
+      setError(safeErrorMessage(e?.message ?? "Failed to load data"));
     } finally {
       setBusy(false);
     }
@@ -279,9 +262,7 @@ export default function TimeOffBalancePage() {
     try {
       await loadBalances(selectedEmployeeId);
     } catch (e: any) {
-      setError(
-        safeErrorMessage(e?.message ?? "Failed to load balances")
-      );
+      setError(safeErrorMessage(e?.message ?? "Failed to load balances"));
     } finally {
       setBusy(false);
     }
@@ -304,29 +285,21 @@ export default function TimeOffBalancePage() {
     if (!selectedEmployee) return;
 
     const t = typeMap[typeId];
-    const current =
-      balances.find((b) => b.typeId === typeId)?.days ?? 0;
+    const row = balances.find((b) => b.typeId === typeId);
+    const currentDays = row?.days ?? 0;
 
     setChangeMode("delta");
-    setValueText("");
     setReasonText("");
+    setValueText("");
 
     setEditModal({
       open: true,
       employeeId: selectedEmployee.id,
       employeeName: fmtName(selectedEmployee),
-      typeId: typeId,
+      typeId,
       typeName: t?.name ?? "Time-off type",
-      currentDays: current,
+      currentDays,
     });
-  }
-
-  function parseNumberStrict(s: string): number | null {
-    const raw = toStr(s);
-    if (!raw) return null;
-    const n = Number(raw);
-    if (Number.isNaN(n) || !Number.isFinite(n)) return null;
-    return n;
   }
 
   async function submitEdit() {
@@ -351,30 +324,47 @@ export default function TimeOffBalancePage() {
       return;
     }
 
+    if (changeMode === "reset" && value < 0) {
+      setError("New balance cannot be negative.");
+      return;
+    }
+
     setError(null);
     setBusy(true);
 
     try {
-      const payload =
+      const payload: any =
         changeMode === "delta"
-          ? { delta: value, reason: reason }
-          : { days: value, reason: reason };
+          ? { reason, delta: value }
+          : { reason, days: value };
 
-      await apiFetchJson<void>(
-        EDIT_BALANCE_API(editModal.employeeId, editModal.typeId),
-        {
-          method: "PUT",
-          body: JSON.stringify(payload),
-        }
+      await apiFetchJson<void>(EDIT_BALANCE_API(editModal.employeeId, editModal.typeId), {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+
+      const localNewDays =
+        changeMode === "delta"
+          ? Number(
+              (balances.find((b) => b.typeId === editModal.typeId)?.days ?? 0) + value
+            )
+          : Number(value);
+
+      setBalances((prev) =>
+        prev.map((b) =>
+          b.typeId === editModal.typeId
+            ? {
+                ...b,
+                days: localNewDays,
+              }
+            : b
+        )
       );
 
       setEditModal({ open: false });
-
       await loadBalances(editModal.employeeId);
     } catch (e: any) {
-      setError(
-        safeErrorMessage(e?.message ?? "Failed to edit balance")
-      );
+      setError(safeErrorMessage(e?.message ?? "Failed to edit balance"));
     } finally {
       setBusy(false);
     }
@@ -387,9 +377,7 @@ export default function TimeOffBalancePage() {
         <div className="timeOffCard">
           <div className="timeOffHeader">
             <div>
-              <h1 className="timeOffHeaderTitle">
-                Time-Off Balance
-              </h1>
+              <h1 className="timeOffHeaderTitle">Time-Off Balance</h1>
               <p className="timeOffHeaderSubtitle">
                 Select employee and manage time-off balances.
               </p>
@@ -415,9 +403,7 @@ export default function TimeOffBalancePage() {
                 className="profileButtonSecondary"
                 type="button"
                 onClick={() =>
-                  busy
-                    ? null
-                    : (setSelectedEmployeeId(""), setBalances([]))
+                  busy ? null : (setSelectedEmployeeId(""), setBalances([]))
                 }
                 disabled={busy || userLoading}
                 style={{
@@ -441,9 +427,7 @@ export default function TimeOffBalancePage() {
           </div>
 
           {!canEdit ? (
-            <div className="errorMessage">
-              You don’t have permission to edit balances.
-            </div>
+            <div className="errorMessage">You don’t have permission to edit balances.</div>
           ) : null}
 
           {error ? (
@@ -474,17 +458,13 @@ export default function TimeOffBalancePage() {
                 <table className="employeesTable">
                   <thead>
                     <tr>
-                      <th className="tableHead">
-                        Employees
-                      </th>
+                      <th className="tableHead">Employees</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredEmployees.length === 0 ? (
                       <tr>
-                        <td className="emptyTable">
-                          No employees found.
-                        </td>
+                        <td className="emptyTable">No employees found.</td>
                       </tr>
                     ) : (
                       filteredEmployees.map((e) => {
@@ -494,9 +474,7 @@ export default function TimeOffBalancePage() {
                           <tr
                             key={e.id}
                             className="tableRow"
-                            onClick={() =>
-                              busy ? null : setSelectedEmployeeId(e.id)
-                            }
+                            onClick={() => (busy ? null : setSelectedEmployeeId(e.id))}
                             style={{
                               cursor: busy ? "not-allowed" : "pointer",
                               background: active
@@ -505,21 +483,8 @@ export default function TimeOffBalancePage() {
                             }}
                           >
                             <td className="tableCell">
-                              <div
-                                style={{
-                                  fontWeight: 900,
-                                }}
-                              >
-                                {fmtName(e)}
-                              </div>
-                              <div
-                                style={{
-                                  opacity: 0.75,
-                                  fontSize: 13,
-                                }}
-                              >
-                                {e.email}
-                              </div>
+                              <div style={{ fontWeight: 900 }}>{fmtName(e)}</div>
+                              <div style={{ opacity: 0.75, fontSize: 13 }}>{e.email}</div>
                             </td>
                           </tr>
                         );
@@ -571,18 +536,10 @@ export default function TimeOffBalancePage() {
                     <table className="timeOffTable">
                       <thead>
                         <tr>
-                          <th className="timeOffTh">
-                            Type
-                          </th>
-                          <th className="timeOffTh">
-                            Balance (days)
-                          </th>
-                          <th className="timeOffTh">
-                            Days / Year
-                          </th>
-                          <th className="timeOffTh">
-                            Actions
-                          </th>
+                          <th className="timeOffTh">Type</th>
+                          <th className="timeOffTh">Balance (days)</th>
+                          <th className="timeOffTh">Days / Year</th>
+                          <th className="timeOffTh">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -601,20 +558,17 @@ export default function TimeOffBalancePage() {
                         ) : (
                           mergedRows.map((r) => {
                             const t = r.type;
+                            const showDaysPerYear = r.daysPerYear ?? t?.daysPerYear ?? null;
 
                             return (
-                              <tr
-                                key={r.typeId}
-                              >
+                              <tr key={r.typeId}>
                                 <td className="timeOffTd">
                                   {t?.emoji ? `${t.emoji} ` : ""}
                                   {t?.name ?? r.typeId}
                                 </td>
+                                <td className="timeOffTd">{fmtInt(r.days)}</td>
                                 <td className="timeOffTd">
-                                  {r.days}
-                                </td>
-                                <td className="timeOffTd">
-                                  {r.daysPerYear ?? t?.daysPerYear ?? "—"}
+                                  {showDaysPerYear === null ? "—" : fmtInt(showDaysPerYear)}
                                 </td>
                                 <td
                                   className="timeOffTd timeOffTd--actions"
@@ -631,10 +585,7 @@ export default function TimeOffBalancePage() {
                                       padding: "8px 16px",
                                       fontSize: 14,
                                       opacity: busy || !canEdit ? 0.5 : 1,
-                                      cursor:
-                                        busy || !canEdit
-                                          ? "not-allowed"
-                                          : "pointer",
+                                      cursor: busy || !canEdit ? "not-allowed" : "pointer",
                                     }}
                                   >
                                     Edit
@@ -680,60 +631,18 @@ export default function TimeOffBalancePage() {
               color: "#fbeab8",
             }}
           >
-            <div
-              style={{
-                fontSize: 22,
-                fontWeight: 900,
-              }}
-            >
-              Edit balance
-            </div>
+            <div style={{ fontSize: 22, fontWeight: 900 }}>Edit balance</div>
 
-            <div
-              style={{
-                marginTop: 10,
-                opacity: 0.85,
-                fontSize: 15,
-              }}
-            >
-              <div
-                style={{
-                  fontWeight: 900,
-                }}
-              >
-                {editModal.employeeName}
+            <div style={{ marginTop: 10, opacity: 0.85, fontSize: 15 }}>
+              <div style={{ fontWeight: 900 }}>{editModal.employeeName}</div>
+
+              <div style={{ marginTop: 6 }}>
+                Type: <span style={{ fontWeight: 900 }}>{editModal.typeName}</span>
               </div>
 
-              <div
-                style={{
-                  marginTop: 6,
-                }}
-              >
-                Type:{" "}
-                <span
-                  style={{
-                    fontWeight: 900,
-                  }}
-                >
-                  {editModal.typeName}
-                </span>
-              </div>
-
-              <div
-                style={{
-                  marginTop: 6,
-                  opacity: 0.8,
-                  fontSize: 13,
-                }}
-              >
+              <div style={{ marginTop: 6, opacity: 0.8, fontSize: 13 }}>
                 Current balance:{" "}
-                <span
-                  style={{
-                    fontWeight: 900,
-                  }}
-                >
-                  {editModal.currentDays}
-                </span>
+                <span style={{ fontWeight: 900 }}>{fmtInt(editModal.currentDays)}</span>
               </div>
             </div>
 
@@ -746,9 +655,7 @@ export default function TimeOffBalancePage() {
               }}
             >
               <div className="accRow">
-                <label className="accLable">
-                  Change mode
-                </label>
+                <label className="accLable">Change mode</label>
 
                 <select
                   className="accInput"
@@ -763,22 +670,10 @@ export default function TimeOffBalancePage() {
                     cursor: busy ? "not-allowed" : "pointer",
                   }}
                 >
-                  <option
-                    value="delta"
-                    style={{
-                      background: "#150d2f",
-                      color: "#fbeab8",
-                    }}
-                  >
+                  <option value="delta" style={{ background: "#150d2f", color: "#fbeab8" }}>
                     Delta (add/subtract)
                   </option>
-                  <option
-                    value="reset"
-                    style={{
-                      background: "#150d2f",
-                      color: "#fbeab8",
-                    }}
-                  >
+                  <option value="reset" style={{ background: "#150d2f", color: "#fbeab8" }}>
                     Reset (set exact value)
                   </option>
                 </select>
@@ -800,9 +695,7 @@ export default function TimeOffBalancePage() {
               </div>
 
               <div className="accRow">
-                <label className="accLable">
-                  Reason
-                </label>
+                <label className="accLable">Reason</label>
 
                 <input
                   className="accInput"
@@ -814,14 +707,7 @@ export default function TimeOffBalancePage() {
               </div>
             </div>
 
-            <div
-              style={{
-                marginTop: 14,
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 10,
-              }}
-            >
+            <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end", gap: 10 }}>
               <button
                 className="profileButtonSecondary"
                 type="button"
@@ -838,18 +724,9 @@ export default function TimeOffBalancePage() {
                 className="profileButtonPrimary"
                 type="button"
                 onClick={() => submitEdit()}
-                disabled={
-                  busy ||
-                  !toStr(reasonText) ||
-                  !toStr(valueText)
-                }
+                disabled={busy || !toStr(reasonText) || !toStr(valueText)}
                 style={{
-                  opacity:
-                    busy ||
-                    !toStr(reasonText) ||
-                    !toStr(valueText)
-                      ? 0.55
-                      : 1,
+                  opacity: busy || !toStr(reasonText) || !toStr(valueText) ? 0.55 : 1,
                 }}
               >
                 Submit
