@@ -340,14 +340,11 @@ export default function TimeOffBalancePage() {
                             You don’t have permission to edit balances.
                         </div>
                     ) : null}
-
-
                     {error ? (
                         <div className="errorMessage" style={{ whiteSpace: "pre-wrap" }}>
                             {error}
                         </div>
                     ) : null}
-
                     <div style={{ display: "flex", gap: 18, alignItems: "flex-start" }}>
                         <div style={{ width: 420, maxWidth: "100%" }}>
                             <div className="employeesTableWrapper">
