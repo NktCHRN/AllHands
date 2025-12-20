@@ -6,9 +6,9 @@ using MediatR;
 
 namespace AllHands.TimeOffService.Application.Features.Employees.UpdateStatus;
 
-public sealed class UpdateEmployeeStatusCommandHandler(IDocumentSession documentSession) : IRequestHandler<SaveEmployeeCommand>
+public sealed class UpdateEmployeeStatusCommandHandler(IDocumentSession documentSession) : IRequestHandler<UpdateEmployeeStatusCommand>
 {
-    public async Task Handle(SaveEmployeeCommand request, CancellationToken cancellationToken)
+    public async Task Handle(UpdateEmployeeStatusCommand request, CancellationToken cancellationToken)
     {
         var employee = await documentSession.Query<Employee>()
                            .FirstOrDefaultAsync(e => e.Id == request.Id, token: cancellationToken)
