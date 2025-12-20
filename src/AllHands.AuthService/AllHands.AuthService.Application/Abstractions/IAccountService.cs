@@ -16,9 +16,6 @@ public interface IAccountService
     Task ReloginAsync(Guid companyId, CancellationToken cancellationToken = default);
     Task GenerateResetPasswordToken(string email, CancellationToken cancellationToken);
     Task ChangePassword(ChangePasswordCommand command, CancellationToken cancellationToken);
-    Task<IReadOnlyList<Guid>> GetUserIds(Guid currentUserId);
-    Task UpdateAsync(UpdateUserCommand command, Guid userId, CancellationToken cancellationToken);
-    Task<RoleDto?> GetRoleByUserIdAsync(Guid userId, CancellationToken cancellationToken);
 
     Task<CreateEmployeeAccountResult> CreateAsync(CreateEmployeeCommand command,
         CancellationToken cancellationToken);

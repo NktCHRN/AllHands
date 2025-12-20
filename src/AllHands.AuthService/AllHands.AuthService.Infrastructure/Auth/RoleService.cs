@@ -9,6 +9,7 @@ using AllHands.AuthService.Application.Features.Roles.GetUsersInRole;
 using AllHands.AuthService.Application.Features.Roles.Update;
 using AllHands.AuthService.Domain.Models;
 using AllHands.Shared.Application.Dto;
+using AllHands.Shared.Contracts.Messaging.Events.Roles;
 using AllHands.Shared.Domain.Exceptions;
 using AllHands.Shared.Domain.UserContext;
 using Microsoft.AspNetCore.Identity;
@@ -114,6 +115,9 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
             CreatedAt = timeProvider.GetUtcNow(),
             CreatedByUserId = UserContext.Id
         };
+
+        await messageBus.PublishAsync(new RoleCreatedEvent(role.Id, role.Name, role.CompanyId));
+        
         var result = await roleManager.CreateAsync(role);
         if (!result.Succeeded)
         {
@@ -175,6 +179,7 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
             });
         }
 
+        await messageBus.PublishAsync(new RoleUpdatedEvent(role.Id, role.Name, role.CompanyId));
         await messageBus.PublishAsync(new CompanySessionsRecalculationRequestedEvent(companyId, UserContext.Id));
         
         var result = await roleManager.UpdateAsync(role);
@@ -220,6 +225,7 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
         role.DeletedAt = timeProvider.GetUtcNow();
         role.DeletedByUserId = UserContext.Id;
         
+        await messageBus.PublishAsync(new RoleDeletedEvent(role.Id, role.CompanyId));
         await messageBus.PublishAsync(new CompanySessionsRecalculationRequestedEvent(companyId, UserContext.Id));
         
         await dbContext.SaveChangesAsync(cancellationToken);

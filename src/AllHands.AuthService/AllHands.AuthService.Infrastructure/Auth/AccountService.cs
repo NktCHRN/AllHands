@@ -12,6 +12,7 @@ using AllHands.AuthService.Application.Features.User.ResetPassword;
 using AllHands.AuthService.Application.Features.User.Update;
 using AllHands.AuthService.Domain.Models;
 using AllHands.AuthService.Infrastructure.Abstractions;
+using AllHands.Shared.Contracts.Messaging.Events.Users;
 using AllHands.Shared.Domain.Exceptions;
 using AllHands.Shared.Domain.UserContext;
 using AllHands.Shared.Domain.Utilities;
@@ -219,56 +220,6 @@ public sealed class AccountService(
         await transaction.CommitAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Guid>> GetUserIds(Guid currentUserId)
-    {
-        var users = await dbContext.Users
-            .Where(u => u.GlobalUser!.Users.Any(gu => gu.Id == currentUserId) 
-                        && !u.DeletedAt.HasValue 
-                        && u.IsInvitationAccepted)
-            .ToListAsync();
-        
-        return users.Select(u => u.Id).ToList();
-    }
-
-    public async Task UpdateAsync(UpdateUserCommand command, Guid userId, CancellationToken cancellationToken)
-    {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
-        
-        var user = await userManager.FindByIdAsync(userId.ToString())
-            ?? throw new EntityNotFoundException("User was not found");
-        
-        user.FirstName = command.FirstName;
-        user.MiddleName = command.MiddleName;
-        user.LastName = command.LastName;
-        user.PhoneNumber = command.PhoneNumber;
-        
-        await userManager.UpdateAsync(user);
-        
-        await ticketModifier.UpdateClaimsAsync(dbContext, userId, () =>
-        [
-            new Claim(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty),
-            new Claim(ClaimTypes.GivenName, user.FirstName),
-            new Claim("middlename", user.MiddleName ?? string.Empty),
-            new Claim(ClaimTypes.Surname, user.LastName)
-        ], cancellationToken: cancellationToken);
-
-        await transaction.CommitAsync(cancellationToken);
-    }
-
-    public async Task<RoleDto?> GetRoleByUserIdAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        var role = await dbContext.Roles
-            .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.Users.Any(u => u.UserId == userId), cancellationToken: cancellationToken);
-
-        if (role is null)
-        {
-            return null;
-        }
-
-        return new RoleDto(role.Id, role.Name ?? string.Empty, role.IsDefault);
-    }
-
     public async Task<CreateEmployeeAccountResult> CreateAsync(CreateEmployeeCommand command,
         CancellationToken cancellationToken)
     {
@@ -318,6 +269,7 @@ public sealed class AccountService(
             StringUtilities.GetFullName(UserContext.FirstName, UserContext.MiddleName, UserContext.LastName),
             invitation.Id,
             invitation.Token));
+        await messageBus.PublishAsync(new UserCreatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), companyId));
         
         await dbContext.SaveChangesAsync(cancellationToken);
         
@@ -386,6 +338,7 @@ public sealed class AccountService(
         await userManager.UpdateAsync(user);
 
         await messageBus.PublishAsync(new UserSessionsRecalculationRequestedEvent(userId, UserContext.Id));
+        await messageBus.PublishAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), user.CompanyId));
         await dbContext.SaveChangesAsync(cancellationToken);
         
         await transaction.CommitAsync(cancellationToken);
@@ -460,6 +413,8 @@ public sealed class AccountService(
         user.DeletedAt = timeProvider.GetUtcNow();
         
         await ticketModifier.ExpireActiveSessionsAsync(dbContext, userId, cancellationToken);
+        
+        await messageBus.PublishAsync(new UserDeletedEvent(user.Id, user.CompanyId));
         
         await dbContext.SaveChangesAsync(cancellationToken);
     }

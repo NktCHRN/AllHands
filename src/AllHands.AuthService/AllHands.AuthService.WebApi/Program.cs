@@ -1,11 +1,18 @@
-﻿using AllHands.AuthService.Application;
+﻿using AllHands.Auth.Contracts.Messaging;
+using AllHands.AuthService.Application;
 using AllHands.AuthService.Infrastructure;
 using AllHands.AuthService.Infrastructure.Auth;
 using AllHands.AuthService.WebApi;
+using AllHands.Shared.Contracts.Messaging;
+using AllHands.Shared.Contracts.Messaging.Events.Roles;
+using AllHands.Shared.Contracts.Messaging.Events.Users;
 using AllHands.Shared.Infrastructure.Messaging;
 using AllHands.Shared.WebApi.Rest;
 using Marten;
 using Microsoft.EntityFrameworkCore;
+using Wolverine.AmazonSqs;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +23,28 @@ builder.Services.AddApplication()
     .AddWebApi(builder.Configuration, builder.Environment);
 
 builder.UseAllHandsWolverine(opts =>
-{
+{    
+    var environment = builder.Environment.EnvironmentName;
+    opts.AddPublisher<UserCreatedEvent>(environment, Topics.User);
+    opts.AddPublisher<UserUpdatedEvent>(environment, Topics.User);
+    opts.AddPublisher<UserDeletedEvent>(environment, Topics.User);
+    
+    opts.AddPublisher<RoleCreatedEvent>(environment, Topics.Role);
+    opts.AddPublisher<RoleUpdatedEvent>(environment, Topics.Role);
+    opts.AddPublisher<RoleDeletedEvent>(environment, Topics.Role);
+
+    opts.PublishMessage<CompanySessionsRecalculationRequestedEvent>()
+        .ToSqsQueue($"{environment.ToLower()}_{Queues.CompanySessionsRecalculationRequestedEvent}");
+    opts.PublishMessage<ResetPasswordRequestedEvent>()
+        .ToSqsQueue($"{environment.ToLower()}_{Queues.ResetPasswordRequestedEvent}");
+    opts.PublishMessage<UserInvitedEvent>()
+        .ToSqsQueue($"{environment.ToLower()}_{Queues.UserInvitedEvent}");
+    opts.PublishMessage<UserSessionsRecalculationRequestedEvent>()
+        .ToSqsQueue($"{environment.ToLower()}_{Queues.UserSessionsRecalculationRequestedEvent}");
+    
+    opts.PersistMessagesWithPostgresql(builder.Configuration.GetConnectionString("postgres") ?? throw new InvalidOperationException("postgres connection was not provided."));
+    
+    opts.UseEntityFrameworkCoreTransactions();
     opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
 });
 
