@@ -3,6 +3,7 @@ using AllHands.AuthService.Domain.Models;
 using AllHands.AuthService.Infrastructure.Abstractions;
 using AllHands.AuthService.Infrastructure.Auth;
 using AllHands.AuthService.Infrastructure.Email;
+using AllHands.Shared.Infrastructure.Auth;
 using AllHands.Shared.Infrastructure.Data;
 using Amazon.SimpleEmailV2;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -18,6 +19,7 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         return services
+            .AddAuth()
             .AddIdentityServices()
             .AddDatabase(configuration)
             .AddEmailService(configuration)

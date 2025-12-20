@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\AllHands.Auth.Contracts\AllHands.Auth.Contracts.csproj" />
+      <ProjectReference Include="..\AllHands.AuthService.Contracts\AllHands.AuthService.Contracts.csproj" />
       <ProjectReference Include="..\AllHands.AuthService.Application\AllHands.AuthService.Application.csproj" />
     </ItemGroup>
 

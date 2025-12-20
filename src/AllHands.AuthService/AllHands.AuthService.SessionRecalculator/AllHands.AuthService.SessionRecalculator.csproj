@@ -15,4 +15,8 @@
     <ItemGroup>
       <ProjectReference Include="..\AllHands.AuthService.Infrastructure\AllHands.AuthService.Infrastructure.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Handlers\" />
+    </ItemGroup>
 </Project>

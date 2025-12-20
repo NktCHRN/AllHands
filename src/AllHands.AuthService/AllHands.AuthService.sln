@@ -12,7 +12,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllHands.AuthService.Applic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllHands.AuthService.Infrastructure", "AllHands.AuthService.Infrastructure\AllHands.AuthService.Infrastructure.csproj", "{97B056F9-B5FD-4230-9170-5F10534E7FEA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllHands.Auth.Contracts", "AllHands.Auth.Contracts\AllHands.Auth.Contracts.csproj", "{2E7C0595-C88A-41EB-A3ED-03C618BFAB9A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllHands.AuthService.Contracts", "AllHands.AuthService.Contracts\AllHands.AuthService.Contracts.csproj", "{2E7C0595-C88A-41EB-A3ED-03C618BFAB9A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

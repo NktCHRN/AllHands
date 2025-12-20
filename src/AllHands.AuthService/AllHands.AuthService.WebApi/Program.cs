@@ -8,7 +8,6 @@ using AllHands.Shared.Contracts.Messaging.Events.Roles;
 using AllHands.Shared.Contracts.Messaging.Events.Users;
 using AllHands.Shared.Infrastructure.Messaging;
 using AllHands.Shared.WebApi.Rest;
-using Marten;
 using Microsoft.EntityFrameworkCore;
 using Wolverine.AmazonSqs;
 using Wolverine.EntityFrameworkCore;
