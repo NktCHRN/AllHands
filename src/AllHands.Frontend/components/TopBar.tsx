@@ -115,6 +115,13 @@ export default function TopBar() {
                       >
                         Time-off
                       </Link>
+                      <Link
+                        href="/management/time-off/balance"
+                        className="navDropdownItem"
+                        onClick={closeMenu}
+                      >
+                        Time-off balance
+                      </Link>
                     </div>
                   )}
                 </div>
