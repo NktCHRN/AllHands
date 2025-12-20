@@ -6,9 +6,9 @@ namespace AllHands.Shared.WebApi.Rest.Auth;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddPermissionBasedAuth(this IServiceCollection services)
+    public static AuthenticationBuilder AddPermissionBasedAuth(this IServiceCollection services)
     {
-        services.AddAuthentication(options =>
+        var result = services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = ServiceAuthHandler.SchemeName;
                 options.DefaultChallengeScheme = ServiceAuthHandler.SchemeName;
@@ -22,6 +22,6 @@ public static class DependencyInjection
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
         services.AddSingleton<IAuthorizationHandler, PermissionRequirementHandler>();
         
-        return services;
+        return result;
     }
 }

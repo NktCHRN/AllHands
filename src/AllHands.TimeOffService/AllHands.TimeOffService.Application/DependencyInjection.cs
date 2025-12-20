@@ -2,6 +2,7 @@
 using AllHands.Shared.Application.Behaviors;
 using AllHands.Shared.Domain;
 using AllHands.TimeOffService.Application.Abstractions;
+using AllHands.TimeOffService.Application.Features.TimeOffBalances.UpdateAll;
 using AllHands.TimeOffService.Application.Utilities;
 using AllHands.TimeOffService.Domain.Abstractions;
 using AllHands.TimeOffService.Domain.Services;
@@ -27,7 +28,9 @@ public static class DependencyInjection
         services.AddSingleton<IWorkDaysCalculator, WorkDaysCalculator>();
         services.AddSingleton<ITimeOffEmojiValidator, TimeOffEmojiValidator>();
 
-        services.AddTransient<IBatchTimeOffBalanceUpdater, Features.TimeOffBalances.UpdateAll.BatchTimeOffBalanceUpdater>();
+        services.AddOptions<TimeOffBalanceAutoUpdaterOptions>()
+            .BindConfiguration("TimeOffBalanceAutoUpdaterOptions");
+        services.AddTransient<IBatchTimeOffBalanceUpdater, BatchTimeOffBalanceUpdater>();
         
         return services.AddSingleton(TimeProvider.System);
     }
