@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-AllHands.AuthService.SessionRecalculator-c1998527-c917-4adf-b5f7-d11bb53cf56c</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
@@ -14,5 +15,11 @@
 
     <ItemGroup>
       <ProjectReference Include="..\AllHands.AuthService.Infrastructure\AllHands.AuthService.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
     </ItemGroup>
 </Project>

@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-AllHands.AuthService.ConsumersWorker-8ea2b2d9-316e-4df0-be24-50034995186f</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
@@ -14,5 +15,11 @@
 
     <ItemGroup>
       <ProjectReference Include="..\AllHands.AuthService.Infrastructure\AllHands.AuthService.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
     </ItemGroup>
 </Project>
