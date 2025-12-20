@@ -53,7 +53,6 @@ type EditModalState =
       typeId: string;
       typeName: string;
       currentDays: number;
-      currentDaysPerYear: number | null;
     };
 
 type ChangeMode = "delta" | "reset";
@@ -176,7 +175,6 @@ export default function TimeOffBalancePage() {
 
   const [changeMode, setChangeMode] = useState<ChangeMode>("delta");
   const [valueText, setValueText] = useState("");
-  const [daysPerYearText, setDaysPerYearText] = useState("");
   const [reasonText, setReasonText] = useState("");
 
   const selectedEmployee = useMemo(() => {
@@ -289,16 +287,10 @@ export default function TimeOffBalancePage() {
     const t = typeMap[typeId];
     const row = balances.find((b) => b.typeId === typeId);
     const currentDays = row?.days ?? 0;
-    const currentDaysPerYear = row?.daysPerYear ?? (t?.daysPerYear ?? null);
 
     setChangeMode("delta");
     setReasonText("");
     setValueText("");
-    setDaysPerYearText(
-      currentDaysPerYear === null || currentDaysPerYear === undefined
-        ? ""
-        : String(currentDaysPerYear)
-    );
 
     setEditModal({
       open: true,
@@ -307,7 +299,6 @@ export default function TimeOffBalancePage() {
       typeId,
       typeName: t?.name ?? "Time-off type",
       currentDays,
-      currentDaysPerYear,
     });
   }
 
@@ -317,10 +308,6 @@ export default function TimeOffBalancePage() {
 
     const reason = toStr(reasonText);
     const value = parseNumberStrict(valueText);
-
-    const dpyText = toStr(daysPerYearText);
-    const shouldUpdateDaysPerYear = dpyText.length > 0;
-    const dpyParsed = shouldUpdateDaysPerYear ? parseNumberStrict(dpyText) : null;
 
     if (!reason) {
       setError("Reason is required.");
@@ -342,30 +329,14 @@ export default function TimeOffBalancePage() {
       return;
     }
 
-    if (shouldUpdateDaysPerYear && dpyParsed === null) {
-      setError("Days / Year must be a number (or leave empty).");
-      return;
-    }
-
     setError(null);
     setBusy(true);
 
     try {
-      const payload: any = {
-        reason,
-        delta: changeMode === "delta" ? value : 0,
-        days: changeMode === "reset" ? value : undefined,
-      };
-
-      if (changeMode === "delta") {
-        delete payload.days;
-      } else {
-        delete payload.delta;
-      }
-
-      if (shouldUpdateDaysPerYear) {
-        payload.daysPerYear = dpyParsed;
-      }
+      const payload: any =
+        changeMode === "delta"
+          ? { reason, delta: value }
+          : { reason, days: value };
 
       await apiFetchJson<void>(EDIT_BALANCE_API(editModal.employeeId, editModal.typeId), {
         method: "PUT",
@@ -374,7 +345,9 @@ export default function TimeOffBalancePage() {
 
       const localNewDays =
         changeMode === "delta"
-          ? Number((balances.find((b) => b.typeId === editModal.typeId)?.days ?? 0) + value)
+          ? Number(
+              (balances.find((b) => b.typeId === editModal.typeId)?.days ?? 0) + value
+            )
           : Number(value);
 
       setBalances((prev) =>
@@ -383,7 +356,6 @@ export default function TimeOffBalancePage() {
             ? {
                 ...b,
                 days: localNewDays,
-                daysPerYear: shouldUpdateDaysPerYear ? (dpyParsed as number) : b.daysPerYear,
               }
             : b
         )
@@ -586,8 +558,7 @@ export default function TimeOffBalancePage() {
                         ) : (
                           mergedRows.map((r) => {
                             const t = r.type;
-                            const showDaysPerYear =
-                              r.daysPerYear ?? t?.daysPerYear ?? null;
+                            const showDaysPerYear = r.daysPerYear ?? t?.daysPerYear ?? null;
 
                             return (
                               <tr key={r.typeId}>
@@ -719,19 +690,6 @@ export default function TimeOffBalancePage() {
                   onChange={(e) => setValueText(e.target.value)}
                   disabled={busy}
                   placeholder={changeMode === "delta" ? "+2 / -1" : "20"}
-                  inputMode="decimal"
-                />
-              </div>
-
-              <div className="accRow">
-                <label className="accLable">Days / Year</label>
-
-                <input
-                  className="accInput"
-                  value={daysPerYearText}
-                  onChange={(e) => setDaysPerYearText(e.target.value)}
-                  disabled={busy}
-                  placeholder="e.g. 20"
                   inputMode="decimal"
                 />
               </div>
