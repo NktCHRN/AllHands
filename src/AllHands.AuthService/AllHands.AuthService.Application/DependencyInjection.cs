@@ -1,15 +1,10 @@
 ﻿using AllHands.Shared.Application;
 using AllHands.Shared.Application.Behaviors;
 using AllHands.Shared.Domain;
-using AllHands.TimeOffService.Application.Abstractions;
-using AllHands.TimeOffService.Application.Features.TimeOffBalances.UpdateAll;
-using AllHands.TimeOffService.Application.Utilities;
-using AllHands.TimeOffService.Domain.Abstractions;
-using AllHands.TimeOffService.Domain.Services;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AllHands.TimeOffService.Application;
+namespace AllHands.AuthService.Application;
 
 public static class DependencyInjection
 {
@@ -25,13 +20,6 @@ public static class DependencyInjection
                 .AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
 
-        services.AddSingleton<IWorkDaysCalculator, WorkDaysCalculator>();
-        services.AddSingleton<ITimeOffEmojiValidator, TimeOffEmojiValidator>();
-
-        services.AddOptions<TimeOffBalanceAutoUpdaterOptions>()
-            .BindConfiguration("TimeOffBalanceAutoUpdaterOptions");
-        services.AddTransient<IBatchTimeOffBalanceUpdater, BatchTimeOffBalanceUpdater>();
-        
         return services.AddSingleton(TimeProvider.System);
     }
 }
