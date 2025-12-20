@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-AllHands.AuthService.ConsumersWorker-8ea2b2d9-316e-4df0-be24-50034995186f</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AllHands.Shared.ConsumersWorker" Version="1.0.14" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\AllHands.AuthService.Infrastructure\AllHands.AuthService.Infrastructure.csproj" />
+    </ItemGroup>
+</Project>
