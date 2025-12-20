@@ -1,11 +1,9 @@
-using AllHands.AuthService.Application.Dto;
 using AllHands.AuthService.Application.Features.Employees.Create;
 using AllHands.AuthService.Application.Features.Employees.Update;
+using AllHands.AuthService.Application.Features.Employees.UpdateRole;
 using AllHands.AuthService.Application.Features.User.ChangePassword;
 using AllHands.AuthService.Application.Features.User.Login;
 using AllHands.AuthService.Application.Features.User.RegisterFromInvitation;
-using AllHands.AuthService.Application.Features.User.ResetPassword;
-using AllHands.AuthService.Application.Features.User.Update;
 
 namespace AllHands.AuthService.Application.Abstractions;
 
@@ -21,8 +19,9 @@ public interface IAccountService
         CancellationToken cancellationToken);
 
     Task RegenerateInvitationAsync(Guid employeeId, CancellationToken cancellationToken);
-    Task UpdateAsync(UpdateEmployeeCommand command, Guid userId, CancellationToken cancellationToken);
+    Task UpdateAsync(UpdateEmployeeCommand command, CancellationToken cancellationToken);
     Task DeactivateAsync(Guid userId, CancellationToken cancellationToken);
     Task ReactivateAsync(Guid userId, CancellationToken cancellationToken);
     Task DeleteAsync(Guid userId, CancellationToken cancellationToken);
+    Task UpdateRoleAsync(UpdateEmployeeRoleCommand command, CancellationToken cancellationToken);
 }

@@ -1,15 +1,12 @@
 using System.Data;
-using System.Security.Claims;
 using AllHands.Auth.Contracts.Messaging;
 using AllHands.AuthService.Application.Abstractions;
-using AllHands.AuthService.Application.Dto;
 using AllHands.AuthService.Application.Features.Employees.Create;
 using AllHands.AuthService.Application.Features.Employees.Update;
+using AllHands.AuthService.Application.Features.Employees.UpdateRole;
 using AllHands.AuthService.Application.Features.User.ChangePassword;
 using AllHands.AuthService.Application.Features.User.Login;
 using AllHands.AuthService.Application.Features.User.RegisterFromInvitation;
-using AllHands.AuthService.Application.Features.User.ResetPassword;
-using AllHands.AuthService.Application.Features.User.Update;
 using AllHands.AuthService.Domain.Models;
 using AllHands.AuthService.Infrastructure.Abstractions;
 using AllHands.Shared.Contracts.Messaging.Events.Users;
@@ -71,7 +68,7 @@ public sealed class AccountService(
             .ThenInclude(r => r!.Claims)
             .Where(u => u.Id == user!.Id)
             .FirstAsync(cancellationToken: cancellationToken);
-        var claimsPrincipal = userClaimsFactory.CreateClaimsPrincipal(userWithClaims!);
+        var claimsPrincipal = userClaimsFactory.CreateClaimsPrincipal(userWithClaims);
         
         return new LoginResult(claimsPrincipal);
     }
@@ -299,14 +296,12 @@ public sealed class AccountService(
         await transaction.CommitAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(UpdateEmployeeCommand command, Guid userId, CancellationToken cancellationToken)
+    public async Task UpdateAsync(UpdateEmployeeCommand command, CancellationToken cancellationToken)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
         var user = await dbContext.Users
-            .Include(u => u.Roles)
-            .ThenInclude(r => r.Role)
-            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+            .FirstOrDefaultAsync(u => u.Id == command.UserId, cancellationToken)
             ?? throw new EntityNotFoundException("User was not found");
         
         user.FirstName = command.FirstName;
@@ -323,8 +318,26 @@ public sealed class AccountService(
             user.NormalizedEmail = StringUtilities.GetNormalizedEmail(command.Email);
             user.UserName = GetUserName(command.Email, user.CompanyId);
         }
+        
+        await userManager.UpdateAsync(user);
+        
+        await messageBus.PublishAsync(new UserSessionsRecalculationRequestedEvent(command.UserId, UserContext.Id));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        
+        await transaction.CommitAsync(cancellationToken);
+    }
+    
+    public async Task UpdateRoleAsync(UpdateEmployeeRoleCommand command, CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
-        if (command.RoleId.HasValue && user.Roles.FirstOrDefault()?.RoleId != command.RoleId)
+        var user = await dbContext.Users
+            .Include(u => u.Roles)
+            .ThenInclude(r => r.Role)
+            .FirstOrDefaultAsync(u => u.Id == command.UserId, cancellationToken)
+            ?? throw new EntityNotFoundException("User was not found");
+
+        if (user.Roles.FirstOrDefault()?.RoleId != command.RoleId)
         {
             dbContext.RemoveRange(user.Roles);
             var role = await dbContext.Roles.FirstOrDefaultAsync(r => r.Id == command.RoleId, cancellationToken)
@@ -337,7 +350,7 @@ public sealed class AccountService(
         
         await userManager.UpdateAsync(user);
 
-        await messageBus.PublishAsync(new UserSessionsRecalculationRequestedEvent(userId, UserContext.Id));
+        await messageBus.PublishAsync(new UserSessionsRecalculationRequestedEvent(command.UserId, UserContext.Id));
         await messageBus.PublishAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), user.CompanyId));
         await dbContext.SaveChangesAsync(cancellationToken);
         

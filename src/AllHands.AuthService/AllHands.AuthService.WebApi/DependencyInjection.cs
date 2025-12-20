@@ -42,7 +42,19 @@ public static class DependencyInjection
             {
                 options.SessionStore = ticketStore;
             });
-        services.AddPermissionBasedAuth().AddCookie();
+        services.AddPermissionBasedAuth().AddCookie(opt =>
+        {
+            opt.Events.OnRedirectToLogin = async context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.WriteAsJsonAsync(ApiResponse.FromError(new ErrorResponse("You are not authorized.")));
+            };
+            opt.Events.OnRedirectToAccessDenied = async context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsJsonAsync(ApiResponse.FromError(new ErrorResponse("Access denied.")));
+            };
+        });
 
         services.AddAllHandsVersioning();
         
