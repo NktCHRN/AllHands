@@ -1,5 +1,5 @@
 ﻿# https://hub.docker.com/_/microsoft-dotnet
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /source
 
 ARG SERVICE_NAME=AllHands.NewsService
@@ -21,7 +21,7 @@ WORKDIR /source/${SERVICE_NAME}.WebApi
 RUN dotnet publish -c release -o /app --no-restore
 
 # final stage/image
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine
 WORKDIR /app
 ENV RUN_MIGRATIONS=true
 ENV ASPNETCORE_URLS=http://+:5000

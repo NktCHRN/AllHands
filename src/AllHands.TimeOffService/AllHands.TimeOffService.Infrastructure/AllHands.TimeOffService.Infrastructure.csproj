@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\AllHands.TimeOffService.Application\AllHands.TimeOffService.Application.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AllHands.Shared.Infrastructure" Version="1.0.11" />
+      <PackageReference Include="WolverineFx.Marten" Version="5.9.0" />
+    </ItemGroup>
+
+</Project>

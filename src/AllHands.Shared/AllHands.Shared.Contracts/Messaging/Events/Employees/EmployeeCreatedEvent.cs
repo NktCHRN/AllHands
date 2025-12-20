@@ -11,7 +11,8 @@ public sealed record EmployeeCreatedEvent(
     Guid ManagerId,
     Guid PositionId,
     Guid CompanyId,
-    Guid UserId) : IAllHandsEvent
+    Guid UserId,
+    string Status) : IAllHandsEvent
 {
     public string GroupId => Id.ToString();
     public DateTimeOffset OccurredAt { get; } = DateTimeOffset.UtcNow;
