@@ -12,16 +12,17 @@ namespace AllHands.TimeOffService.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration, bool integrateWithWolverine = true)
     {
         services.AddAuth();
-        
-        services.AddAllHandsMarten(configuration, options =>
+
+        var addMartenResult = services.AddAllHandsMarten(configuration, options =>
         {
             options.Projections.Add<EmployeeTimeOffBalanceItemProjection>(ProjectionLifecycle.Inline);
             options.Projections.Add<TimeOffRequestProjection>(ProjectionLifecycle.Inline);
-            
+
             options.Schema.For<Employee>();
+            options.Schema.For<Company>();
             options.Schema.For<Holiday>()
                 .Duplicate(x => x.Date, "date", notNull: true, configure: idx =>
                 {
@@ -56,7 +57,12 @@ public static class DependencyInjection
                 {
                     idx.TenancyScope = TenancyScope.PerTenant;
                 });
-        }).IntegrateWithWolverine();
+        });
+
+        if (integrateWithWolverine)
+        {
+            addMartenResult.IntegrateWithWolverine();
+        }
         
         return services;
     }
