@@ -1,0 +1,18 @@
+﻿using System.Text.Json.Serialization;
+using AllHands.Shared.Domain.Abstractions;
+
+namespace AllHands.TimeOffService.Domain.Models;
+
+public sealed class Holiday : IIdentifiable, ISoftDeletable
+{
+    public required Guid Id { get; set; }
+    public required string Name { get; set; }
+    public required Guid CompanyId { get; set; }
+    public required DateOnly Date { get; set; }
+    public required DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
+    [JsonIgnore]
+    public bool Deleted { get; set; }
+    [JsonIgnore]
+    public DateTimeOffset? DeletedAt { get; set; }
+}
