@@ -12,13 +12,15 @@ using AllHands.Shared.Application.Dto;
 using AllHands.Shared.Contracts.Messaging.Events.Roles;
 using AllHands.Shared.Domain.Exceptions;
 using AllHands.Shared.Domain.UserContext;
+using AllHands.Shared.Infrastructure.Messaging;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Wolverine;
+using Wolverine.EntityFrameworkCore;
 
 namespace AllHands.AuthService.Infrastructure.Auth;
 
-public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDbContext dbContext, RoleManager<AllHandsRole> roleManager, TimeProvider timeProvider, IMessageBus messageBus) : IRoleService
+public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDbContext dbContext, RoleManager<AllHandsRole> roleManager, TimeProvider timeProvider, IDbContextOutbox  messageBus) : IRoleService
 {
     private IUserContext UserContext => userContextAccessor.UserContext ?? throw new InvalidOperationException("UserContext is not set");
     
@@ -116,7 +118,10 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
             CreatedByUserId = UserContext.Id
         };
 
-        await messageBus.PublishAsync(new RoleCreatedEvent(role.Id, role.Name, role.CompanyId));
+        messageBus.Enroll(dbContext);
+        await messageBus.PublishWithHeadersAsync(new RoleCreatedEvent(role.Id, role.Name, role.CompanyId), UserContext);
+        
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
         var result = await roleManager.CreateAsync(role);
         if (!result.Succeeded)
@@ -179,8 +184,11 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
             });
         }
 
-        await messageBus.PublishAsync(new RoleUpdatedEvent(role.Id, role.Name, role.CompanyId));
-        await messageBus.PublishAsync(new CompanySessionsRecalculationRequestedEvent(companyId, UserContext.Id));
+        messageBus.Enroll(dbContext);
+        await messageBus.PublishWithHeadersAsync(new RoleUpdatedEvent(role.Id, role.Name, role.CompanyId), UserContext);
+        await messageBus.PublishWithHeadersAsync(new CompanySessionsRecalculationRequestedEvent(companyId, UserContext.Id), UserContext);
+        
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
         var result = await roleManager.UpdateAsync(role);
         if (!result.Succeeded)
@@ -225,10 +233,11 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
         role.DeletedAt = timeProvider.GetUtcNow();
         role.DeletedByUserId = UserContext.Id;
         
-        await messageBus.PublishAsync(new RoleDeletedEvent(role.Id, role.CompanyId));
-        await messageBus.PublishAsync(new CompanySessionsRecalculationRequestedEvent(companyId, UserContext.Id));
+        messageBus.Enroll(dbContext);
+        await messageBus.PublishWithHeadersAsync(new RoleDeletedEvent(role.Id, role.CompanyId), UserContext);
+        await messageBus.PublishWithHeadersAsync(new CompanySessionsRecalculationRequestedEvent(companyId, UserContext.Id), UserContext);
         
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
         await transaction.CommitAsync(cancellationToken);
     }
