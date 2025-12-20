@@ -5,6 +5,8 @@ using AllHands.AuthService.SessionRecalculator;
 using AllHands.Shared.ConsumersWorker;
 using AllHands.Shared.Infrastructure.Messaging;
 using Wolverine.AmazonSqs;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -27,6 +29,10 @@ builder.UseAllHandsWolverine(opts =>
         .ToSqsQueue($"{environment.ToLower()}_{Queues.UserSessionsRecalculationRequestedEvent}");
     
     opts.AddIncomingHeadersMiddleware();
+    
+    opts.PersistMessagesWithPostgresql(builder.Configuration.GetConnectionString("postgres") ?? throw new InvalidOperationException("postgres connection was not provided."));
+    
+    opts.UseEntityFrameworkCoreTransactions();
     
     opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
     opts.Policies.UseDurableInboxOnAllListeners();

@@ -5,9 +5,10 @@ using AllHands.AuthService.Infrastructure;
 using AllHands.Shared.ConsumersWorker;
 using AllHands.Shared.Contracts.Messaging;
 using AllHands.Shared.Contracts.Messaging.Events.Employees;
-using AllHands.Shared.Contracts.Messaging.Events.Users;
 using AllHands.Shared.Infrastructure.Messaging;
 using Wolverine.AmazonSqs;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -35,6 +36,10 @@ builder.UseAllHandsWolverine(opts =>
     opts.AddListener<EmployeeRehiredEvent>(environment, Topics.Employee, Services.AuthService);
     
     opts.AddIncomingHeadersMiddleware();
+    
+    opts.PersistMessagesWithPostgresql(builder.Configuration.GetConnectionString("postgres") ?? throw new InvalidOperationException("postgres connection was not provided."));
+    
+    opts.UseEntityFrameworkCoreTransactions();
     
     opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
     opts.Policies.UseDurableInboxOnAllListeners();

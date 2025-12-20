@@ -27,7 +27,7 @@ public sealed class AccountController(IMediator mediator) : ControllerBase
         return NoContent();
     }
     
-    [Authorize]
+    [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
     [HttpPost("relogin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Relogin([FromBody] ReloginCommand command, CancellationToken cancellationToken)
@@ -67,7 +67,7 @@ public sealed class AccountController(IMediator mediator) : ControllerBase
         return NoContent();
     }
     
-    [Authorize]
+    [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout()
