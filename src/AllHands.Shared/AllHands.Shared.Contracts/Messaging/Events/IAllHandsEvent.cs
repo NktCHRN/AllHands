@@ -2,6 +2,6 @@
 
 public interface IAllHandsEvent
 {
-    string GroupId { get; }
+    string? GroupId { get; }
     DateTimeOffset OccurredAt { get; }
 }
