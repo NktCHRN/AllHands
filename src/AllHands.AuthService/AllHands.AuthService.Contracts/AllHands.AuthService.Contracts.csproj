@@ -7,4 +7,8 @@
         <RootNamespace>AllHands.Auth.Contracts</RootNamespace>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="AllHands.Shared.Contracts" Version="1.0.8" />
+    </ItemGroup>
+
 </Project>

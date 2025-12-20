@@ -1,6 +1,9 @@
-﻿namespace AllHands.Auth.Contracts.Messaging;
+﻿using AllHands.Shared.Contracts.Messaging.Events;
 
-public record CompanySessionsRecalculationRequestedEvent(Guid CompanyId, Guid RequesterId)
+namespace AllHands.Auth.Contracts.Messaging;
+
+public record CompanySessionsRecalculationRequestedEvent(Guid CompanyId, Guid RequesterId) : IAllHandsEvent
 {
+    public string GroupId => CompanyId.ToString();
     public DateTimeOffset OccurredAt { get; } = DateTimeOffset.UtcNow;
 }

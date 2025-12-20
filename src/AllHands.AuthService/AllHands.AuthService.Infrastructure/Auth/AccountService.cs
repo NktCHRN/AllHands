@@ -13,10 +13,12 @@ using AllHands.Shared.Contracts.Messaging.Events.Users;
 using AllHands.Shared.Domain.Exceptions;
 using AllHands.Shared.Domain.UserContext;
 using AllHands.Shared.Domain.Utilities;
+using AllHands.Shared.Infrastructure.Messaging;
 using Humanizer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Wolverine;
+using Wolverine.EntityFrameworkCore;
 
 namespace AllHands.AuthService.Infrastructure.Auth;
 
@@ -29,7 +31,7 @@ public sealed class AccountService(
     IPasswordResetTokenProvider passwordResetTokenProvider,
     TimeProvider timeProvider,
     ITicketModifier ticketModifier,
-    IMessageBus messageBus) : IAccountService
+    IDbContextOutbox messageBus) : IAccountService
 {
     private IUserContext UserContext => userContextAccessor.UserContext ?? throw new InvalidOperationException("UserContext is not set.");
     
@@ -173,10 +175,11 @@ public sealed class AccountService(
         
         await dbContext.PasswordResetTokens.AddAsync(entity, cancellationToken);
 
-        await messageBus.PublishAsync(new ResetPasswordRequestedEvent(globalUser.Email, globalUser.Users.FirstOrDefault(u => u.CompanyId == globalUser.DefaultCompanyId)?.FirstName
-            ?? globalUser.Users.First().FirstName, token));
-        
-        await dbContext.SaveChangesAsync(cancellationToken);
+        messageBus.Enroll(dbContext);
+        await messageBus.PublishWithHeadersAsync(new ResetPasswordRequestedEvent(globalUser.Email, globalUser.Users.FirstOrDefault(u => u.CompanyId == globalUser.DefaultCompanyId)?.FirstName
+            ?? globalUser.Users.First().FirstName, token), UserContext);
+
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
     }
 
     public async Task ChangePassword(ChangePasswordCommand command, CancellationToken cancellationToken)
@@ -260,15 +263,16 @@ public sealed class AccountService(
 
         var invitation = await invitationService.CreateAsync(user.Id, UserContext.Id, cancellationToken);
         
-        await messageBus.PublishAsync(new UserInvitedEvent(
+        messageBus.Enroll(dbContext);
+        await messageBus.PublishWithHeadersAsync(new UserInvitedEvent(
             user.Email, 
             user.FirstName, 
             StringUtilities.GetFullName(UserContext.FirstName, UserContext.MiddleName, UserContext.LastName),
             invitation.Id,
-            invitation.Token));
-        await messageBus.PublishAsync(new UserCreatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), companyId));
+            invitation.Token), UserContext);
+        await messageBus.PublishWithHeadersAsync(new UserCreatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), companyId), UserContext);
         
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
         await transaction.CommitAsync(cancellationToken);
         
@@ -284,14 +288,15 @@ public sealed class AccountService(
                        .FirstOrDefaultAsync(u => u.EmployeeId == employeeId, cancellationToken)
                    ?? throw new EntityNotFoundException("User was not found");
         var invitation = await invitationService.CreateAsync(user.Id, UserContext.Id, cancellationToken);
-        await messageBus.PublishAsync(new UserInvitedEvent(
+        messageBus.Enroll(dbContext);
+        await messageBus.PublishWithHeadersAsync(new UserInvitedEvent(
             user.Email ?? string.Empty, 
             user.FirstName, 
             StringUtilities.GetFullName(UserContext.FirstName, UserContext.MiddleName, UserContext.LastName),
             invitation.Id,
-            invitation.Token));
+            invitation.Token), UserContext);
         
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
         await transaction.CommitAsync(cancellationToken);
     }
@@ -321,8 +326,9 @@ public sealed class AccountService(
         
         await userManager.UpdateAsync(user);
         
-        await messageBus.PublishAsync(new UserSessionsRecalculationRequestedEvent(command.UserId, UserContext.Id));
-        await dbContext.SaveChangesAsync(cancellationToken);
+        messageBus.Enroll(dbContext);
+        await messageBus.PublishWithHeadersAsync(new UserSessionsRecalculationRequestedEvent(command.UserId, UserContext.Id), UserContext);
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
         await transaction.CommitAsync(cancellationToken);
     }
@@ -350,9 +356,10 @@ public sealed class AccountService(
         
         await userManager.UpdateAsync(user);
 
-        await messageBus.PublishAsync(new UserSessionsRecalculationRequestedEvent(command.UserId, UserContext.Id));
-        await messageBus.PublishAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), user.CompanyId));
-        await dbContext.SaveChangesAsync(cancellationToken);
+        messageBus.Enroll(dbContext);
+        await messageBus.PublishWithHeadersAsync(new UserSessionsRecalculationRequestedEvent(command.UserId, UserContext.Id), UserContext);
+        await messageBus.PublishWithHeadersAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), user.CompanyId), UserContext);
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
         await transaction.CommitAsync(cancellationToken);
     }
@@ -427,8 +434,9 @@ public sealed class AccountService(
         
         await ticketModifier.ExpireActiveSessionsAsync(dbContext, userId, cancellationToken);
         
-        await messageBus.PublishAsync(new UserDeletedEvent(user.Id, user.CompanyId));
+        messageBus.Enroll(dbContext);
+        await messageBus.PublishWithHeadersAsync(new UserDeletedEvent(user.Id, user.CompanyId), UserContext);
         
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
     }
 }

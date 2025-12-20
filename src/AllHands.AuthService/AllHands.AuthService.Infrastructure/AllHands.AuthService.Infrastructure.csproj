@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="AllHands.Shared.Infrastructure" Version="1.0.13" />
+      <PackageReference Include="AllHands.Shared.Infrastructure" Version="1.0.14" />
       <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.3.17" />
       <PackageReference Include="AWSSDK.SimpleEmailV2" Version="4.0.11" />
         <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
