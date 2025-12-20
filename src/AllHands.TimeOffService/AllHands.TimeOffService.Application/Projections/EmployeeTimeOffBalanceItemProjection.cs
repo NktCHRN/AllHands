@@ -5,7 +5,7 @@ using Marten.Events.Projections;
 
 // ReSharper disable UnusedMember.Global
 
-namespace AllHands.TimeOffService.Domain.Projections;
+namespace AllHands.TimeOffService.Application.Projections;
 
 public sealed class EmployeeTimeOffBalanceItemProjection : MultiStreamProjection<TimeOffBalance, Guid>
 {

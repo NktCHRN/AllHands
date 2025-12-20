@@ -2,7 +2,7 @@
 using AllHands.TimeOffService.Domain.Models;
 using Marten.Events.Aggregation;
 
-namespace AllHands.TimeOffService.Domain.Projections;
+namespace AllHands.TimeOffService.Application.Projections;
 // ReSharper disable UnusedMember.Global
 
 public sealed class TimeOffRequestProjection : SingleStreamProjection<TimeOffRequest, Guid>

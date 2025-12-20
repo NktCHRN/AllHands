@@ -1,7 +1,7 @@
 ﻿using AllHands.Shared.Infrastructure.Auth;
 using AllHands.Shared.Infrastructure.Data;
+using AllHands.TimeOffService.Application.Projections;
 using AllHands.TimeOffService.Domain.Models;
-using AllHands.TimeOffService.Domain.Projections;
 using JasperFx.Events.Projections;
 using Marten.Schema.Indexing.Unique;
 using Microsoft.Extensions.Configuration;
