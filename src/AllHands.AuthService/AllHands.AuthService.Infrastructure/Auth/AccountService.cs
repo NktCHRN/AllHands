@@ -342,7 +342,6 @@ public sealed class AccountService(
         await userManager.UpdateAsync(user);
         
         messageBus.Enroll(dbContext);
-        await messageBus.PublishWithHeadersAsync(new UserSessionsRecalculationRequestedEvent(command.UserId, UserContext.Id), UserContext);
         await messageBus.PublishWithHeadersAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), true, user.CompanyId), UserContext);
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
@@ -373,7 +372,6 @@ public sealed class AccountService(
         await userManager.UpdateAsync(user);
 
         messageBus.Enroll(dbContext);
-        await messageBus.PublishWithHeadersAsync(new UserSessionsRecalculationRequestedEvent(command.UserId, UserContext.Id), UserContext);
         await messageBus.PublishWithHeadersAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), true, user.CompanyId), UserContext);
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         

@@ -37,8 +37,6 @@ builder.UseAllHandsWolverine(opts =>
         .ToSqsQueue($"{environment.ToLower()}_{Queues.ResetPasswordRequestedEvent}");
     opts.PublishMessage<UserInvitedEvent>()
         .ToSqsQueue($"{environment.ToLower()}_{Queues.UserInvitedEvent}");
-    opts.PublishMessage<UserSessionsRecalculationRequestedEvent>()
-        .ToSqsQueue($"{environment.ToLower()}_{Queues.UserSessionsRecalculationRequestedEvent}");
     
     opts.PersistMessagesWithPostgresql(builder.Configuration.GetConnectionString("postgres") ?? throw new InvalidOperationException("postgres connection was not provided."));
     
