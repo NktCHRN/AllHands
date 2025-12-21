@@ -225,18 +225,18 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
 
     public async Task ResetUsersRoleAsync(Guid oldRoleId, CancellationToken cancellationToken)
     {
-        var defaultRole = await GetDefaultRoleAsync(oldRoleId, cancellationToken);
-        if (defaultRole is null)
-        {
-            throw new EntityNotFoundException("Default role was not found");
-        }
-
         var role = await dbContext.Roles
                        .IgnoreQueryFilters()
                        .Include(r => r.Users.Where(u => !u.User!.DeletedAt.HasValue && !u.User.DeactivatedAt.HasValue))
                        .ThenInclude(u => u.User)
                        .FirstOrDefaultAsync(r => r.Id == oldRoleId, cancellationToken: cancellationToken)
                    ?? throw new EntityNotFoundException("Role was not found");
+        
+        var defaultRole = await GetDefaultRoleAsync(role.CompanyId, cancellationToken);
+        if (defaultRole is null)
+        {
+            throw new EntityNotFoundException("Default role was not found");
+        }
         
         messageBus.Enroll(dbContext);
         foreach (var userRole in role.Users)
