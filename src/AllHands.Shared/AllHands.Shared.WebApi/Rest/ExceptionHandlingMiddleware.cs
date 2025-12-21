@@ -35,7 +35,6 @@ public sealed class ExceptionHandlingMiddleware
                 EntityValidationFailedException => (HttpStatusCode.BadRequest, baseException.Message),
                 UserUnauthorizedException => (HttpStatusCode.Unauthorized, baseException.Message),
                 ForbiddenForUserException => (HttpStatusCode.Forbidden, baseException.Message),
-                RpcException rpcException => GetExceptionDetails(rpcException),
                 _ => (HttpStatusCode.InternalServerError, "An unexpected error occured on the server.")
             };
 
@@ -48,18 +47,5 @@ public sealed class ExceptionHandlingMiddleware
             httpContext.Response.StatusCode = (int)statusCode;
             await httpContext.Response.WriteAsJsonAsync(ApiResponse.FromError(new ErrorResponse(message)));
         }
-    }
-
-    private static (HttpStatusCode, string) GetExceptionDetails(RpcException rpcException)
-    {
-        return rpcException.StatusCode switch
-        {
-            StatusCode.AlreadyExists => (HttpStatusCode.Conflict, rpcException.Message),
-            StatusCode.NotFound => (HttpStatusCode.NotFound, rpcException.Message),
-            StatusCode.InvalidArgument => (HttpStatusCode.BadRequest, rpcException.Message),
-            StatusCode.Unauthenticated => (HttpStatusCode.Unauthorized, rpcException.Message),
-            StatusCode.PermissionDenied => (HttpStatusCode.Forbidden, rpcException.Message),
-            _ => (HttpStatusCode.InternalServerError, "An unexpected error occured on the server.")
-        };
     }
 }
