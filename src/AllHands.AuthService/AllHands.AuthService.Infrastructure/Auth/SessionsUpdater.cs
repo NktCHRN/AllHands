@@ -59,4 +59,20 @@ public sealed class SessionsUpdater(IDbContextFactory<AuthDbContext> dbContextFa
             takeOnlyNewClaims: true,
             cancellationToken);
     }
+    
+    public async Task ExpireUser(Guid userId, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var user = await dbContext.Users
+                       .IgnoreQueryFilters()
+                       .AsNoTracking()
+                       .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+                   ?? throw new EntityNotFoundException("User was not found");
+        
+        await ticketModifier.ExpireActiveSessionsAsync(
+            dbContext, 
+            user.Id, 
+            cancellationToken);
+    }
 }

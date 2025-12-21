@@ -168,6 +168,7 @@ public sealed class AllHandsTicketStore(IDbContextFactory<AuthDbContext> dbConte
         var currentDateTime = timeProvider.GetUtcNow();
 
         var sessions = await dbContext.Sessions
+            .IgnoreQueryFilters()
             .Where(x => x.UserId == userId && x.ExpiresAt >= currentDateTime && !x.IsRevoked)
             .ToListAsync(cancellationToken: cancellationToken);
 
