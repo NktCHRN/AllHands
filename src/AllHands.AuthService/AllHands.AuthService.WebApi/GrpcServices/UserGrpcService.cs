@@ -37,7 +37,7 @@ public sealed class UserGrpcService(IAccountService accountService) : UserServic
             request.MiddleName,
             request.LastName,
             request.PhoneNumber,
-            Guid.Parse(request.RoleId));
+            string.IsNullOrEmpty(request.RoleId) ? null : Guid.Parse(request.RoleId));
         
         var result = await accountService.UpdateAsync(command, context.CancellationToken);
 

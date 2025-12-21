@@ -1,5 +1,5 @@
 ﻿# https://hub.docker.com/_/microsoft-dotnet
-FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /source
 
 ARG SERVICE_NAME=AllHands.AuthService
@@ -23,10 +23,11 @@ WORKDIR /source/${SERVICE_NAME}.WebApi
 RUN dotnet publish -c release -o /app --no-restore
 
 # final stage/image
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 ENV RUN_MIGRATIONS=true
-ENV ASPNETCORE_URLS=http://+:5000
+ENV ASPNETCORE_URLS=http://+:5000;http://+:5001
 EXPOSE 5000
+EXPOSE 5001
 COPY --from=build /app ./
 ENTRYPOINT ["dotnet", "AllHands.AuthService.WebApi.dll"]
