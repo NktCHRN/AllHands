@@ -476,6 +476,32 @@ COMMIT;
 
 
 
+CREATE FOREIGN TABLE public."AspNetUserRoles_ft" (
+    "UserId" uuid NOT NULL,
+    "RoleId" uuid NOT NULL
+)
+SERVER remote_allhands_prod
+OPTIONS (
+    schema_name 'public',
+    table_name  'AspNetUserRoles'
+);
+
+
+BEGIN;
+
+INSERT INTO public."AspNetUserRoles" (
+    "UserId",
+    "RoleId"
+)
+SELECT
+    "UserId",
+    "RoleId"
+FROM public."AspNetUserRoles_ft"
+ON CONFLICT ("UserId", "RoleId") DO NOTHING;
+
+COMMIT;
+
+
 
 
 

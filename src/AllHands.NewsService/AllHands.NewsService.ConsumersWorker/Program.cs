@@ -5,6 +5,7 @@ using AllHands.Shared.ConsumersWorker;
 using AllHands.Shared.Contracts.Messaging;
 using AllHands.Shared.Contracts.Messaging.Events.Employees;
 using AllHands.Shared.Infrastructure.Messaging;
+using Wolverine;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -25,7 +26,8 @@ builder.UseAllHandsWolverine(opts =>
     opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
     opts.Policies.UseDurableInboxOnAllListeners();
     
-    opts.Discovery.IncludeAssembly(typeof(IConsumersWorkerMarker).Assembly);
+    opts.Discovery.IncludeAssembly(typeof(IConsumersWorkerMarker).Assembly)
+        .IncludeAssembly(typeof(WolverineOptions).Assembly);
 });
 
 var app = builder.Build();

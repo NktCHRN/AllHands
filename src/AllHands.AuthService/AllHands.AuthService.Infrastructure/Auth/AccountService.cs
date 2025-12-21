@@ -278,8 +278,6 @@ public sealed class AccountService(
         
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
-        await transaction.CommitAsync(cancellationToken);
-        
         return new CreateUserAccountResult(user.Id, defaultRole.Id, globalUser.Id);
     }
 
@@ -301,8 +299,6 @@ public sealed class AccountService(
             invitation.Token), UserContext);
         
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
-        
-        await transaction.CommitAsync(cancellationToken);
     }
 
     public async Task<UpdateUserResult> UpdateAsync(UpdateUserCommand command, CancellationToken cancellationToken)
@@ -356,8 +352,6 @@ public sealed class AccountService(
         messageBus.Enroll(dbContext);
         await messageBus.PublishWithHeadersAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), true, user.CompanyId), UserContext);
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
-        
-        await transaction.CommitAsync(cancellationToken);
 
         return new UpdateUserResult(user.Id, role?.Id ?? Guid.Empty, user.GlobalUserId);
     }

@@ -6,6 +6,7 @@ using AllHands.Shared.Infrastructure.Messaging;
 using AllHands.TimeOffService.Application;
 using AllHands.TimeOffService.ConsumersWorker;
 using AllHands.TimeOffService.Infrastructure;
+using Wolverine;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -31,7 +32,8 @@ builder.UseAllHandsWolverine(opts =>
     opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
     opts.Policies.UseDurableInboxOnAllListeners();
     
-    opts.Discovery.IncludeAssembly(typeof(IConsumersWorkerMarker).Assembly);
+    opts.Discovery.IncludeAssembly(typeof(IConsumersWorkerMarker).Assembly)
+        .IncludeAssembly(typeof(WolverineOptions).Assembly);
 });
 
 var app = builder.Build();

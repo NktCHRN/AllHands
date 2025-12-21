@@ -9,6 +9,7 @@ using AllHands.Shared.Contracts.Messaging.Events.Employees;
 using AllHands.Shared.Contracts.Messaging.Events.Roles;
 using AllHands.Shared.Contracts.Messaging.Events.Users;
 using AllHands.Shared.Infrastructure.Messaging;
+using Wolverine;
 using Wolverine.AmazonSqs;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
@@ -59,7 +60,8 @@ builder.UseAllHandsWolverine(opts =>
     opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
     opts.Policies.UseDurableInboxOnAllListeners();
     
-    opts.Discovery.IncludeAssembly(typeof(IConsumerWorkerMarker).Assembly);
+    opts.Discovery.IncludeAssembly(typeof(IConsumerWorkerMarker).Assembly)
+        .IncludeAssembly(typeof(WolverineOptions).Assembly);
 });
 
 builder.Services.AddOptions<SessionRecalculatorOptions>()

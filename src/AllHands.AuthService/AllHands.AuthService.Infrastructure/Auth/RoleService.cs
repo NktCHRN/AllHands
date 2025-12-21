@@ -122,15 +122,13 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
         messageBus.Enroll(dbContext);
         await messageBus.PublishWithHeadersAsync(new RoleCreatedEvent(role.Id, role.Name, role.CompanyId, role.IsDefault), UserContext);
         
-        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
-        
         var result = await roleManager.CreateAsync(role);
         if (!result.Succeeded)
         {
             throw new EntityValidationFailedException(IdentityUtilities.IdentityErrorsToString(result.Errors));
         }
         
-        await transaction.CommitAsync(cancellationToken);
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
         return role.Id;
     }
@@ -190,15 +188,13 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
         
         await messageBus.PublishWithHeadersAsync(new RoleUpdatedEvent(role.Id, role.Name, role.CompanyId, role.IsDefault), UserContext);
         
-        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
-        
         var result = await roleManager.UpdateAsync(role);
         if (!result.Succeeded)
         {
             throw new EntityValidationFailedException(IdentityUtilities.IdentityErrorsToString(result.Errors));
         }
         
-        await transaction.CommitAsync(cancellationToken);
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
     }
     
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
@@ -225,8 +221,6 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
         await messageBus.PublishWithHeadersAsync(new RoleDeletedEvent(role.Id, defaultRole?.Id ?? Guid.Empty, role.CompanyId), UserContext);
         
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
-        
-        await transaction.CommitAsync(cancellationToken);
     }
 
     public async Task ResetUsersRoleAsync(Guid oldRoleId, CancellationToken cancellationToken)
