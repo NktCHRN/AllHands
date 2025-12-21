@@ -4,7 +4,7 @@ namespace AllHands.Shared.Infrastructure.UserContext;
 
 public static class UserContextGrpcMetadataProvider
 {
-    public static Grpc.Core.Metadata GetMetadata(Domain.UserContext.UserContext userContext)
+    public static Grpc.Core.Metadata GetMetadata(Domain.UserContext.IUserContext userContext)
     {
         var metadata = new Grpc.Core.Metadata()
         {
