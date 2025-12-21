@@ -1,4 +1,4 @@
-﻿using AllHands.AuthService.Application.Features.Employees.ResendInvitation;
+﻿using AllHands.AuthService.Application.Features.User.ResendInvitation;
 using AllHands.Shared.Application.Auth;
 using AllHands.Shared.WebApi.Rest.Auth;
 using MediatR;

@@ -1,6 +1,6 @@
 ﻿using AllHands.Auth.Contracts.Messaging;
 using AllHands.AuthService.Application.Abstractions;
-using AllHands.AuthService.Application.Features.Employees.Create;
+using AllHands.AuthService.Application.Features.User.Create;
 
 namespace AllHands.AuthService.ConsumersWorker.Handlers;
 

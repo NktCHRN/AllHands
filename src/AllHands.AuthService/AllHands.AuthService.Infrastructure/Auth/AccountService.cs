@@ -1,11 +1,11 @@
 using System.Data;
 using AllHands.Auth.Contracts.Messaging;
 using AllHands.AuthService.Application.Abstractions;
-using AllHands.AuthService.Application.Features.Employees.Create;
-using AllHands.AuthService.Application.Features.Employees.Update;
 using AllHands.AuthService.Application.Features.User.ChangePassword;
+using AllHands.AuthService.Application.Features.User.Create;
 using AllHands.AuthService.Application.Features.User.Login;
 using AllHands.AuthService.Application.Features.User.RegisterFromInvitation;
+using AllHands.AuthService.Application.Features.User.Update;
 using AllHands.AuthService.Domain.Models;
 using AllHands.AuthService.Infrastructure.Abstractions;
 using AllHands.Shared.Contracts.Messaging.Events.Users;
@@ -226,7 +226,7 @@ public sealed class AccountService(
         await transaction.CommitAsync(cancellationToken);
     }
 
-    public async Task<CreateEmployeeAccountResult> CreateAsync(CreateEmployeeCommand command,
+    public async Task<CreateUserAccountResult> CreateAsync(CreateUserCommand command,
         CancellationToken cancellationToken)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
@@ -280,7 +280,7 @@ public sealed class AccountService(
         
         await transaction.CommitAsync(cancellationToken);
         
-        return new CreateEmployeeAccountResult(user.Id, defaultRole.Id, globalUser.Id);
+        return new CreateUserAccountResult(user.Id, defaultRole.Id, globalUser.Id);
     }
 
     public async Task RegenerateInvitationAsync(Guid employeeId, CancellationToken cancellationToken)
@@ -305,7 +305,7 @@ public sealed class AccountService(
         await transaction.CommitAsync(cancellationToken);
     }
 
-    public async Task<UpdateEmployeeResult> UpdateAsync(UpdateEmployeeCommand command, CancellationToken cancellationToken)
+    public async Task<UpdateUserResult> UpdateAsync(UpdateUserCommand command, CancellationToken cancellationToken)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
@@ -359,7 +359,7 @@ public sealed class AccountService(
         
         await transaction.CommitAsync(cancellationToken);
 
-        return new UpdateEmployeeResult(user.Id, role?.Id ?? Guid.Empty, user.GlobalUserId);
+        return new UpdateUserResult(user.Id, role?.Id ?? Guid.Empty, user.GlobalUserId);
     }
 
     private async Task<AllHandsGlobalUser> GetOrCreateGlobalUserByEmailAsync(string email, Guid companyId,

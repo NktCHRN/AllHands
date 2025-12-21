@@ -1,6 +1,6 @@
-namespace AllHands.AuthService.Application.Features.Employees;
+namespace AllHands.AuthService.Application.Features.User;
 
-public abstract record EmployeeCommandBase(
+public abstract record UserCommandBase(
     Guid PositionId,
     Guid ManagerId,
     string Email, 

@@ -1,4 +1,4 @@
-namespace AllHands.AuthService.Application.Features.Employees.Create;
+namespace AllHands.AuthService.Application.Features.User.Create;
 
 public sealed record SendCompleteRegistrationEmailCommand(
     string Email,

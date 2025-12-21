@@ -1,6 +1,6 @@
 using System.Text.Json;
 using AllHands.AuthService.Application.Abstractions;
-using AllHands.AuthService.Application.Features.Employees.Create;
+using AllHands.AuthService.Application.Features.User.Create;
 using AllHands.AuthService.Application.Features.User.ResetPassword;
 using AllHands.AuthService.Infrastructure.Utilities;
 using Amazon.SimpleEmailV2;
