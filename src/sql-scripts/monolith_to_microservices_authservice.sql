@@ -12,7 +12,7 @@ CREATE USER MAPPING FOR postgres
 SERVER remote_allhands_prod
 OPTIONS (
     user 'postgres',
-    password ''
+    password '${DB_PASSWORD}'
 );
 
 
