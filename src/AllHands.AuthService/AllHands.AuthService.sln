@@ -4,8 +4,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllHands.AuthService.WebApi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllHands.AuthService.ConsumersWorker", "AllHands.AuthService.ConsumersWorker\AllHands.AuthService.ConsumersWorker.csproj", "{09A59EB5-ACF1-4005-A20C-A6A9207D996A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllHands.AuthService.SessionRecalculator", "AllHands.AuthService.SessionRecalculator\AllHands.AuthService.SessionRecalculator.csproj", "{333B1BAB-EC50-483B-8265-FA491AFC4E21}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllHands.AuthService.Domain", "AllHands.AuthService.Domain\AllHands.AuthService.Domain.csproj", "{C416840C-E6C3-4959-B7FB-BA243FEBA0ED}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllHands.AuthService.Application", "AllHands.AuthService.Application\AllHands.AuthService.Application.csproj", "{FFCA09C5-E6E0-4F2E-8937-90D1AA9FBBDF}"
@@ -28,10 +26,6 @@ Global
 		{09A59EB5-ACF1-4005-A20C-A6A9207D996A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09A59EB5-ACF1-4005-A20C-A6A9207D996A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09A59EB5-ACF1-4005-A20C-A6A9207D996A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{333B1BAB-EC50-483B-8265-FA491AFC4E21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{333B1BAB-EC50-483B-8265-FA491AFC4E21}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{333B1BAB-EC50-483B-8265-FA491AFC4E21}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{333B1BAB-EC50-483B-8265-FA491AFC4E21}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C416840C-E6C3-4959-B7FB-BA243FEBA0ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C416840C-E6C3-4959-B7FB-BA243FEBA0ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C416840C-E6C3-4959-B7FB-BA243FEBA0ED}.Release|Any CPU.ActiveCfg = Release|Any CPU

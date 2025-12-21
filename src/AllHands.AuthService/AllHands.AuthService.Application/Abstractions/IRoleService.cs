@@ -16,4 +16,5 @@ public interface IRoleService
     Task<Guid> CreateAsync(CreateRoleCommand command, CancellationToken cancellationToken);
     Task UpdateAsync(UpdateRoleCommand command, CancellationToken cancellationToken);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken);
+    Task ResetUsersRoleAsync(Guid oldRoleId, CancellationToken cancellationToken);
 }

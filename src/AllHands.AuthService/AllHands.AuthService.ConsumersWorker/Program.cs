@@ -2,6 +2,7 @@
 using AllHands.AuthService.Application;
 using AllHands.AuthService.ConsumersWorker;
 using AllHands.AuthService.Infrastructure;
+using AllHands.AuthService.SessionRecalculator;
 using AllHands.Shared.ConsumersWorker;
 using AllHands.Shared.Contracts.Messaging;
 using AllHands.Shared.Contracts.Messaging.Events.Employees;
@@ -45,6 +46,11 @@ builder.UseAllHandsWolverine(opts =>
     opts.AddListener<EmployeeFiredEvent>(environment, Topics.Employee, Services.AuthService);
     opts.AddListener<EmployeeRehiredEvent>(environment, Topics.Employee, Services.AuthService);
     
+    opts.AddListener<RoleUpdatedEvent>(environment, Topics.Role, Services.AuthService);
+    opts.AddListener<RoleDeletedEvent>(environment, Topics.Role, Services.AuthService);
+    opts.AddPublisher<UserUpdatedEvent>(environment, Topics.User);
+    opts.AddPublisher<UserDeletedEvent>(environment, Topics.User);
+    
     opts.AddIncomingHeadersMiddleware();
     
     opts.PersistMessagesWithPostgresql(builder.Configuration.GetConnectionString("postgres") ?? throw new InvalidOperationException("postgres connection was not provided."));
@@ -56,6 +62,11 @@ builder.UseAllHandsWolverine(opts =>
     
     opts.Discovery.IncludeAssembly(typeof(IConsumerWorkerMarker).Assembly);
 });
+
+builder.Services.AddOptions<SessionRecalculatorOptions>()
+    .BindConfiguration(nameof(SessionRecalculatorOptions))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 var host = builder.Build();
 host.Run();

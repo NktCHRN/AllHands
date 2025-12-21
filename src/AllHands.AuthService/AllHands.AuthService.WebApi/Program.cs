@@ -32,9 +32,7 @@ builder.UseAllHandsWolverine(opts =>
     opts.AddPublisher<RoleCreatedEvent>(environment, Topics.Role);
     opts.AddPublisher<RoleUpdatedEvent>(environment, Topics.Role);
     opts.AddPublisher<RoleDeletedEvent>(environment, Topics.Role);
-
-    opts.PublishMessage<CompanySessionsRecalculationRequestedEvent>()
-        .ToSqsQueue($"{environment.ToLower()}_{Queues.CompanySessionsRecalculationRequestedEvent}");
+    
     opts.PublishMessage<ResetPasswordRequestedEvent>()
         .ToSqsQueue($"{environment.ToLower()}_{Queues.ResetPasswordRequestedEvent}");
     opts.PublishMessage<UserInvitedEvent>()

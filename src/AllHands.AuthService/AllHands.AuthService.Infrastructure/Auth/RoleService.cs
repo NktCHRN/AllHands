@@ -10,6 +10,7 @@ using AllHands.AuthService.Application.Features.Roles.Update;
 using AllHands.AuthService.Domain.Models;
 using AllHands.Shared.Application.Dto;
 using AllHands.Shared.Contracts.Messaging.Events.Roles;
+using AllHands.Shared.Contracts.Messaging.Events.Users;
 using AllHands.Shared.Domain.Exceptions;
 using AllHands.Shared.Domain.UserContext;
 using AllHands.Shared.Infrastructure.Messaging;
@@ -186,7 +187,6 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
 
         messageBus.Enroll(dbContext);
         await messageBus.PublishWithHeadersAsync(new RoleUpdatedEvent(role.Id, role.Name, role.CompanyId), UserContext);
-        await messageBus.PublishWithHeadersAsync(new CompanySessionsRecalculationRequestedEvent(companyId, UserContext.Id), UserContext);
         
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
@@ -206,7 +206,6 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
         
         var role = await dbContext.Roles
-            .Include(r => r.Users.Where(u => !u.User!.DeletedAt.HasValue))
             .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.Id == id, cancellationToken: cancellationToken)
             ?? throw new EntityNotFoundException("Role was not found");
 
@@ -216,30 +215,48 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
         }
         
         var defaultRole = await GetDefaultRoleAsync(companyId, cancellationToken);
-
-        if (defaultRole is not null)
-        {
-            foreach (var userRole in role.Users)
-            {
-                dbContext.UserRoles.Remove(userRole);
-                dbContext.UserRoles.Add(new AllHandsUserRole()
-                {
-                    UserId = userRole.UserId,
-                    RoleId = defaultRole.Id
-                });
-            }
-        }
         
         role.DeletedAt = timeProvider.GetUtcNow();
         role.DeletedByUserId = UserContext.Id;
         
         messageBus.Enroll(dbContext);
         await messageBus.PublishWithHeadersAsync(new RoleDeletedEvent(role.Id, defaultRole?.Id ?? Guid.Empty, role.CompanyId), UserContext);
-        await messageBus.PublishWithHeadersAsync(new CompanySessionsRecalculationRequestedEvent(companyId, UserContext.Id), UserContext);
         
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
         await transaction.CommitAsync(cancellationToken);
+    }
+
+    public async Task ResetUsersRoleAsync(Guid oldRoleId, CancellationToken cancellationToken)
+    {
+        var defaultRole = await GetDefaultRoleAsync(oldRoleId, cancellationToken);
+        if (defaultRole is null)
+        {
+            throw new EntityNotFoundException("Default role was not found");
+        }
+
+        var role = await dbContext.Roles
+                       .IgnoreQueryFilters()
+                       .Include(r => r.Users.Where(u => !u.User!.DeletedAt.HasValue && !u.User.DeactivatedAt.HasValue))
+                       .ThenInclude(u => u.User)
+                       .FirstOrDefaultAsync(r => r.Id == oldRoleId, cancellationToken: cancellationToken)
+                   ?? throw new EntityNotFoundException("Role was not found");
+        
+        messageBus.Enroll(dbContext);
+        foreach (var userRole in role.Users)
+        {
+            dbContext.UserRoles.Remove(userRole);
+            dbContext.UserRoles.Add(new AllHandsUserRole()
+            {
+                UserId = userRole.UserId,
+                RoleId = defaultRole.Id
+            });
+            var user = userRole.User;
+            await messageBus.PublishWithHeadersAsync(
+                new UserUpdatedEvent(user!.Id, user.GlobalUserId, [defaultRole.Id], true, role.CompanyId), UserContext);
+        }
+        
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
     }
 
     private async Task<AllHandsRole?> GetDefaultRoleAsync(Guid companyId, CancellationToken cancellationToken)
