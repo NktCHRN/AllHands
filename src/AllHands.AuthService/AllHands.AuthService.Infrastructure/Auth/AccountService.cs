@@ -276,7 +276,7 @@ public sealed class AccountService(
         
         await transaction.CommitAsync(cancellationToken);
         
-        return new CreateEmployeeAccountResult(user.Id);
+        return new CreateEmployeeAccountResult(user.Id, globalUser.Id);
     }
 
     public async Task RegenerateInvitationAsync(Guid employeeId, CancellationToken cancellationToken)
