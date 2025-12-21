@@ -4,6 +4,7 @@ using AllHands.AuthService.Infrastructure;
 using AllHands.AuthService.Infrastructure.Auth;
 using AllHands.AuthService.WebApi;
 using AllHands.AuthService.WebApi.GrpcServices;
+using AllHands.AuthService.WebApi.Middlewares;
 using AllHands.Shared.Contracts.Messaging;
 using AllHands.Shared.Contracts.Messaging.Events.Roles;
 using AllHands.Shared.Contracts.Messaging.Events.Users;
@@ -63,6 +64,8 @@ app.MapHealthChecks("/health");
 app.UseExceptionHandlingMiddleware();
 
 app.UseUserContextHeadersMiddleware();
+
+app.UseMiddleware<RemoveCookieOnLoginMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
