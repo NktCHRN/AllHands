@@ -410,7 +410,6 @@ public sealed class AccountService(
         user.DeactivatedAt = timeProvider.GetUtcNow();
         
         messageBus.Enroll(dbContext);
-        await ticketModifier.ExpireActiveSessionsAsync(dbContext, userId, cancellationToken);
         
         await messageBus.PublishWithHeadersAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), false, user.CompanyId), UserContext);
         
@@ -455,8 +454,6 @@ public sealed class AccountService(
                    ?? throw new EntityNotFoundException("User was not found");
         
         user.DeletedAt = timeProvider.GetUtcNow();
-        
-        await ticketModifier.ExpireActiveSessionsAsync(dbContext, userId, cancellationToken);
         
         messageBus.Enroll(dbContext);
         await messageBus.PublishWithHeadersAsync(new UserDeletedEvent(user.Id, user.CompanyId), UserContext);
