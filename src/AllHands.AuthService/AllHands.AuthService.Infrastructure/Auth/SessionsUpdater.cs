@@ -46,33 +46,28 @@ public sealed class SessionsUpdater(IDbContextFactory<AuthDbContext> dbContextFa
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         
         var user = await dbContext.Users
+            .IgnoreQueryFilters()
             .Include(u => u.Roles)
             .ThenInclude(r => r.Role)
             .ThenInclude(r => r!.Claims)
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
             ?? throw new EntityNotFoundException("User was not found");
-        
-        await ticketModifier.UpdateClaimsAsync(
-            dbContext, 
-            user.Id, 
-            () => userClaimsFactory.CreateClaims(user), 
-            takeOnlyNewClaims: true,
-            cancellationToken);
-    }
-    
-    public async Task ExpireUser(Guid userId, CancellationToken cancellationToken = default)
-    {
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        
-        var user = await dbContext.Users
-                       .IgnoreQueryFilters()
-                       .AsNoTracking()
-                       .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
-                   ?? throw new EntityNotFoundException("User was not found");
-        
-        await ticketModifier.ExpireActiveSessionsAsync(
-            dbContext, 
-            user.Id, 
-            cancellationToken);
+
+        if (!user.DeactivatedAt.HasValue && !user.DeletedAt.HasValue)
+        {
+            await ticketModifier.UpdateClaimsAsync(
+                dbContext,
+                user.Id,
+                () => userClaimsFactory.CreateClaims(user),
+                takeOnlyNewClaims: true,
+                cancellationToken);
+        }
+        else
+        {
+            await ticketModifier.ExpireActiveSessionsAsync(
+                dbContext, 
+                user.Id, 
+                cancellationToken);
+        }
     }
 }
