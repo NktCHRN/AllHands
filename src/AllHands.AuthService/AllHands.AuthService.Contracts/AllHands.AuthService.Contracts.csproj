@@ -9,6 +9,19 @@
 
     <ItemGroup>
       <PackageReference Include="AllHands.Shared.Contracts" Version="1.0.10" />
+      <PackageReference Include="Google.Protobuf" Version="3.33.2" />
+      <PackageReference Include="Grpc.Core" Version="2.46.6" />
+      <PackageReference Include="Grpc.Tools" Version="2.76.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
     </ItemGroup>
 
+    <ItemGroup>
+        <Protobuf Include="Grpc\Protos\Server\*.proto"
+                  GrpcServices="Server"
+                  Access="Public"
+                  ProtoRoot="Grpc\Protos\Server"/>
+    </ItemGroup>
+    
 </Project>

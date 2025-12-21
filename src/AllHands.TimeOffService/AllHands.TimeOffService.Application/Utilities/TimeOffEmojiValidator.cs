@@ -16,7 +16,11 @@ public sealed class TimeOffEmojiValidator : ITimeOffEmojiValidator
         "😷",
         "🤕",
         "🤧",
-        "🏥"
+        "🏥",
+        "📅",
+        "🌿",
+        "👶",
+        "🍼"
     ];
 
     private readonly FrozenSet<string> _allowedEmojiSet;

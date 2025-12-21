@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option csharp_namespace = "AllHands.AuthService.Contracts.Protos.Grpc";
+
+package shared;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+service UserService
+{
+  
+}
+
+
+message CreateUserCommand {
+  string email = 1;
+  string first_name = 2;
+  google.protobuf.StringValue middle_name = 3;
+  string last_name = 4;
+  google.protobuf.StringValue phone_number = 5;
+  string employee_id = 6;
+}
+
+message UpdateUserCommand {
+  string user_id = 1;
+  string email = 2;
+  string first_name = 3;
+  google.protobuf.StringValue middle_name = 4;
+  string last_name = 5;
+  google.protobuf.StringValue phone_number = 6;
+  google.protobuf.StringValue role_id = 7;
+}
+
+message DeleteUserCommand {
+  string user_id = 1;
+}

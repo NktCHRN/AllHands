@@ -2,17 +2,12 @@ using MediatR;
 
 namespace AllHands.AuthService.Application.Features.User.Update;
 
-public sealed record UpdateUserCommand(Guid UserId, 
-    Guid PositionId,
-    Guid ManagerId,
+public sealed record UpdateUserCommand(
+    Guid UserId,
     string Email,
     string FirstName,
     string? MiddleName,
     string LastName,
     string? PhoneNumber,
-    DateOnly WorkStartDate,
-    Guid? RoleId) : 
-    UserCommandBase(PositionId, ManagerId, Email, FirstName, MiddleName, LastName, PhoneNumber, WorkStartDate), IRequest
-{
-    public Guid EmployeeId { get; set; }
-}
+    Guid? RoleId) :
+    UserCommandBase(Email, FirstName, MiddleName, LastName, PhoneNumber), IRequest;

@@ -22,6 +22,62 @@ public sealed class SaveCompanyCommandHandler(IDocumentSession documentSession) 
                 WorkDays = request.WorkDays,
                 UpdatedAt = request.EventOccurredAt
             };
+    
+            // Default time off types. You can change this setup later.
+            var timeOffTypes = new[]
+            {
+                new TimeOffType()
+                {
+                    Id = Guid.CreateVersion7(),
+                    CompanyId = company.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    Emoji = "🌴",
+                    Name = "Vacation",
+                    DaysPerYear = 20,
+                    Order = 1
+                },
+                new TimeOffType()
+                {
+                    Id = Guid.CreateVersion7(),
+                    CompanyId = company.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    Emoji = "📅",
+                    Name = "Unpaid time off",
+                    DaysPerYear = 0,
+                    Order = 2
+                },
+                new TimeOffType()
+                {
+                    Id = Guid.CreateVersion7(),
+                    CompanyId = company.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    Emoji = "🤒",
+                    Name = "Sick leave (Undocumented)",
+                    DaysPerYear = 0,
+                    Order = 3
+                },
+                new TimeOffType()
+                {
+                    Id = Guid.CreateVersion7(),
+                    CompanyId = company.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    Emoji = "🏥",
+                    Name = "Sick leave (documented)",
+                    DaysPerYear = 0,
+                    Order = 4
+                },
+                new TimeOffType()
+                {
+                    Id = Guid.CreateVersion7(),
+                    CompanyId = company.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    Emoji = "👶",
+                    Name = "Parental leave",
+                    DaysPerYear = 0,
+                    Order = 5
+                }
+            };
+            documentSession.Insert(timeOffTypes);
         }
         else
         {
