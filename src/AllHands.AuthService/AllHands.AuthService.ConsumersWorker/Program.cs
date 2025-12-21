@@ -47,8 +47,8 @@ builder.UseAllHandsWolverine(opts =>
     
     opts.AddListener<RoleUpdatedEvent>(environment, Topics.Role, Services.AuthService);
     opts.AddListener<RoleDeletedEvent>(environment, Topics.Role, Services.AuthService);
-    opts.AddPublisher<UserUpdatedEvent>(environment, Topics.User);
-    opts.AddPublisher<UserDeletedEvent>(environment, Topics.User);
+    opts.AddListener<UserUpdatedEvent>(environment, Topics.User, Services.AuthService);
+    opts.AddListener<UserDeletedEvent>(environment, Topics.User, Services.AuthService);
     
     opts.AddIncomingHeadersMiddleware();
     
