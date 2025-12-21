@@ -11,9 +11,23 @@ public sealed class GrpcExceptionMappingInterceptor : Interceptor
         ClientInterceptorContext<TRequest, TResponse> context,
         AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
     {
+        var call = continuation(request, context);
+
+        var responseAsync = HandleResponse(call.ResponseAsync);
+
+        return new AsyncUnaryCall<TResponse>(
+            responseAsync,
+            call.ResponseHeadersAsync,
+            call.GetStatus,
+            call.GetTrailers,
+            call.Dispose);
+    }
+
+    private static async Task<TResponse> HandleResponse<TResponse>(Task<TResponse> innerTask)
+    {
         try
         {
-            return continuation(request, context);
+            return await innerTask;
         }
         catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
         {
