@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="AllHands.Shared.Contracts" Version="1.0.8" />
+      <PackageReference Include="AllHands.Shared.Contracts" Version="1.0.10" />
     </ItemGroup>
 
 </Project>

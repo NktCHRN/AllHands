@@ -234,7 +234,7 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
         role.DeletedByUserId = UserContext.Id;
         
         messageBus.Enroll(dbContext);
-        await messageBus.PublishWithHeadersAsync(new RoleDeletedEvent(role.Id, role.CompanyId), UserContext);
+        await messageBus.PublishWithHeadersAsync(new RoleDeletedEvent(role.Id, defaultRole?.Id ?? Guid.Empty, role.CompanyId), UserContext);
         await messageBus.PublishWithHeadersAsync(new CompanySessionsRecalculationRequestedEvent(companyId, UserContext.Id), UserContext);
         
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);

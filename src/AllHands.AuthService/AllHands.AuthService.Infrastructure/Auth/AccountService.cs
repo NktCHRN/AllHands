@@ -276,7 +276,7 @@ public sealed class AccountService(
         
         await transaction.CommitAsync(cancellationToken);
         
-        return new CreateEmployeeAccountResult(user.Id, globalUser.Id);
+        return new CreateEmployeeAccountResult(user.Id, defaultRole.Id, globalUser.Id);
     }
 
     public async Task RegenerateInvitationAsync(Guid employeeId, CancellationToken cancellationToken)
@@ -306,6 +306,8 @@ public sealed class AccountService(
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
         var user = await dbContext.Users
+            .Include(u => u.Roles)
+                .ThenInclude(r => r.Role)
             .FirstOrDefaultAsync(u => u.Id == command.UserId, cancellationToken)
             ?? throw new EntityNotFoundException("User was not found");
         
@@ -328,6 +330,7 @@ public sealed class AccountService(
         
         messageBus.Enroll(dbContext);
         await messageBus.PublishWithHeadersAsync(new UserSessionsRecalculationRequestedEvent(command.UserId, UserContext.Id), UserContext);
+        await messageBus.PublishWithHeadersAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), true, user.CompanyId), UserContext);
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
         await transaction.CommitAsync(cancellationToken);
@@ -358,7 +361,7 @@ public sealed class AccountService(
 
         messageBus.Enroll(dbContext);
         await messageBus.PublishWithHeadersAsync(new UserSessionsRecalculationRequestedEvent(command.UserId, UserContext.Id), UserContext);
-        await messageBus.PublishWithHeadersAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), user.CompanyId), UserContext);
+        await messageBus.PublishWithHeadersAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), true, user.CompanyId), UserContext);
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
         await transaction.CommitAsync(cancellationToken);
@@ -388,14 +391,19 @@ public sealed class AccountService(
     public async Task DeactivateAsync(Guid userId, CancellationToken cancellationToken)
     {
         var user = await dbContext.Users
+                       .Include(u => u.Roles)
+                       .ThenInclude(r => r.Role)
                        .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
                    ?? throw new EntityNotFoundException("User was not found");
 
         user.DeactivatedAt = timeProvider.GetUtcNow();
         
+        messageBus.Enroll(dbContext);
         await ticketModifier.ExpireActiveSessionsAsync(dbContext, userId, cancellationToken);
         
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await messageBus.PublishWithHeadersAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), false, user.CompanyId), UserContext);
+        
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
     }
     
     public async Task ReactivateAsync(Guid userId, CancellationToken cancellationToken)
@@ -420,7 +428,14 @@ public sealed class AccountService(
             });
         }
         
-        await dbContext.SaveChangesAsync(cancellationToken);
+        messageBus.Enroll(dbContext);
+        
+        await messageBus.PublishWithHeadersAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), true, user.CompanyId), UserContext);
+        await messageBus.PublishWithHeadersAsync(
+            new UserReactivatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(),
+                user.CompanyId), UserContext);
+        
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(Guid userId, CancellationToken cancellationToken)

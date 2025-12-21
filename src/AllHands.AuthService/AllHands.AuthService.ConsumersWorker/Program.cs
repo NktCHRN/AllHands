@@ -5,6 +5,8 @@ using AllHands.AuthService.Infrastructure;
 using AllHands.Shared.ConsumersWorker;
 using AllHands.Shared.Contracts.Messaging;
 using AllHands.Shared.Contracts.Messaging.Events.Employees;
+using AllHands.Shared.Contracts.Messaging.Events.Roles;
+using AllHands.Shared.Contracts.Messaging.Events.Users;
 using AllHands.Shared.Infrastructure.Messaging;
 using Wolverine.AmazonSqs;
 using Wolverine.EntityFrameworkCore;
@@ -19,6 +21,14 @@ builder.Services.AddApplication()
 builder.UseAllHandsWolverine(opts =>
 {
     var environment = builder.Environment.EnvironmentName;
+    opts.AddPublisher<UserCreatedEvent>(environment, Topics.User);
+    opts.AddPublisher<UserUpdatedEvent>(environment, Topics.User);
+    opts.AddPublisher<UserReactivatedEvent>(environment, Topics.User);
+    opts.AddPublisher<UserDeletedEvent>(environment, Topics.User);
+    
+    opts.AddPublisher<RoleCreatedEvent>(environment, Topics.Role);
+    opts.AddPublisher<RoleUpdatedEvent>(environment, Topics.Role);
+    opts.AddPublisher<RoleDeletedEvent>(environment, Topics.Role);
     
     opts.ListenToSqsQueue($"{environment.ToLower()}_{Queues.ResetPasswordRequestedEvent}")
         .ConfigureDeadLetterQueue($"{environment.ToLower()}_{Queues.ResetPasswordRequestedEvent}_errors");

@@ -26,6 +26,7 @@ builder.UseAllHandsWolverine(opts =>
     var environment = builder.Environment.EnvironmentName;
     opts.AddPublisher<UserCreatedEvent>(environment, Topics.User);
     opts.AddPublisher<UserUpdatedEvent>(environment, Topics.User);
+    opts.AddPublisher<UserReactivatedEvent>(environment, Topics.User);
     opts.AddPublisher<UserDeletedEvent>(environment, Topics.User);
     
     opts.AddPublisher<RoleCreatedEvent>(environment, Topics.Role);
