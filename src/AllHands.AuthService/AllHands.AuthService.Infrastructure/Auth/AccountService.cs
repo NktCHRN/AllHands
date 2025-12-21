@@ -17,7 +17,6 @@ using AllHands.Shared.Infrastructure.Messaging;
 using Humanizer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Wolverine;
 using Wolverine.EntityFrameworkCore;
 
 namespace AllHands.AuthService.Infrastructure.Auth;
@@ -228,10 +227,8 @@ public sealed class AccountService(
         var normalizedEmail = StringUtilities.GetNormalizedEmail(command.Email);
 
         var globalUser = await GetOrCreateGlobalUserByEmailAsync(command.Email, companyId, cancellationToken);
-        
-        var defaultRole = await dbContext.Roles
-            .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.IsDefault, cancellationToken)
-            ?? throw new EntityNotFoundException("Default role was not found.");
+
+        var defaultRole = await GetDefaultRoleAsync(companyId, cancellationToken);
 
         var user = new AllHandsIdentityUser()
         {
@@ -419,9 +416,7 @@ public sealed class AccountService(
         if (!user.Roles.Any() || user.Roles.All(r => r.Role?.DeletedAt.HasValue == true))
         {
             var companyId = UserContext.CompanyId;
-            var defaultRole = await dbContext.Roles
-                                  .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.IsDefault, cancellationToken)
-                              ?? throw new EntityNotFoundException("Default role was not found.");
+            var defaultRole = await GetDefaultRoleAsync(companyId, cancellationToken);
             user.Roles.Add(new AllHandsUserRole()
             {
                 RoleId = defaultRole.Id
@@ -453,5 +448,12 @@ public sealed class AccountService(
         await messageBus.PublishWithHeadersAsync(new UserDeletedEvent(user.Id, user.CompanyId), UserContext);
         
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
+    }
+
+    private async Task<AllHandsRole> GetDefaultRoleAsync(Guid companyId, CancellationToken cancellationToken)
+    {
+        return await dbContext.Roles
+                .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.IsDefault, cancellationToken)
+            ?? throw new EntityNotFoundException("Default role was not found.");
     }
 }
