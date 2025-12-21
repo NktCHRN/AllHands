@@ -64,11 +64,19 @@ public sealed class AccountService(
         }
         
         var userWithClaims = await dbContext.Users
+            .AsNoTracking()
             .Include(u => u.Roles)
             .ThenInclude(r => r.Role)
             .ThenInclude(r => r!.Claims)
             .Where(u => u.Id == user!.Id)
             .FirstAsync(cancellationToken: cancellationToken);
+        if (!userWithClaims.Roles.Any())
+        {
+            userWithClaims.Roles.Add(new AllHandsUserRole()
+            {
+                Role = await GetDefaultRoleAsync(userWithClaims.CompanyId, cancellationToken)
+            });
+        }
         var claimsPrincipal = userClaimsFactory.CreateClaimsPrincipal(userWithClaims);
         
         return new LoginResult(claimsPrincipal);
@@ -322,6 +330,14 @@ public sealed class AccountService(
             user.NormalizedEmail = StringUtilities.GetNormalizedEmail(command.Email);
             user.UserName = GetUserName(command.Email, user.CompanyId);
         }
+
+        if (!user.Roles.Any())
+        {
+            user.Roles.Add(new AllHandsUserRole()
+            {
+                Role = await GetDefaultRoleAsync(user.CompanyId, cancellationToken)
+            });
+        }
         
         await userManager.UpdateAsync(user);
         
@@ -343,7 +359,7 @@ public sealed class AccountService(
             .FirstOrDefaultAsync(u => u.Id == command.UserId, cancellationToken)
             ?? throw new EntityNotFoundException("User was not found");
 
-        if (user.Roles.FirstOrDefault()?.RoleId != command.RoleId)
+        if (!user.Roles.Any() || user.Roles.FirstOrDefault()?.RoleId != command.RoleId)
         {
             dbContext.RemoveRange(user.Roles);
             var role = await dbContext.Roles.FirstOrDefaultAsync(r => r.Id == command.RoleId, cancellationToken)
@@ -453,6 +469,7 @@ public sealed class AccountService(
     private async Task<AllHandsRole> GetDefaultRoleAsync(Guid companyId, CancellationToken cancellationToken)
     {
         return await dbContext.Roles
+                   .Include(r => r.Claims)
                 .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.IsDefault, cancellationToken)
             ?? throw new EntityNotFoundException("Default role was not found.");
     }
