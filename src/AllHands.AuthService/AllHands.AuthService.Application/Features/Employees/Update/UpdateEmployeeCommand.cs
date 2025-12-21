@@ -10,7 +10,8 @@ public sealed record UpdateEmployeeCommand(Guid UserId,
     string? MiddleName,
     string LastName,
     string? PhoneNumber,
-    DateOnly WorkStartDate) : 
+    DateOnly WorkStartDate,
+    Guid? RoleId) : 
     EmployeeCommandBase(PositionId, ManagerId, Email, FirstName, MiddleName, LastName, PhoneNumber, WorkStartDate), IRequest
 {
     public Guid EmployeeId { get; set; }

@@ -41,7 +41,6 @@ builder.UseAllHandsWolverine(opts =>
     opts.PublishMessage<UserInvitedEvent>()
         .ToSqsQueue($"{environment.ToLower()}_{Queues.UserInvitedEvent}");
     
-    opts.AddListener<EmployeeUpdatedEvent>(environment, Topics.Employee, Services.AuthService);
     opts.AddListener<EmployeeDeletedEvent>(environment, Topics.Employee, Services.AuthService);
     opts.AddListener<EmployeeFiredEvent>(environment, Topics.Employee, Services.AuthService);
     opts.AddListener<EmployeeRehiredEvent>(environment, Topics.Employee, Services.AuthService);

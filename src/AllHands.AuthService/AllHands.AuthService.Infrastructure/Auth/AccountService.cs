@@ -3,7 +3,6 @@ using AllHands.Auth.Contracts.Messaging;
 using AllHands.AuthService.Application.Abstractions;
 using AllHands.AuthService.Application.Features.Employees.Create;
 using AllHands.AuthService.Application.Features.Employees.Update;
-using AllHands.AuthService.Application.Features.Employees.UpdateRole;
 using AllHands.AuthService.Application.Features.User.ChangePassword;
 using AllHands.AuthService.Application.Features.User.Login;
 using AllHands.AuthService.Application.Features.User.RegisterFromInvitation;
@@ -306,7 +305,7 @@ public sealed class AccountService(
         await transaction.CommitAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(UpdateEmployeeCommand command, CancellationToken cancellationToken)
+    public async Task<UpdateEmployeeResult> UpdateAsync(UpdateEmployeeCommand command, CancellationToken cancellationToken)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
@@ -331,38 +330,21 @@ public sealed class AccountService(
             user.UserName = GetUserName(command.Email, user.CompanyId);
         }
 
-        if (!user.Roles.Any())
-        {
-            user.Roles.Add(new AllHandsUserRole()
-            {
-                Role = await GetDefaultRoleAsync(user.CompanyId, cancellationToken)
-            });
-        }
-        
-        await userManager.UpdateAsync(user);
-        
-        messageBus.Enroll(dbContext);
-        await messageBus.PublishWithHeadersAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), true, user.CompanyId), UserContext);
-        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
-        
-        await transaction.CommitAsync(cancellationToken);
-    }
-    
-    public async Task UpdateRoleAsync(UpdateEmployeeRoleCommand command, CancellationToken cancellationToken)
-    {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
-
-        var user = await dbContext.Users
-            .Include(u => u.Roles)
-            .ThenInclude(r => r.Role)
-            .FirstOrDefaultAsync(u => u.Id == command.UserId, cancellationToken)
-            ?? throw new EntityNotFoundException("User was not found");
-
-        if (!user.Roles.Any() || user.Roles.FirstOrDefault()?.RoleId != command.RoleId)
+        AllHandsRole? role = user.Roles.FirstOrDefault()?.Role;
+        if (command.RoleId.HasValue && user.Roles.FirstOrDefault()?.RoleId != command.RoleId)
         {
             dbContext.RemoveRange(user.Roles);
-            var role = await dbContext.Roles.FirstOrDefaultAsync(r => r.Id == command.RoleId, cancellationToken)
-                ?? throw new EntityNotFoundException("Role was not found");
+            role = await dbContext.Roles.FirstOrDefaultAsync(r => r.Id == command.RoleId, cancellationToken)
+                       ?? throw new EntityNotFoundException("Role was not found");
+            user.Roles.Add(new AllHandsUserRole()
+            {
+                RoleId = role.Id
+            });
+        }
+
+        if (!user.Roles.Any())
+        {
+            role = await GetDefaultRoleAsync(user.CompanyId, cancellationToken);
             user.Roles.Add(new AllHandsUserRole()
             {
                 RoleId = role.Id
@@ -370,12 +352,14 @@ public sealed class AccountService(
         }
         
         await userManager.UpdateAsync(user);
-
+        
         messageBus.Enroll(dbContext);
         await messageBus.PublishWithHeadersAsync(new UserUpdatedEvent(user.Id, user.GlobalUserId, user.Roles.Select(r => r.RoleId).ToList(), true, user.CompanyId), UserContext);
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
         await transaction.CommitAsync(cancellationToken);
+
+        return new UpdateEmployeeResult(user.Id, role?.Id ?? Guid.Empty, user.GlobalUserId);
     }
 
     private async Task<AllHandsGlobalUser> GetOrCreateGlobalUserByEmailAsync(string email, Guid companyId,
