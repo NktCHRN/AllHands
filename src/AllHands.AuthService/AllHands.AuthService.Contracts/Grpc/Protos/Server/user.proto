@@ -10,11 +10,12 @@ import "google/protobuf/wrappers.proto";
 
 service UserService
 {
-  
+  rpc Create(CreateUserRequest) returns (CreateUserResponse);
+  rpc Update(UpdateUserRequest) returns (UpdateUserResponse);
+  rpc Delete(DeleteUserRequest) returns (DeleteUserResponse);
 }
 
-
-message CreateUserCommand {
+message CreateUserRequest {
   string email = 1;
   string first_name = 2;
   google.protobuf.StringValue middle_name = 3;
@@ -23,7 +24,13 @@ message CreateUserCommand {
   string employee_id = 6;
 }
 
-message UpdateUserCommand {
+message CreateUserResponse {
+  string user_id = 1;
+  string role_id = 2;
+  string global_user_id = 3; 
+}
+
+message UpdateUserRequest {
   string user_id = 1;
   string email = 2;
   string first_name = 3;
@@ -33,6 +40,15 @@ message UpdateUserCommand {
   google.protobuf.StringValue role_id = 7;
 }
 
-message DeleteUserCommand {
+message UpdateUserResponse {
   string user_id = 1;
+  string role_id = 2;
+  string global_user_id = 3;
+}
+
+message DeleteUserRequest {
+  string user_id = 1;
+}
+
+message DeleteUserResponse {
 }

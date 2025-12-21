@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using AllHands.Shared.Contracts.Rest;
+using AllHands.Shared.WebApi.Grpc;
 using AllHands.Shared.WebApi.Rest;
 using AllHands.Shared.WebApi.Rest.Auth;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -19,6 +20,8 @@ public static class DependencyInjection
             .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
         
         services.AddOpenApi();
+
+        services.AddGrpc(opt => opt.AddInterceptors());
 
         if (environment.IsDevelopment())
         {

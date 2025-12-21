@@ -3,6 +3,7 @@ using AllHands.AuthService.Application;
 using AllHands.AuthService.Infrastructure;
 using AllHands.AuthService.Infrastructure.Auth;
 using AllHands.AuthService.WebApi;
+using AllHands.AuthService.WebApi.GrpcServices;
 using AllHands.Shared.Contracts.Messaging;
 using AllHands.Shared.Contracts.Messaging.Events.Roles;
 using AllHands.Shared.Contracts.Messaging.Events.Users;
@@ -67,6 +68,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGrpcService<UserGrpcService>();
 
 var runMigrations = app.Configuration.GetValue<bool>("RUN_MIGRATIONS");
 var runMigrationsAndExit =  app.Configuration.GetValue<bool>("RUN_MIGRATIONS_AND_EXIT");
