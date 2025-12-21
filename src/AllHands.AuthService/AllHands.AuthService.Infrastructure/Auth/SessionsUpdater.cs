@@ -47,7 +47,7 @@ public sealed class SessionsUpdater(IDbContextFactory<AuthDbContext> dbContextFa
         
         var user = await dbContext.Users
             .IgnoreQueryFilters()
-            .Include(u => u.Roles)
+            .Include(u => u.Roles.Where(r => r.Role != null && !r.Role.DeletedAt.HasValue))
             .ThenInclude(r => r.Role)
             .ThenInclude(r => r!.Claims)
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
