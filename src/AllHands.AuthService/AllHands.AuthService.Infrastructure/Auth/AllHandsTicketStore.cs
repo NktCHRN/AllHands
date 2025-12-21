@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 using System.Text.Json;
+using AllHands.AuthService.Domain.Models;
 using AllHands.Shared.Domain.Exceptions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;

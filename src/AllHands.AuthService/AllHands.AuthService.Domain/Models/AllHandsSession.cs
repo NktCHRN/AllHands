@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
-using AllHands.AuthService.Domain.Models;
 
-namespace AllHands.AuthService.Infrastructure.Auth;
+namespace AllHands.AuthService.Domain.Models;
 
 public sealed class AllHandsSession
 {
