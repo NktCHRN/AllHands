@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\AllHands.EmployeeService.Application\AllHands.EmployeeService.Application.csproj" />
+      <ProjectReference Include="..\AllHands.EmployeeService.Contracts\AllHands.EmployeeService.Contracts.csproj" />
+    </ItemGroup>
+
+</Project>
