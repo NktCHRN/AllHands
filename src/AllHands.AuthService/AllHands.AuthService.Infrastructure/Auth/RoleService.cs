@@ -120,7 +120,7 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
         };
 
         messageBus.Enroll(dbContext);
-        await messageBus.PublishWithHeadersAsync(new RoleCreatedEvent(role.Id, role.Name, role.CompanyId), UserContext);
+        await messageBus.PublishWithHeadersAsync(new RoleCreatedEvent(role.Id, role.Name, role.CompanyId, role.IsDefault), UserContext);
         
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
@@ -141,6 +141,8 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
         
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
         
+        messageBus.Enroll(dbContext);
+        
         var role = await dbContext.Roles
             .Include(r => r.Claims.Where(c => c.ClaimType == AuthConstants.PermissionClaimName))
             .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.Id == command.Id, cancellationToken: cancellationToken)
@@ -158,6 +160,7 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
             {
                 defaultRole.IsDefault = false;
                 dbContext.Roles.Update(defaultRole);
+                await messageBus.PublishWithHeadersAsync(new RoleUpdatedEvent(defaultRole.Id, defaultRole.Name ?? string.Empty, defaultRole.CompanyId, false), UserContext);
             }
         }
         
@@ -184,9 +187,8 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
                 RoleId = role.Id
             });
         }
-
-        messageBus.Enroll(dbContext);
-        await messageBus.PublishWithHeadersAsync(new RoleUpdatedEvent(role.Id, role.Name, role.CompanyId), UserContext);
+        
+        await messageBus.PublishWithHeadersAsync(new RoleUpdatedEvent(role.Id, role.Name, role.CompanyId, role.IsDefault), UserContext);
         
         await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
