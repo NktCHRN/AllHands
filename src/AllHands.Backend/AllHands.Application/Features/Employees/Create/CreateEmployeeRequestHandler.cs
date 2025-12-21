@@ -52,7 +52,7 @@ public sealed class CreateEmployeeRequestHandler(IDocumentSession documentSessio
         var accountCreationResult = await accountService.CreateAsync(request, cancellationToken);
 
         var employeeId = Guid.CreateVersion7();
-        documentSession.Events.StartStream(employeeId, new EmployeeCreatedEvent(
+        documentSession.Events.StartStream<Employee>(employeeId, new EmployeeCreatedEvent(
             employeeId,
             currentUserService.GetId(),
             accountCreationResult.Id,

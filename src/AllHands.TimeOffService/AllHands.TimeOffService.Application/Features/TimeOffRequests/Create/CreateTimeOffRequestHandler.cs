@@ -41,7 +41,7 @@ public sealed class CreateTimeOffRequestHandler(IDocumentSession documentSession
         if (balance == null)
         {
             balanceId = TimeOffBalance.CreateId(employeeId, request.TypeId);
-            documentSession.Events.StartStream(balanceId.Value, new TimeOffBalanceCreatedEvent(balanceId.Value, employeeId, request.TypeId, 0));
+            documentSession.Events.StartStream<TimeOffBalance>(balanceId.Value, new TimeOffBalanceCreatedEvent(balanceId.Value, employeeId, request.TypeId, 0));
         }
 
         var company = await documentSession.Query<Domain.Models.Company>()
@@ -68,7 +68,7 @@ public sealed class CreateTimeOffRequestHandler(IDocumentSession documentSession
             request.EndDate,
             workDaysCount,
             balanceId!.Value);
-        documentSession.Events.StartStream(timeOffRequestId, @event);
+        documentSession.Events.StartStream<TimeOffRequest>(timeOffRequestId, @event);
         
         documentSession.Events.Append(balanceId.Value, new TimeOffBalanceRequestChangeEvent(balanceId.Value, userContext.Id, timeOffRequestId, -workDaysCount));
         

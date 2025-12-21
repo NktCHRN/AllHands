@@ -34,7 +34,7 @@ public sealed class UpdateBalanceHandler(IDocumentSession session, IUserContext 
             {
                 events.Add(new TimeOffBalanceManuallyUpdated(balanceId, userContext.Id, userContext.EmployeeId, request.Reason, request.Delta));
             }
-            session.Events.StartStream(balanceId, events);
+            session.Events.StartStream<TimeOffBalance>(balanceId, events);
             await session.SaveChangesAsync(cancellationToken);
             return;
         }
