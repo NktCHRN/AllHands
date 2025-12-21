@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using AllHands.Shared.Contracts.Rest;
 using AllHands.Shared.Domain.Exceptions;
+using Grpc.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -25,13 +26,16 @@ public sealed class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            var (statusCode, message) = ex switch
+            var baseException = ex.GetBaseException();
+            
+            var (statusCode, message) = baseException switch
             {
-                EntityAlreadyExistsException => (HttpStatusCode.Conflict, ex.Message),
-                EntityNotFoundException => (HttpStatusCode.NotFound, ex.Message),
-                EntityValidationFailedException => (HttpStatusCode.BadRequest, ex.Message),
-                UserUnauthorizedException => (HttpStatusCode.Unauthorized, ex.Message),
-                ForbiddenForUserException => (HttpStatusCode.Forbidden, ex.Message),
+                EntityAlreadyExistsException => (HttpStatusCode.Conflict, baseException.Message),
+                EntityNotFoundException => (HttpStatusCode.NotFound, baseException.Message),
+                EntityValidationFailedException => (HttpStatusCode.BadRequest, baseException.Message),
+                UserUnauthorizedException => (HttpStatusCode.Unauthorized, baseException.Message),
+                ForbiddenForUserException => (HttpStatusCode.Forbidden, baseException.Message),
+                RpcException rpcException => GetExceptionDetails(rpcException),
                 _ => (HttpStatusCode.InternalServerError, "An unexpected error occured on the server.")
             };
 
@@ -44,5 +48,18 @@ public sealed class ExceptionHandlingMiddleware
             httpContext.Response.StatusCode = (int)statusCode;
             await httpContext.Response.WriteAsJsonAsync(ApiResponse.FromError(new ErrorResponse(message)));
         }
+    }
+
+    private static (HttpStatusCode, string) GetExceptionDetails(RpcException rpcException)
+    {
+        return rpcException.StatusCode switch
+        {
+            StatusCode.AlreadyExists => (HttpStatusCode.Conflict, rpcException.Message),
+            StatusCode.NotFound => (HttpStatusCode.NotFound, rpcException.Message),
+            StatusCode.InvalidArgument => (HttpStatusCode.BadRequest, rpcException.Message),
+            StatusCode.Unauthenticated => (HttpStatusCode.Unauthorized, rpcException.Message),
+            StatusCode.PermissionDenied => (HttpStatusCode.Forbidden, rpcException.Message),
+            _ => (HttpStatusCode.InternalServerError, "An unexpected error occured on the server.")
+        };
     }
 }

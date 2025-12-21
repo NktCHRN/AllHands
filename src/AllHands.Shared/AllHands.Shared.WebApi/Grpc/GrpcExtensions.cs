@@ -4,8 +4,9 @@ namespace AllHands.Shared.WebApi.Grpc;
 
 public static class GrpcExtensions
 {
-    public static void AddUserContextHeadersInterceptor(this GrpcServiceOptions options)
+    public static void AddsInterceptors(this GrpcServiceOptions options)
     {
+        options.Interceptors.Add<ExceptionHandlingInterceptor>();
         options.Interceptors.Add<UserContextHeadersInterceptor>();
     }
 }
