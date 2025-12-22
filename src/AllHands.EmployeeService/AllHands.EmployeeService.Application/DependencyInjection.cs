@@ -4,6 +4,7 @@ using AllHands.Shared.Application.Behaviors;
 using AllHands.Shared.Domain;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using PhoneNumbers;
 
 namespace AllHands.EmployeeService.Application;
 
@@ -20,6 +21,7 @@ public static class DependencyInjection
             opt.RegisterServicesFromAssemblyContaining<IApplicationMarker>()
                 .AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
+        services.AddSingleton(_ => PhoneNumberUtil.GetInstance());
 
         services.AddOptions<UserRoleUpdaterOptions>()
             .BindConfiguration(nameof(UserRoleUpdaterOptions));
