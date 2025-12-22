@@ -16,7 +16,7 @@ public sealed class RegisterUserCommandHandler(IDocumentSession documentSession,
                            .FirstOrDefaultAsync(x => x.UserId == request.UserId, token: cancellationToken)
                        ?? throw new EntityNotFoundException("Employee was not found");
         
-        documentSession.Events.Append(request.UserId, new EmployeeRegisteredEvent(employee.Id, employee.UserId));
+        documentSession.Events.Append(employee.Id, new EmployeeRegisteredEvent(employee.Id, employee.UserId));
         await eventService.PublishAsync(new AllHands.Shared.Contracts.Messaging.Events.Employees.EmployeeRegisteredEvent(employee.Id, employee.CompanyId, employee.UserId));
         await eventService.PublishAsync(new EmployeeStatusUpdated(employee.Id, nameof(EmployeeStatus.Active),
             employee.CompanyId, employee.UserId));
