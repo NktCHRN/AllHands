@@ -1,5 +1,4 @@
 using System.Data;
-using AllHands.Auth.Contracts.Messaging;
 using AllHands.AuthService.Application.Abstractions;
 using AllHands.AuthService.Application.Dto;
 using AllHands.AuthService.Application.Features.Roles.Create;
@@ -8,6 +7,7 @@ using AllHands.AuthService.Application.Features.Roles.GetById;
 using AllHands.AuthService.Application.Features.Roles.GetUsersInRole;
 using AllHands.AuthService.Application.Features.Roles.Update;
 using AllHands.AuthService.Domain.Models;
+using AllHands.Shared.Application.Auth;
 using AllHands.Shared.Application.Dto;
 using AllHands.Shared.Contracts.Messaging.Events.Roles;
 using AllHands.Shared.Contracts.Messaging.Events.Users;
@@ -16,12 +16,11 @@ using AllHands.Shared.Domain.UserContext;
 using AllHands.Shared.Infrastructure.Messaging;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Wolverine;
 using Wolverine.EntityFrameworkCore;
 
 namespace AllHands.AuthService.Infrastructure.Auth;
 
-public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDbContext dbContext, RoleManager<AllHandsRole> roleManager, TimeProvider timeProvider, IDbContextOutbox  messageBus) : IRoleService
+public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDbContext dbContext, RoleManager<AllHandsRole> roleManager, TimeProvider timeProvider, IDbContextOutbox messageBus, IPermissionsContainer permissionsContainer) : IRoleService
 {
     private IUserContext UserContext => userContextAccessor.UserContext ?? throw new InvalidOperationException("UserContext is not set");
     
@@ -259,5 +258,142 @@ public sealed class RoleService(IUserContextAccessor userContextAccessor, AuthDb
     {
         return await dbContext.Roles
             .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.IsDefault, cancellationToken: cancellationToken);
+    }
+    
+    public async Task CreateDefaultRolesAsync(Guid companyId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
+
+        var roles = new[]
+        {
+            new AllHandsRole()
+            {
+                Id = Guid.CreateVersion7(),
+                CompanyId = companyId,
+                Name = "Admin",
+                Claims = permissionsContainer.Permissions.Select(p => new AllHandsRoleClaim()
+                {
+                    Id = Guid.CreateVersion7(),
+                    ClaimType = AuthConstants.PermissionClaimName,
+                    ClaimValue = p.Key
+                }).ToList(),
+                CreatedAt = DateTime.UtcNow,
+            },
+            new AllHandsRole()
+            {
+                Id = Guid.CreateVersion7(),
+                CompanyId = companyId,
+                Name = "HR",
+                Claims = new List<AllHandsRoleClaim>()
+                {
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.EmployeeCreate
+                    },
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.EmployeeCreate
+                    },
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.NewsCreate
+                    },
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.NewsEdit
+                    },
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.NewsDelete
+                    },
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.RolesView
+                    },
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.TimeOffBalanceEdit
+                    },
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.TimeOffRequestAdminApprove
+                    },
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.HolidayCreate
+                    },
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.HolidayEdit
+                    },
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.HolidayDelete
+                    },
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.PositionCreate
+                    },
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.PositionEdit
+                    },
+                    new AllHandsRoleClaim()
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ClaimType = AuthConstants.PermissionClaimName,
+                        ClaimValue = Permissions.PositionDelete
+                    },
+                },
+                CreatedAt = DateTime.UtcNow,
+            },
+            new AllHandsRole()
+            {
+                Id = Guid.CreateVersion7(),
+                CompanyId = companyId,
+                Name = "Employee",
+                IsDefault = true,
+                CreatedAt = DateTime.UtcNow,
+            }
+        };
+
+        messageBus.Enroll(dbContext);
+        foreach (var role in roles)
+        {
+            await messageBus.PublishWithHeadersAsync(new RoleCreatedEvent(role.Id, role.Name!, role.CompanyId, role.IsDefault), UserContext);
+            var result = await roleManager.CreateAsync(role);
+            if (!result.Succeeded)
+            {
+                throw new InvalidOperationException($"Default roles creation failed for company {companyId}: {IdentityUtilities.IdentityErrorsToString(result.Errors)}");
+            }
+        }
+        
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
     }
 }

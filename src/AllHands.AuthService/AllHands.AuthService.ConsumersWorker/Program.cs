@@ -5,6 +5,7 @@ using AllHands.AuthService.Infrastructure;
 using AllHands.AuthService.SessionRecalculator;
 using AllHands.Shared.ConsumersWorker;
 using AllHands.Shared.Contracts.Messaging;
+using AllHands.Shared.Contracts.Messaging.Events.Companies;
 using AllHands.Shared.Contracts.Messaging.Events.Employees;
 using AllHands.Shared.Contracts.Messaging.Events.Invitations;
 using AllHands.Shared.Contracts.Messaging.Events.Roles;
@@ -53,6 +54,8 @@ builder.UseAllHandsWolverine(opts =>
     opts.AddListener<RoleDeletedEvent>(environment, Topics.Role, Services.AuthService);
     opts.AddListener<UserUpdatedEvent>(environment, Topics.User, Services.AuthService);
     opts.AddListener<UserDeletedEvent>(environment, Topics.User, Services.AuthService);
+    
+    opts.AddListener<CompanyCreatedEvent>(environment, Topics.Company, Services.AuthService);
     
     opts.AddIncomingHeadersMiddleware();
     

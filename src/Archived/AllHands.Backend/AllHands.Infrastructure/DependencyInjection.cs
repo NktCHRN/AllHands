@@ -60,6 +60,9 @@ public static class DependencyInjection
     {
         services.AddSingleton<IPasswordHasher<AllHandsIdentityUser>, BCryptUserPasswordHasher>();
         
+        // Prevents EF Core Identity from validating by name in all companies. MUST BE BEFORE THE AddIdentity().
+        services.AddScoped<IRoleValidator<AllHandsRole>, CompanyRoleValidator>();
+        
         services.AddIdentity<AllHandsIdentityUser, AllHandsRole>(options =>
         {
             options.Password.RequiredLength = 8;
