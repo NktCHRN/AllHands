@@ -11,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="AllHands.Shared.Infrastructure" Version="1.0.9" />
+      <PackageReference Include="AllHands.Shared.Infrastructure" Version="1.0.21" />
       <PackageReference Include="WolverineFx.Marten" Version="5.9.0" />
     </ItemGroup>
 

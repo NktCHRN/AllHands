@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Text.Json;
 using AllHands.Shared.Domain.UserContext;
 using AllHands.Shared.Infrastructure.UserContext;
 using Microsoft.AspNetCore.Http;
@@ -75,7 +76,7 @@ public sealed class UserContextHeadersMiddleware
 
         if (headers.TryGetValue(UserContextHeaders.Roles, out var roles))
         {
-            userContext.Roles = roles;
+            userContext.Roles = JsonSerializer.Deserialize<List<string>>(roles.ToString()) ?? [];
         }
         
         if (headers.TryGetValue(UserContextHeaders.Permissions, out var permissions))

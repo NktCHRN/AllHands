@@ -11,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="AllHands.Shared.Application" Version="1.0.3" />
+      <PackageReference Include="AllHands.Shared.Application" Version="1.0.8" />
     </ItemGroup>
 
 </Project>

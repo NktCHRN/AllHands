@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AllHands.Shared.WebApi" Version="1.0.25" />
+        <PackageReference Include="AllHands.Shared.WebApi" Version="1.0.27" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0"/>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.1" />
         <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="10.0.1" />

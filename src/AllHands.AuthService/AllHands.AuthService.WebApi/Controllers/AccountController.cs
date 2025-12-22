@@ -1,5 +1,5 @@
 ﻿using System.Security.Claims;
-using AllHands.Auth.Contracts.Rest;
+using System.Text.Json;
 using AllHands.AuthService.Application.Constants;
 using AllHands.AuthService.Application.Features.User.ChangePassword;
 using AllHands.AuthService.Application.Features.User.Login;
@@ -7,7 +7,7 @@ using AllHands.AuthService.Application.Features.User.RegisterFromInvitation;
 using AllHands.AuthService.Application.Features.User.Relogin;
 using AllHands.AuthService.Application.Features.User.ResetPassword;
 using AllHands.AuthService.Infrastructure.Auth;
-using AllHands.Shared.Contracts.Rest;
+using AllHands.Shared.Infrastructure.UserContext;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -46,25 +46,33 @@ public sealed class AccountController(IMediator mediator) : ControllerBase
     
     [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
     [HttpPost("authenticate")]
-    [ProducesResponseType(typeof(ApiResponse<UserContextResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public Task<IActionResult> Authenticate(CancellationToken cancellationToken)
     {
-        var userContext = new UserContextResponse(
-            HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty,
-            HttpContext.User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty,
-            HttpContext.User.FindFirst(ClaimTypes.MobilePhone)?.Value,
-            HttpContext.User.FindFirst("companyid")?.Value ?? string.Empty,
-            User.FindFirst(ClaimTypes.GivenName)?.Value ?? string.Empty,
-            User.FindFirst("middlename")?.Value,
-            User.FindFirst(ClaimTypes.Surname)?.Value ?? string.Empty,
-            User.FindFirst(AllHandsClaimTypes.EmployeeId)?.Value ?? string.Empty,
-            User
-                .FindAll(ClaimTypes.Role)
-                .Where(r => !string.IsNullOrEmpty(r.Value))
-                .Select(x => x.Value)
-                .ToList(),
-            User.FindFirst(AuthConstants.PermissionClaimName)?.Value ?? string.Empty);
-        return Task.FromResult((IActionResult) Ok(ApiResponse.FromResult(userContext)));
+        Response.Headers[UserContextHeaders.Id] = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        Response.Headers[UserContextHeaders.Email] = HttpContext.User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
+        Response.Headers[UserContextHeaders.CompanyId] = HttpContext.User.FindFirst(AllHandsClaimTypes.CompanyId)?.Value ?? string.Empty;
+        Response.Headers[UserContextHeaders.FirstName] = User.FindFirst(ClaimTypes.GivenName)?.Value ?? string.Empty;
+        Response.Headers[UserContextHeaders.LastName] = User.FindFirst(ClaimTypes.Surname)?.Value ?? string.Empty;
+        Response.Headers[UserContextHeaders.Roles] = JsonSerializer.Serialize(User
+            .FindAll(ClaimTypes.Role)
+            .Where(r => !string.IsNullOrEmpty(r.Value))
+            .Select(x => x.Value)
+            .ToList());
+        Response.Headers[UserContextHeaders.EmployeeId] = User.FindFirst(AllHandsClaimTypes.EmployeeId)?.Value ?? string.Empty;
+        Response.Headers[UserContextHeaders.Permissions] = User.FindFirst(AuthConstants.PermissionClaimName)?.Value ?? string.Empty;
+
+        
+        if (!string.IsNullOrEmpty(HttpContext.User.FindFirst(ClaimTypes.MobilePhone)?.Value))
+        {
+            Response.Headers[UserContextHeaders.PhoneNumber] = HttpContext.User.FindFirst(ClaimTypes.MobilePhone)?.Value;
+        }
+        if (!string.IsNullOrEmpty(User.FindFirst(AllHandsClaimTypes.MiddleName)?.Value))
+        {
+            Response.Headers[UserContextHeaders.MiddleName] = User.FindFirst(AllHandsClaimTypes.MiddleName)?.Value;
+        }
+        
+        return Task.FromResult<IActionResult>(NoContent());
     }
 
     [HttpPost("register/invitation")]
