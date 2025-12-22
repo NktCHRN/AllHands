@@ -20,6 +20,7 @@
       <Folder Include="Features\Roles\Delete\" />
       <Folder Include="Features\Roles\Update\" />
       <Folder Include="Features\User\Reactivate\" />
+      <Folder Include="Features\User\Register\" />
     </ItemGroup>
 
 </Project>
