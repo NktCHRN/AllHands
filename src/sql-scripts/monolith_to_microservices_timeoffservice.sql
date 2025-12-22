@@ -502,4 +502,10 @@ DO UPDATE SET
 
 COMMIT;
 
+SELECT setval(
+  'public.mt_events_sequence',
+  (SELECT COALESCE(MAX(seq_id), 0) FROM public.mt_events) + 1,
+  false
+);
+
 DROP SERVER IF EXISTS remote_allhands_prod CASCADE;

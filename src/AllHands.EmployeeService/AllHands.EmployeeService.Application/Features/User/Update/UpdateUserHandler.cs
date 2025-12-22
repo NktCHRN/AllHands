@@ -23,7 +23,7 @@ public sealed class UpdateUserHandler(IUserContext userContext, IEventService ev
             throw new EntityNotFoundException("User was not found");
         }
         
-        await userClient.UpdateAsync(new UpdateIdentityUserCommand(
+        var updateResult = await userClient.UpdateAsync(new UpdateIdentityUserCommand(
             employee.UserId,
             employee.Email,
             request.FirstName,
@@ -40,7 +40,9 @@ public sealed class UpdateUserHandler(IUserContext userContext, IEventService ev
                 request.FirstName,
                 request.MiddleName,
                 request.LastName,
-                request.PhoneNumber));
+                request.PhoneNumber,
+                updateResult.GlobalUserId,
+                updateResult.RoleId));
             await eventService.PublishAsync(new Shared.Contracts.Messaging.Events.Employees.EmployeeUpdatedEvent(
                 employee.Id,
                 request.FirstName,

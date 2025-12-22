@@ -8,4 +8,6 @@ public sealed record EmployeeUpdatedBySelfEvent(
     string FirstName,
     string? MiddleName,
     string LastName,
-    string? PhoneNumber): AuditableEvent(EntityId, PerformedByUserId);
+    string? PhoneNumber,
+    Guid GlobalUserId,
+    Guid RoleId): AuditableEvent(EntityId, PerformedByUserId);

@@ -74,7 +74,9 @@ public sealed class CreateEmployeeRequestHandler(IDocumentSession documentSessio
                 request.MiddleName,
                 request.LastName,
                 request.PhoneNumber,
-                request.WorkStartDate));
+                request.WorkStartDate,
+                accountCreationResult.GlobalUserId,
+                accountCreationResult.RoleId));
             await eventService.PublishAsync(new Shared.Contracts.Messaging.Events.Employees.EmployeeCreatedEvent(
                 employeeId,
                 request.FirstName,

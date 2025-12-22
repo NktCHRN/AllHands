@@ -40,7 +40,7 @@ public sealed class UpdateEmployeeHandler(IDocumentSession documentSession, IEve
             }
         }
 
-        await userClient.UpdateAsync(new UpdateIdentityUserCommand(
+        var updateResult = await userClient.UpdateAsync(new UpdateIdentityUserCommand(
             employee.UserId,
             request.Email,
             request.FirstName,
@@ -62,7 +62,9 @@ public sealed class UpdateEmployeeHandler(IDocumentSession documentSession, IEve
                 request.MiddleName,
                 request.LastName,
                 request.PhoneNumber,
-                request.WorkStartDate));
+                request.WorkStartDate,
+                updateResult.GlobalUserId,
+                updateResult.RoleId));
             await eventService.PublishAsync(new Shared.Contracts.Messaging.Events.Employees.EmployeeUpdatedEvent(
                 employee.Id,
                 request.FirstName,

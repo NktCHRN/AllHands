@@ -13,5 +13,7 @@ public sealed record EmployeeUpdatedEvent(
     string? MiddleName,
     string LastName,
     string? PhoneNumber,
-    DateOnly WorkStartDate): AuditableEvent(EntityId, PerformedByUserId);
+    DateOnly WorkStartDate,
+    Guid GlobalUserId,
+    Guid RoleId): AuditableEvent(EntityId, PerformedByUserId);
     

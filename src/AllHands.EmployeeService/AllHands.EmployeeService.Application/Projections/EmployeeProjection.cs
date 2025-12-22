@@ -21,6 +21,7 @@ public sealed class EmployeeProjection : SingleStreamProjection<Employee, Guid>
         IncludeType<EmployeeRegisteredEvent>();
         IncludeType<EmployeeRehiredEvent>();
         IncludeType<EmployeeAvatarUpdated>();
+        IncludeType<EmployeeReactivatedEvent>();
     }
     
     public override (Employee?, ActionType) DetermineAction(Employee? snapshot, Guid identity,
@@ -56,7 +57,9 @@ public sealed class EmployeeProjection : SingleStreamProjection<Employee, Guid>
                         WorkStartDate = @event.WorkStartDate,
                         Status = EmployeeStatus.Unactivated,
                         StatusBeforeFire = EmployeeStatus.Unactivated,
-                        CreatedAt = @event.OccurredAt
+                        CreatedAt = @event.OccurredAt,
+                        RoleId = @event.RoleId,
+                        GlobalUserId = @event.GlobalUserId
                     };
                     break;
  
@@ -72,6 +75,8 @@ public sealed class EmployeeProjection : SingleStreamProjection<Employee, Guid>
                     snapshot.PhoneNumber = @event.PhoneNumber;
                     snapshot.WorkStartDate = @event.WorkStartDate;
                     snapshot.NormalizedEmail = @event.NormalizedEmail;
+                    snapshot.RoleId = @event.RoleId;
+                    snapshot.GlobalUserId = @event.GlobalUserId;
                     break;
                 
                 case EmployeeUpdatedBySelfEvent @event when snapshot is { Deleted: false }:
@@ -81,6 +86,8 @@ public sealed class EmployeeProjection : SingleStreamProjection<Employee, Guid>
                     snapshot.MiddleName = @event.MiddleName;
                     snapshot.LastName = @event.LastName;
                     snapshot.PhoneNumber = @event.PhoneNumber;
+                    snapshot.RoleId = @event.RoleId;
+                    snapshot.GlobalUserId = @event.GlobalUserId;
                     break;
                 
                 case EmployeeFiredEvent @event when snapshot is { Deleted: false }:
@@ -107,6 +114,11 @@ public sealed class EmployeeProjection : SingleStreamProjection<Employee, Guid>
                     snapshot.UpdatedAt = @event.OccurredAt;
                     break;
  
+                case EmployeeReactivatedEvent @event when snapshot is { Deleted: false }:
+                    snapshot.RoleId = @event.RoleId;
+                    snapshot.GlobalUserId = @event.GlobalUserId;
+                    break;
+                
                 case EmployeeDeletedEvent @event when snapshot is { Deleted: false }:
                     snapshot.Deleted = true;
                     snapshot.DeletedAt = @event.OccurredAt;
