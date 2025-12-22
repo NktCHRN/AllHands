@@ -11,4 +11,12 @@
       <ProjectReference Include="..\AllHands.EmployeeService.Contracts\AllHands.EmployeeService.Contracts.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="AllHands.Shared.Infrastructure" Version="1.0.20" />
+      <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.3.17" />
+      <PackageReference Include="AWSSDK.S3" Version="4.0.15.2" />
+      <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.1" />
+      <PackageReference Include="WolverineFx.Marten" Version="5.9.1" />
+    </ItemGroup>
+
 </Project>

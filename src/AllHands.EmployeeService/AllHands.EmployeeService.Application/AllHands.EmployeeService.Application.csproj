@@ -10,4 +10,16 @@
       <ProjectReference Include="..\AllHands.EmployeeService.Domain\AllHands.EmployeeService.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="AllHands.Shared.Application" Version="1.0.8" />
+      <PackageReference Include="libphonenumber-csharp" Version="9.0.21" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Features\Roles\Create\" />
+      <Folder Include="Features\Roles\Delete\" />
+      <Folder Include="Features\Roles\Update\" />
+      <Folder Include="Features\User\Reactivate\" />
+    </ItemGroup>
+
 </Project>

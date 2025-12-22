@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Models\" />
+      <PackageReference Include="AllHands.Shared.Domain" Version="1.0.2" />
     </ItemGroup>
 
 </Project>

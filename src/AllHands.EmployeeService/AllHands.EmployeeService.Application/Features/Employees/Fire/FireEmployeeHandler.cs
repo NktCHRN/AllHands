@@ -1,0 +1,38 @@
+﻿using AllHands.EmployeeService.Domain.Events.Employee;
+using AllHands.EmployeeService.Domain.Models;
+using AllHands.Shared.Application.Auth;
+using AllHands.Shared.Domain.Exceptions;
+using AllHands.Shared.Domain.UserContext;
+using Marten;
+using MediatR;
+
+namespace AllHands.EmployeeService.Application.Features.Employees.Fire;
+
+public sealed class FireEmployeeHandler(IDocumentSession documentSession, IUserContext userContext, IUserPermissionService userPermissionService) : IRequestHandler<FireEmployeeCommand>
+{
+    public async Task Handle(FireEmployeeCommand request, CancellationToken cancellationToken)
+    {
+        var employee = await documentSession.Query<Employee>()
+                           .FirstOrDefaultAsync(e => e.Id == request.EmployeeId, cancellationToken)
+                       ?? throw new EntityNotFoundException("Employee was not found.");
+
+        if (employee.Status != EmployeeStatus.Active && employee.Status != EmployeeStatus.Unactivated)
+        {
+            throw new EntityAlreadyExistsException("Cannot update fired employee.");
+        }
+
+        if (employee.ManagerId != userContext.EmployeeId
+            && !userPermissionService.IsAllowed(Permissions.EmployeeEdit))
+        {
+            throw new ForbiddenForUserException("Only managers and users with permission can fire employees.");
+        }
+        
+        // TODO: Send event.
+
+        documentSession.Events.Append(employee.Id, new EmployeeFiredEvent(
+            employee.Id,
+            userContext.Id,
+            request.Reason));
+        await documentSession.SaveChangesAsync(cancellationToken);
+    }
+}

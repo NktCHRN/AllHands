@@ -8,6 +8,7 @@ using AllHands.AuthService.Application.Features.User.RegisterFromInvitation;
 using AllHands.AuthService.Application.Features.User.Update;
 using AllHands.AuthService.Domain.Models;
 using AllHands.AuthService.Infrastructure.Abstractions;
+using AllHands.Shared.Contracts.Messaging.Events.Invitations;
 using AllHands.Shared.Contracts.Messaging.Events.Users;
 using AllHands.Shared.Domain.Exceptions;
 using AllHands.Shared.Domain.UserContext;
@@ -107,7 +108,8 @@ public sealed class AccountService(
     public async Task<Guid> RegisterFromInvitationAsync(RegisterFromInvitationCommand command, CancellationToken cancellationToken = default)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
-        
+
+        messageBus.Enroll(dbContext);
         var user = await dbContext.Users
             .Include(u => u.GlobalUser)
                 .ThenInclude(g => g!.Users.Where(u => !u.DeletedAt.HasValue))
@@ -146,8 +148,20 @@ public sealed class AccountService(
         user.IsInvitationAccepted = true;
         user.GlobalUser.DefaultCompanyId = user.CompanyId;
         await invitationService.UseAsync(command.InvitationId, invitationToken: command.InvitationToken, cancellationToken);
+
+        await messageBus.PublishWithHeadersAsync(new InvitationAcceptedEvent(command.InvitationId, user.Id, user.CompanyId), new UserContext()
+        {
+            Id = user.Id,
+            Email = user.Email ?? string.Empty,
+            CompanyId = user.CompanyId,
+            EmployeeId = user.EmployeeId,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            MiddleName = user.MiddleName,
+            PhoneNumber = user.PhoneNumber
+        });
         
-        await transaction.CommitAsync(cancellationToken);
+        await messageBus.SaveChangesAndFlushMessagesAsync(cancellationToken);
         
         return user.Id;
     }

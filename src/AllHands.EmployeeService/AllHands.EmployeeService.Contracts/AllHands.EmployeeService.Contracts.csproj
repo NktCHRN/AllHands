@@ -6,4 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <Folder Include="Grpc\Protos\Client\" />
+    </ItemGroup>
+
 </Project>

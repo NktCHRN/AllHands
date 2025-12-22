@@ -1,0 +1,17 @@
+﻿using MediatR;
+
+namespace AllHands.EmployeeService.Application.Features.Employees.Update;
+
+public sealed record UpdateEmployeeCommand(Guid PositionId,
+    Guid ManagerId,
+    string Email,
+    string FirstName,
+    string? MiddleName,
+    string LastName,
+    string? PhoneNumber,
+    DateOnly WorkStartDate,
+    Guid? RoleId) : 
+    EmployeeCommandBase(PositionId, ManagerId, Email, FirstName, MiddleName, LastName, PhoneNumber, WorkStartDate), IRequest
+{
+    public Guid EmployeeId { get; set; }
+}

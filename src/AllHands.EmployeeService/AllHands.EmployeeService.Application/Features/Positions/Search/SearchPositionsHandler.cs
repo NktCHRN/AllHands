@@ -1,0 +1,37 @@
+﻿using AllHands.EmployeeService.Application.Dto;
+using AllHands.EmployeeService.Domain.Models;
+using AllHands.Shared.Application.Dto;
+using AllHands.Shared.Domain.Utilities;
+using Marten;
+using MediatR;
+
+namespace AllHands.EmployeeService.Application.Features.Positions.Search;
+
+public sealed class SearchPositionsHandler(IQuerySession querySession) : IRequestHandler<SearchPositionsQuery, PagedDto<PositionDto>>
+{
+    public async Task<PagedDto<PositionDto>> Handle(SearchPositionsQuery request, CancellationToken cancellationToken)
+    {
+        IQueryable<Position> positionsQuery = querySession.Query<Position>();
+
+        if (!string.IsNullOrEmpty(request.Search))
+        {
+            var normalizedSearch = StringUtilities.GetNormalizedName(request.Search);
+            positionsQuery = positionsQuery.Where(p => p.NormalizedName.Contains(normalizedSearch));
+        }
+        
+        var count = await positionsQuery.CountAsync(cancellationToken);
+        
+        var positions = await positionsQuery.OrderBy(p => p.NormalizedName)
+            .Skip((request.Page - 1) * request.PerPage)
+            .Take(request.PerPage)
+            .ToListAsync(token: cancellationToken);
+
+        return new PagedDto<PositionDto>(positions
+            .Select(p => new PositionDto
+            {
+                Id = p.Id, 
+                Name = p.Name
+            })
+            .ToList(), count);
+    }
+}

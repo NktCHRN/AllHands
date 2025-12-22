@@ -19,6 +19,17 @@ public static class MessageBusExtensions
             throw new InvalidOperationException("Setup UserContext to use this method");
         }
         
+        options.Headers.Remove(UserContextHeaders.Id);
+        options.Headers.Remove(UserContextHeaders.CompanyId);
+        options.Headers.Remove(UserContextHeaders.EmployeeId);
+        options.Headers.Remove(UserContextHeaders.Email);
+        options.Headers.Remove(UserContextHeaders.FirstName);
+        options.Headers.Remove(UserContextHeaders.LastName);
+        options.Headers.Remove(UserContextHeaders.PhoneNumber);
+        options.Headers.Remove(UserContextHeaders.MiddleName);
+        options.Headers.Remove(UserContextHeaders.Permissions);
+        options.Headers.Remove(UserContextHeaders.Roles);
+        
         options.Headers.Add(UserContextHeaders.Id, userContext.Id.ToString());
         options.Headers.Add(UserContextHeaders.CompanyId, userContext.CompanyId.ToString());
         options.Headers.Add(UserContextHeaders.EmployeeId, userContext.EmployeeId.ToString());
