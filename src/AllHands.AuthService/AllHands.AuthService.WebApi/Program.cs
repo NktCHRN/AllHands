@@ -6,6 +6,7 @@ using AllHands.AuthService.WebApi;
 using AllHands.AuthService.WebApi.GrpcServices;
 using AllHands.AuthService.WebApi.Middlewares;
 using AllHands.Shared.Contracts.Messaging;
+using AllHands.Shared.Contracts.Messaging.Events.Invitations;
 using AllHands.Shared.Contracts.Messaging.Events.Roles;
 using AllHands.Shared.Contracts.Messaging.Events.Users;
 using AllHands.Shared.Infrastructure.Messaging;
@@ -34,6 +35,8 @@ builder.UseAllHandsWolverine(opts =>
     opts.AddPublisher<RoleCreatedEvent>(environment, Topics.Role);
     opts.AddPublisher<RoleUpdatedEvent>(environment, Topics.Role);
     opts.AddPublisher<RoleDeletedEvent>(environment, Topics.Role);
+    
+    opts.AddPublisher<InvitationAcceptedEvent>(environment, Topics.Invitation);
     
     opts.PublishMessage<ResetPasswordRequestedEvent>()
         .ToSqsQueue($"{environment.ToLower()}_{Queues.ResetPasswordRequestedEvent}");

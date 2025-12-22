@@ -6,6 +6,7 @@ using AllHands.AuthService.SessionRecalculator;
 using AllHands.Shared.ConsumersWorker;
 using AllHands.Shared.Contracts.Messaging;
 using AllHands.Shared.Contracts.Messaging.Events.Employees;
+using AllHands.Shared.Contracts.Messaging.Events.Invitations;
 using AllHands.Shared.Contracts.Messaging.Events.Roles;
 using AllHands.Shared.Contracts.Messaging.Events.Users;
 using AllHands.Shared.Infrastructure.Messaging;
@@ -31,6 +32,8 @@ builder.UseAllHandsWolverine(opts =>
     opts.AddPublisher<RoleCreatedEvent>(environment, Topics.Role);
     opts.AddPublisher<RoleUpdatedEvent>(environment, Topics.Role);
     opts.AddPublisher<RoleDeletedEvent>(environment, Topics.Role);
+    
+    opts.AddPublisher<InvitationAcceptedEvent>(environment, Topics.Invitation);
     
     opts.ListenToSqsQueue($"{environment.ToLower()}_{Queues.ResetPasswordRequestedEvent}")
         .ConfigureDeadLetterQueue($"{environment.ToLower()}_{Queues.ResetPasswordRequestedEvent}_errors");
