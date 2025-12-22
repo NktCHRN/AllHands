@@ -34,7 +34,7 @@ public static class DependencyInjection
 
         services.AddGrpcRetryOptions();
         
-        services.AddGrpcClient<UserService.UserServiceClient>()
+        services.AddGrpcClient<UserService.UserServiceClient>(opt => opt.Address = new Uri(configuration.GetValue<string>("AuthService:grpc")?? throw new InvalidOperationException("AuthService URL must be provided.")))
             .AddInterceptors()
             .ConfigureChannel((sp, o) => o.ServiceConfig = new Grpc.Net.Client.Configuration.ServiceConfig
             {
