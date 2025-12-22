@@ -1,4 +1,5 @@
-﻿using AllHands.EmployeeService.Domain.Events.Employee;
+﻿using AllHands.EmployeeService.Application.Abstractions;
+using AllHands.EmployeeService.Domain.Events.Employee;
 using AllHands.EmployeeService.Domain.Models;
 using AllHands.Shared.Domain.Exceptions;
 using AllHands.Shared.Domain.UserContext;
@@ -7,7 +8,7 @@ using MediatR;
 
 namespace AllHands.EmployeeService.Application.Features.Employees.Delete;
 
-public sealed class DeleteEmployeeHandler(IDocumentSession documentSession, IUserContext userContext) : IRequestHandler<DeleteEmployeeCommand>
+public sealed class DeleteEmployeeHandler(IDocumentSession documentSession, IEventService eventService, IUserContext userContext) : IRequestHandler<DeleteEmployeeCommand>
 {
     public async Task Handle(DeleteEmployeeCommand request, CancellationToken cancellationToken)
     {
@@ -15,7 +16,7 @@ public sealed class DeleteEmployeeHandler(IDocumentSession documentSession, IUse
                            .FirstOrDefaultAsync(e => e.Id == request.EmployeeId, cancellationToken)
                        ?? throw new EntityNotFoundException("Employee was not found.");
         
-        // TODO: send event
+        await eventService.PublishAsync(new Shared.Contracts.Messaging.Events.Employees.EmployeeDeletedEvent(request.EmployeeId, employee.CompanyId, employee.UserId));
         
         documentSession.Events.Append(request.EmployeeId, new EmployeeDeletedEvent(request.EmployeeId, userContext.Id, request.Reason));
         await documentSession.SaveChangesAsync(cancellationToken);

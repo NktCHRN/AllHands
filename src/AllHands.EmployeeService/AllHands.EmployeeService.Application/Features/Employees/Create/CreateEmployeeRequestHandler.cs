@@ -1,6 +1,8 @@
-﻿using AllHands.EmployeeService.Domain.Events.Employee;
+﻿using AllHands.EmployeeService.Application.Abstractions;
+using AllHands.EmployeeService.Domain.Events.Employee;
 using AllHands.EmployeeService.Domain.Models;
 using AllHands.Shared.Domain.Exceptions;
+using AllHands.Shared.Domain.UserContext;
 using AllHands.Shared.Domain.Utilities;
 using Marten;
 using MediatR;
@@ -8,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AllHands.EmployeeService.Application.Features.Employees.Create;
 
-public sealed class CreateEmployeeRequestHandler(IDocumentSession documentSession, IAccountService accountService, ICurrentUserService currentUserService, IEmailSender emailSender, ILogger<CreateEmployeeRequestHandler> logger) : IRequestHandler<CreateEmployeeCommand, CreateEmployeeResult>
+public sealed class CreateEmployeeRequestHandler(IDocumentSession documentSession, IEventService eventService, IUserContext userContext, IUserClient userClient, ILogger<CreateEmployeeRequestHandler> logger) : IRequestHandler<CreateEmployeeCommand, CreateEmployeeResult>
 {
     public async Task<CreateEmployeeResult> Handle(CreateEmployeeCommand request, CancellationToken cancellationToken)
     {
@@ -26,7 +28,7 @@ public sealed class CreateEmployeeRequestHandler(IDocumentSession documentSessio
             }
         }
 
-        var positionExists = await documentSession.Query<Domain.Models.Position>()
+        var positionExists = await documentSession.Query<Position>()
             .AnyAsync(p => p.Id == request.PositionId, cancellationToken);
         if (!positionExists)
         {
@@ -48,42 +50,54 @@ public sealed class CreateEmployeeRequestHandler(IDocumentSession documentSessio
             throw new EntityAlreadyExistsException("Employee already worked here, he is listed as a fired employee. Please, find and rehire them instead.");
         }
 
-        var accountCreationResult = await accountService.CreateAsync(request, cancellationToken);   // Replace with gRPC call.
-
         var employeeId = Guid.CreateVersion7();
-        documentSession.Events.StartStream<Employee>(employeeId, new EmployeeCreatedEvent(
-            employeeId,
-            currentUserService.GetId(),
-            accountCreationResult.Id,
-            currentUserService.GetCompanyId(),
-            request.PositionId,
-            request.ManagerId,
+        var accountCreationResult = await userClient.CreateAsync(new CreateIdentityUserCommand(
             request.Email,
-            normalizedEmail,
             request.FirstName,
             request.MiddleName,
             request.LastName,
             request.PhoneNumber,
-            request.WorkStartDate));
-        await documentSession.SaveChangesAsync(cancellationToken);
+            employeeId), cancellationToken);
 
-        var emailSentSuccessfully = false;
         try
         {
-            var admin = currentUserService.GetCurrentUser();
-            await emailSender.SendCompleteRegistrationEmailAsync(new SendCompleteRegistrationEmailCommand(
+            documentSession.Events.StartStream<Employee>(employeeId, new EmployeeCreatedEvent(
+                employeeId,
+                userContext.Id,
+                accountCreationResult.UserId,
+                userContext.CompanyId,
+                request.PositionId,
+                request.ManagerId,
                 request.Email,
+                normalizedEmail,
                 request.FirstName,
-                StringUtilities.GetFullName(admin.FirstName, admin.MiddleName, admin.LastName),
-                accountCreationResult.InvitationId,
-                accountCreationResult.InvitationToken), cancellationToken);
-            emailSentSuccessfully = true;
+                request.MiddleName,
+                request.LastName,
+                request.PhoneNumber,
+                request.WorkStartDate));
+            await eventService.PublishAsync(new Shared.Contracts.Messaging.Events.Employees.EmployeeCreatedEvent(
+                employeeId,
+                request.FirstName,
+                request.MiddleName,
+                request.LastName,
+                request.Email,
+                request.PhoneNumber,
+                request.WorkStartDate,
+                request.ManagerId,
+                request.PositionId,
+                userContext.CompanyId,
+                accountCreationResult.UserId,
+                nameof(EmployeeStatus.Unactivated)));
+            await documentSession.SaveChangesAsync(cancellationToken);
         }
         catch (Exception e)
         {
-            logger.LogError(e, "An error occurred while sending registration email.");
+            logger.LogError(e, "An error occured while creating an employee.");
+            await userClient.DeleteAsync(accountCreationResult.UserId, cancellationToken);
+
+            throw;
         }
 
-        return new CreateEmployeeResult(employeeId, emailSentSuccessfully);
+        return new CreateEmployeeResult(employeeId);
     }
 }

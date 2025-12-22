@@ -1,15 +1,19 @@
-﻿using AllHands.EmployeeService.Application.Abstractions;
+﻿using AllHands.AuthService.Contracts.Protos.Grpc;
+using AllHands.EmployeeService.Application.Abstractions;
 using AllHands.EmployeeService.Application.Projections;
 using AllHands.EmployeeService.Domain.Models;
+using AllHands.EmployeeService.Infrastructure.Clients;
 using AllHands.EmployeeService.Infrastructure.Files;
 using AllHands.EmployeeService.Infrastructure.Messaging;
 using AllHands.Shared.Infrastructure.Auth;
 using AllHands.Shared.Infrastructure.Data;
+using AllHands.Shared.Infrastructure.GrpcInfrastructure;
 using Amazon.S3;
 using JasperFx.Events.Projections;
 using Marten.Schema.Indexing.Unique;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Wolverine.Marten;
 
 namespace AllHands.EmployeeService.Infrastructure;
@@ -25,6 +29,27 @@ public static class DependencyInjection
         services.AddFileService(configuration);
 
         services.AddScoped<IEventService, EventService>();
+
+        services.AddScoped<IUserClient, IdentityUserClient>();
+
+        services.AddGrpcRetryOptions();
+        
+        services.AddGrpcClient<UserService.UserServiceClient>()
+            .AddInterceptors()
+            .ConfigureChannel((sp, o) => o.ServiceConfig = new Grpc.Net.Client.Configuration.ServiceConfig
+            {
+                MethodConfigs =
+                {
+                    new Grpc.Net.Client.Configuration.MethodConfig
+                    {
+                        Names =
+                        {
+                            Grpc.Net.Client.Configuration.MethodName.Default
+                        },
+                        RetryPolicy = GrpcRetryProvider.GetDefaultRetryPolicy(sp.GetRequiredService<IOptions<GrpcRetryOptions>>().Value)
+                    }
+                }
+            });
         
         return services;
     }
