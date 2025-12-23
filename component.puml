@@ -1,0 +1,106 @@
+@startuml ComponentDiagram
+title AllHands - Component Diagram
+
+skinparam componentStyle rectangle
+skinparam node {
+  BorderColor black
+  BackgroundColor #EEEEEE
+}
+skinparam database {
+  BackgroundColor #DDDDFF
+}
+skinparam queue {
+  BackgroundColor #FFEECC
+}
+
+actor "User" as User
+
+component UI as "AllHands UI"
+
+node "AllHands BE" as AllHandsBE  {
+    component ApiGateway as "API Gateway"
+    
+    database Redis as "Redis (Cache)"
+
+    package "Auth Service" {
+        component AuthServiceWebApi as "Auth Service Web API"
+        component AuthServiceConsumersWorker as "Auth Service Consumers Worker"
+        database AuthServiceDB as "Auth Service DB"
+        database UserTopic as "User topic"
+        database RoleTopic as "Role topic"
+        database InvitationTopic as "Invitation topic"
+        database UserInvitedEventQueue as "user-invited-event queue"
+        database ResetPasswordRequestedEventQueue as "reset-password-requested-event queue"
+    }
+
+    package "Employee Service" {
+        component EmployeeServiceWebApi as "Employee Service Web API"
+        component EmployeeServiceConsumersWorker as "Employee Service Consumers Worker"
+        database EmployeeServiceDB as "Employee Service DB"
+        database EmployeeTopic as "Employee topic"
+        database CompanyTopic as "Company topic"
+    }
+
+    package "TimeOff Service" {
+        component TimeOffServiceWebApi as "TimeOff Service Web API"
+        component TimeOffServiceConsumersWorker as "TimeOff Service Consumers Worker"
+        component TimeOffServiceBalanceUpdater as "TimeOff Service Balance Updater"
+        database TimeOffServiceDB as "TimeOff Service DB"
+    }
+
+    package "News Service" {
+        component NewsServiceWebApi as "News Service Web API"
+        component NewsServiceConsumersWorker as "News Service Consumers Worker"
+        database NewsServiceDB as "News Service DB"
+    }
+}
+
+cloud "AWS External Services" as AWSExternalServices {
+    component SES as "Simple Email Service"
+    component S3 as "Simple Storage Service"
+}
+
+User -down-> UI
+UI -down-> ApiGateway : HTTP / REST
+ApiGateway -down-> NewsServiceWebApi : HTTP / REST
+ApiGateway -down-> AuthServiceWebApi : HTTP / REST
+ApiGateway -down-> EmployeeServiceWebApi : HTTP / REST
+ApiGateway -down-> TimeOffServiceWebApi : HTTP / REST
+NewsServiceWebApi --> NewsServiceDB
+NewsServiceConsumersWorker --> NewsServiceDB
+AuthServiceWebApi --> AuthServiceDB
+AuthServiceConsumersWorker --> AuthServiceDB
+AuthServiceWebApi --> Redis
+AuthServiceConsumersWorker --> Redis
+AuthServiceConsumersWorker --> SES
+TimeOffServiceWebApi --> TimeOffServiceDB
+TimeOffServiceConsumersWorker --> TimeOffServiceDB
+TimeOffServiceBalanceUpdater --> TimeOffServiceDB
+EmployeeServiceWebApi --> EmployeeServiceDB
+EmployeeServiceConsumersWorker --> EmployeeServiceDB
+EmployeeServiceWebApi --> AuthServiceWebApi : HTTP 2.0 / gRPC
+EmployeeServiceWebApi --> S3
+EmployeeServiceWebApi --> EmployeeTopic
+EmployeeServiceConsumersWorker --> EmployeeTopic
+EmployeeServiceWebApi --> CompanyTopic
+AuthServiceWebApi --> UserTopic
+AuthServiceConsumersWorker --> UserTopic
+AuthServiceWebApi --> RoleTopic
+AuthServiceConsumersWorker --> RoleTopic
+AuthServiceWebApi --> InvitationTopic
+CompanyTopic --> AuthServiceConsumersWorker
+EmployeeTopic --> AuthServiceConsumersWorker
+RoleTopic --> AuthServiceConsumersWorker
+UserTopic --> AuthServiceConsumersWorker
+RoleTopic --> EmployeeServiceConsumersWorker
+UserTopic --> EmployeeServiceConsumersWorker
+InvitationTopic --> EmployeeServiceConsumersWorker
+CompanyTopic --> TimeOffServiceConsumersWorker
+EmployeeTopic --> TimeOffServiceConsumersWorker
+EmployeeTopic --> NewsServiceConsumersWorker
+AuthServiceWebApi --> UserInvitedEventQueue
+AuthServiceWebApi --> ResetPasswordRequestedEventQueue
+UserInvitedEventQueue --> AuthServiceConsumersWorker
+ResetPasswordRequestedEventQueue --> AuthServiceConsumersWorker
+
+@enduml
