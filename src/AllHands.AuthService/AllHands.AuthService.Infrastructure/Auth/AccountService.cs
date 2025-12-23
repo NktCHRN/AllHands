@@ -338,6 +338,13 @@ public sealed class AccountService(
             user.Email = command.Email;
             user.NormalizedEmail = StringUtilities.GetNormalizedEmail(command.Email);
             user.UserName = GetUserName(command.Email, user.CompanyId);
+            user.NormalizedUserName = StringUtilities.GetNormalizedName(user.UserName);
+            
+            var existingUserWithUserName = await userManager.FindByNameAsync(user.UserName);
+            if (existingUserWithUserName != null)
+            {
+                throw new EntityValidationFailedException($"Email {command.Email} is already taken.");
+            }
         }
 
         AllHandsRole? role = user.Roles.FirstOrDefault()?.Role;
