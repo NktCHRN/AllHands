@@ -16,10 +16,10 @@ public sealed class CreateTimeOffRequestHandler(IDocumentSession documentSession
     public async Task<CreatedEntityDto> Handle(CreateTimeOffRequestCommand request, CancellationToken cancellationToken)
     {
         var employeeId = userContext.EmployeeId;
-        var timeOffTypeExists = await documentSession.Query<TimeOffType>()
-            .AnyAsync(t => t.Id == request.TypeId, cancellationToken);
+        var timeOffType = await documentSession.Query<TimeOffType>()
+            .FirstOrDefaultAsync(t => t.Id == request.TypeId, cancellationToken);
 
-        if (!timeOffTypeExists)
+        if (timeOffType is null)
         {
             throw new EntityNotFoundException("Time off type was not found.");
         }
@@ -41,7 +41,7 @@ public sealed class CreateTimeOffRequestHandler(IDocumentSession documentSession
         if (balance == null)
         {
             balanceId = TimeOffBalance.CreateId(employeeId, request.TypeId);
-            documentSession.Events.StartStream<TimeOffBalance>(balanceId.Value, new TimeOffBalanceCreatedEvent(balanceId.Value, employeeId, request.TypeId, 0));
+            documentSession.Events.StartStream<TimeOffBalance>(balanceId.Value, new TimeOffBalanceCreatedEvent(balanceId.Value, employeeId, request.TypeId, timeOffType.DaysPerYear));
         }
 
         var company = await documentSession.Query<Domain.Models.Company>()
